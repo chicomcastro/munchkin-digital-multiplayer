@@ -7,7 +7,7 @@ on:
     branches: [main]
 
 permissions:
-  contents: read
+  contents: write
   pull-requests: write
   issues: write
 
@@ -205,6 +205,74 @@ jobs:
           path: logs
           if-no-files-found: warn
           retention-days: 14
+
+      - name: Publish screenshots to ci-evidence branch
+        if: always() && github.event_name == 'pull_request'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -e
+          if [ ! -d e2e/cypress/screenshots ] || [ -z "$(ls -A e2e/cypress/screenshots 2>/dev/null)" ]; then
+            echo "No screenshots to publish; skipping."
+            exit 0
+          fi
+
+          SHORT_SHA="${SHA:0:7}"
+          BRANCH="ci-evidence"
+          REPO="${{ github.repository }}"
+          WORK=$(mktemp -d)
+
+          echo "Cloning $BRANCH (creating if it doesn't exist)..."
+          if ! git clone --depth=1 --branch "$BRANCH" --single-branch \
+            "https://x-access-token:${GITHUB_TOKEN}@github.com/${REPO}.git" "$WORK" 2>/dev/null; then
+            git clone --depth=1 \
+              "https://x-access-token:${GITHUB_TOKEN}@github.com/${REPO}.git" "$WORK"
+            (
+              cd "$WORK"
+              git checkout --orphan "$BRANCH"
+              git rm -rf . >/dev/null 2>&1 || true
+              printf '# CI evidence\n\nScreenshots from Cypress E2E runs. Published per PR by `.github/workflows/ci.yml`.\n' > README.md
+              git config user.email 'actions@github.com'
+              git config user.name 'github-actions[bot]'
+              git add README.md
+              git commit -m "Initialize $BRANCH"
+              git push origin "$BRANCH"
+            )
+          fi
+
+          DEST="$WORK/pr-$PR_NUMBER/$SHORT_SHA"
+          rm -rf "$WORK/pr-$PR_NUMBER"
+          mkdir -p "$DEST"
+          cp -r e2e/cypress/screenshots/. "$DEST/"
+
+          cd "$WORK"
+          git config user.email 'actions@github.com'
+          git config user.name 'github-actions[bot]'
+          git add -A
+          if git diff --cached --quiet; then
+            echo "No screenshot changes."
+          else
+            git commit -m "PR #$PR_NUMBER: screenshots for $SHORT_SHA [skip ci]"
+            git push origin "$BRANCH"
+          fi
+          echo "RAW_BASE_URL=https://raw.githubusercontent.com/${REPO}/${BRANCH}/pr-${PR_NUMBER}/${SHORT_SHA}" >> "$GITHUB_ENV"
+          echo "SHORT_SHA=$SHORT_SHA" >> "$GITHUB_ENV"
+
+      - name: Build visual evidence PR comment
+        if: always() && github.event_name == 'pull_request' && env.RAW_BASE_URL != ''
+        env:
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: node scripts/build-evidence-comment.mjs
+
+      - name: Post visual evidence as sticky PR comment
+        if: always() && github.event_name == 'pull_request' && env.RAW_BASE_URL != ''
+        uses: marocchino/sticky-pull-request-comment@v2
+        with:
+          header: visual-evidence
+          path: evidence-comment.md
 
       - name: Build E2E debug PR comment
         if: always() && github.event_name == 'pull_request'
