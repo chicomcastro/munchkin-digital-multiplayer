@@ -257,7 +257,11 @@ jobs:
             git commit -m "PR #$PR_NUMBER: screenshots for $SHORT_SHA [skip ci]"
             git push origin "$BRANCH"
           fi
-          echo "RAW_BASE_URL=https://raw.githubusercontent.com/${REPO}/${BRANCH}/pr-${PR_NUMBER}/${SHORT_SHA}" >> "$GITHUB_ENV"
+          # For private repos: github.com/.../blob/{ref}/{path}?raw=true serves the raw image
+          # to authenticated viewers via their session cookies (raw.githubusercontent.com
+          # would 404 anonymously). Embedded <img> tags resolve the same way client-side.
+          echo "RAW_BASE_URL=https://github.com/${REPO}/blob/${BRANCH}/pr-${PR_NUMBER}/${SHORT_SHA}" >> "$GITHUB_ENV"
+          echo "RAW_URL_SUFFIX=?raw=true" >> "$GITHUB_ENV"
           echo "SHORT_SHA=$SHORT_SHA" >> "$GITHUB_ENV"
 
       - name: Build visual evidence PR comment

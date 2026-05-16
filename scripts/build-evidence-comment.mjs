@@ -1,14 +1,16 @@
 // Reads e2e/cypress/screenshots/ and produces evidence-comment.md
-// with each screenshot rendered inline via raw.githubusercontent.com URLs.
+// with each screenshot rendered inline.
 //
 // Env:
-//   RAW_BASE_URL — e.g. https://raw.githubusercontent.com/owner/repo/ci-evidence/pr-12/abc1234
+//   RAW_BASE_URL  — e.g. https://github.com/owner/repo/blob/ci-evidence/pr-12/abc1234
+//   RAW_URL_SUFFIX — e.g. ?raw=true  (private repos need this)
 //   PR_NUMBER, SHORT_SHA, RUN_URL — used in the header
 
 import fs from 'fs';
 import path from 'path';
 
 const RAW_BASE_URL = process.env.RAW_BASE_URL ?? '';
+const RAW_URL_SUFFIX = process.env.RAW_URL_SUFFIX ?? '';
 const PR_NUMBER = process.env.PR_NUMBER ?? '';
 const SHORT_SHA = process.env.SHORT_SHA ?? '';
 const RUN_URL = process.env.RUN_URL ?? '';
@@ -47,7 +49,7 @@ if (files.length === 0) {
     const segs = rel.split(path.sep);
     const spec = segs.length > 1 ? segs[0] : 'root';
     if (!grouped.has(spec)) grouped.set(spec, []);
-    const url = `${RAW_BASE_URL}/${rel.replace(/\\/g, '/')}`;
+    const url = `${RAW_BASE_URL}/${rel.replace(/\\/g, '/')}${RAW_URL_SUFFIX}`;
     const label = segs.slice(1).join('/').replace(/\.png$/, '') || segs[0];
     grouped.get(spec).push({ label, url, rel });
   }
