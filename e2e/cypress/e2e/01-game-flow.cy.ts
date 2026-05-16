@@ -45,7 +45,7 @@ describe('Munchkin — full game flow', () => {
     cy.snapshot('03-lobby-with-ghost');
 
     // Tweak a config option to demonstrate the controls.
-    cy.contains('No death').find('input').check({ force: true });
+    cy.contains('No death').parent().find('input[type="checkbox"]').check({ force: true });
 
     cy.snapshot('04-lobby-config-tweaked');
 

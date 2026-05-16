@@ -68,75 +68,104 @@ jobs:
         with:
           node-version: '20'
 
-      # Server
-      - name: Install server
+      - name: Install + build server
         working-directory: server
-        run: npm ci
-      - name: Build server
-        working-directory: server
-        run: npm run build
-      - name: Start server
-        working-directory: server
-        env:
-          PORT: '3001'
-          CLIENT_URL: 'http://localhost:5173'
-        run: node dist/index.js &
-      - name: Wait for server
         run: |
-          for i in {1..40}; do
-            if curl -sf http://localhost:3001/health; then exit 0; fi
-            sleep 0.5
-          done
-          echo "Server failed to start"; exit 1
+          npm ci
+          npm run build
 
-      # Client
-      - name: Install client
-        working-directory: client
-        run: npm ci
-      - name: Build client
+      - name: Install + build client
         working-directory: client
         env:
           VITE_SERVER_URL: 'http://localhost:3001'
-        run: npm run build
-      - name: Start client preview
-        working-directory: client
-        run: npx vite preview --host 0.0.0.0 --port 5173 &
-      - name: Wait for client
         run: |
-          for i in {1..40}; do
-            if curl -sf http://localhost:5173 >/dev/null; then exit 0; fi
-            sleep 0.5
-          done
-          echo "Client failed to start"; exit 1
+          npm ci
+          npm run build
 
-      # Cypress
       - name: Install Cypress
         working-directory: e2e
         run: npm ci
-      - name: Run Cypress
-        working-directory: e2e
+
+      - name: Cache Cypress binary
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/Cypress
+          key: cypress-${{ runner.os }}-${{ hashFiles('e2e/package-lock.json') }}
+
+      - name: Run E2E (server + client + cypress in one step)
+        working-directory: ${{ github.workspace }}
         env:
           CYPRESS_BASE_URL: 'http://localhost:5173'
           CYPRESS_SERVER_URL: 'http://localhost:3001'
-        run: npx cypress run
+        run: |
+          set -e
+          mkdir -p logs
+
+          echo "--- Starting server ---"
+          ( cd server && PORT=3001 CLIENT_URL='http://localhost:5173' \
+            nohup node dist/index.js > "$GITHUB_WORKSPACE/logs/server.log" 2>&1 & echo $! > "$GITHUB_WORKSPACE/logs/server.pid" )
+          disown || true
+
+          echo "--- Waiting for server ---"
+          for i in {1..60}; do
+            if curl -sf http://localhost:3001/health >/dev/null; then echo "Server ready"; break; fi
+            if [ "$i" = "60" ]; then echo "Server failed to start"; cat logs/server.log || true; exit 1; fi
+            sleep 0.5
+          done
+
+          echo "--- Starting client preview ---"
+          ( cd client && \
+            nohup npx vite preview --host 0.0.0.0 --port 5173 > "$GITHUB_WORKSPACE/logs/client.log" 2>&1 & echo $! > "$GITHUB_WORKSPACE/logs/client.pid" )
+          disown || true
+
+          echo "--- Waiting for client ---"
+          for i in {1..60}; do
+            if curl -sf http://localhost:5173 >/dev/null 2>&1; then echo "Client ready"; break; fi
+            if [ "$i" = "60" ]; then echo "Client failed to start"; cat logs/client.log || true; exit 1; fi
+            sleep 0.5
+          done
+
+          echo "--- Running Cypress ---"
+          ( cd e2e && npx cypress run )
+
+      - name: Print server/client logs on failure
+        if: failure()
+        run: |
+          echo "===== server.log ====="
+          cat logs/server.log 2>/dev/null || echo "(missing)"
+          echo "===== client.log ====="
+          cat logs/client.log 2>/dev/null || echo "(missing)"
 
       - name: Build visual catalog HTML
         if: always()
         run: node scripts/build-visual-catalog.mjs
+
       - name: Upload screenshots
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: visual-catalog
           path: e2e/cypress/screenshots
+          if-no-files-found: warn
           retention-days: 30
+
       - name: Upload visual catalog HTML
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: visual-catalog-html
           path: e2e/visual-catalog.html
+          if-no-files-found: warn
           retention-days: 30
+
+      - name: Upload service logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-service-logs
+          path: logs
+          if-no-files-found: warn
+          retention-days: 14
 
   coverage-comment:
     name: Comment coverage on PR
