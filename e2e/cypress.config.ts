@@ -1,7 +1,8 @@
 import { defineConfig } from 'cypress';
 import fs from 'fs';
 import path from 'path';
-import { io as ioc, type Socket as ClientSocket } from 'socket.io-client';
+import { io as ioc } from 'socket.io-client';
+import type { Socket as ClientSocket } from 'socket.io-client';
 
 // e2e/ is the project root (working-directory in CI).
 const ROOT = __dirname;
