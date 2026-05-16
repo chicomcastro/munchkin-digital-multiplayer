@@ -108,6 +108,8 @@ jobs:
         run: |
           set +e
           mkdir -p logs
+          # Tee all output of this step to a file we can post back to the PR.
+          exec > >(tee logs/e2e-debug.log) 2>&1
 
           echo "================ Starting server ================"
           ( cd server && PORT=3001 CLIENT_URL='http://localhost:5173' \
@@ -203,6 +205,43 @@ jobs:
           path: logs
           if-no-files-found: warn
           retention-days: 14
+
+      - name: Build E2E debug PR comment
+        if: always() && github.event_name == 'pull_request'
+        run: |
+          mkdir -p logs
+          {
+            echo '## 🔧 E2E debug (auto-posted by CI)'
+            echo
+            echo 'Last failure log (truncated to last 200 lines):'
+            echo
+            echo '```'
+            tail -n 200 logs/e2e-debug.log 2>/dev/null || echo '(no e2e-debug.log captured)'
+            echo '```'
+            echo
+            echo '<details><summary>server.log</summary>'
+            echo
+            echo '```'
+            tail -n 60 logs/server.log 2>/dev/null || echo '(no server.log)'
+            echo '```'
+            echo
+            echo '</details>'
+            echo
+            echo '<details><summary>client.log</summary>'
+            echo
+            echo '```'
+            tail -n 60 logs/client.log 2>/dev/null || echo '(no client.log)'
+            echo '```'
+            echo
+            echo '</details>'
+          } > e2e-debug-comment.md
+
+      - name: Post E2E debug as sticky PR comment
+        if: always() && github.event_name == 'pull_request'
+        uses: marocchino/sticky-pull-request-comment@v2
+        with:
+          header: e2e-debug
+          path: e2e-debug-comment.md
 
   coverage-comment:
     name: Comment coverage on PR
