@@ -1,0 +1,144 @@
+import { useEffect, useRef, useState } from 'react';
+import type { GameState } from '../types';
+import { PlayerStatus } from '../components/PlayerStatus';
+import { CombatArena } from '../components/CombatArena';
+import { CardView } from '../components/Card';
+
+export function BoardView({ state, onPlayerMode }: { state: GameState; onPlayerMode: () => void }) {
+  const combat = state.combatState;
+  const activePlayer = state.players.find((p) => p.id === state.activePlayerId);
+  const logEnd = useRef<HTMLDivElement>(null);
+  useEffect(() => { logEnd.current?.scrollIntoView({ behavior: 'smooth' }); }, [state.log.length]);
+
+  const [secondsLeft, setSecondsLeft] = useState<number | null>(null);
+  useEffect(() => {
+    if (!state.turnTimerEndsAt) return setSecondsLeft(null);
+    const tick = () => setSecondsLeft(Math.max(0, Math.floor((state.turnTimerEndsAt! - Date.now()) / 1000)));
+    tick();
+    const id = setInterval(tick, 500);
+    return () => clearInterval(id);
+  }, [state.turnTimerEndsAt]);
+
+  const [globalLeft, setGlobalLeft] = useState<string | null>(null);
+  useEffect(() => {
+    if (!state.globalTimerEndsAt) return setGlobalLeft(null);
+    const tick = () => {
+      const s = Math.max(0, Math.floor((state.globalTimerEndsAt! - Date.now()) / 1000));
+      const m = Math.floor(s / 60);
+      setGlobalLeft(`${m}:${(s % 60).toString().padStart(2, '0')}`);
+    };
+    tick();
+    const id = setInterval(tick, 1000);
+    return () => clearInterval(id);
+  }, [state.globalTimerEndsAt]);
+
+  return (
+    <div className="min-h-screen p-4 grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-4">
+      <div className="space-y-4">
+        <div className="card-shell p-4 flex items-center justify-between">
+          <div>
+            <div className="text-xs uppercase opacity-60">Room {state.roomCode} · Turn {state.turn} · {state.turnPhase}</div>
+            <div className="text-3xl font-bold">
+              Active: <span style={{ color: activePlayer?.color }}>{activePlayer?.name ?? '—'}</span>
+            </div>
+          </div>
+          <div className="flex flex-col items-end gap-1">
+            {secondsLeft != null && (
+              <div className={['text-xl font-bold', secondsLeft < 10 ? 'text-red-400' : ''].join(' ')}>
+                ⏱ {secondsLeft}s
+              </div>
+            )}
+            {globalLeft != null && <div className="text-sm opacity-70">global {globalLeft}</div>}
+            <button className="btn text-xs" onClick={onPlayerMode}>player mode</button>
+          </div>
+        </div>
+
+        {state.config.variant === 'cooperative' && (
+          <div className="card-shell p-4">
+            <div className="text-xs uppercase opacity-60 mb-2">Coop status</div>
+            {state.config.coopObjective === 'bossFight' && (
+              <div>
+                <div className="text-sm mb-1">Boss HP: {state.coopBossHpRemaining} / {state.config.coopBossLevel}</div>
+                <div className="h-3 bg-slate-800 rounded overflow-hidden">
+                  <div className="h-full bg-red-600" style={{ width: `${100 * state.coopBossHpRemaining / state.config.coopBossLevel}%` }} />
+                </div>
+              </div>
+            )}
+            {state.config.coopObjective === 'dungeonTrail' && (
+              <div className="text-sm">Trail: {state.coopMonstersDefeated} / {state.config.coopTrailSize}</div>
+            )}
+            {state.config.coopObjective === 'surviveRounds' && (
+              <div className="text-sm">Round {state.turn} / {state.config.coopRounds}</div>
+            )}
+            {state.config.threatTrackEnabled && (
+              <div className="mt-3">
+                <div className="text-xs mb-1">Threat: {state.threatTrack} / 10</div>
+                <div className="h-2 bg-slate-800 rounded overflow-hidden">
+                  <div className="h-full bg-purple-500" style={{ width: `${state.threatTrack * 10}%` }} />
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {combat ? (
+          <CombatArena combat={combat} players={state.players} />
+        ) : (
+          <div className="card-shell p-6 text-center opacity-60">No active combat</div>
+        )}
+
+        {state.config.marketEnabled && state.market.length > 0 && (
+          <div className="card-shell p-4">
+            <div className="text-xs uppercase opacity-60 mb-2">Market</div>
+            <div className="flex gap-2 overflow-x-auto">
+              {state.market.map((c) => (
+                <CardView key={c.id} card={c} compact />
+              ))}
+            </div>
+          </div>
+        )}
+
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+          {state.players.map((p) => (
+            <PlayerStatus key={p.id} player={p} active={state.activePlayerId === p.id} detailed />
+          ))}
+        </div>
+
+        {state.phase === 'ended' && (
+          <div className="card-shell p-6 text-center">
+            <div className="text-3xl font-bold text-amber-400 mb-2">Game over</div>
+            {state.winnerId ? (
+              <div>Winner: {state.players.find((p) => p.id === state.winnerId)?.name}</div>
+            ) : (
+              <div className="opacity-70">{state.log[state.log.length - 1]?.text}</div>
+            )}
+          </div>
+        )}
+      </div>
+
+      <aside className="card-shell p-3 max-h-[80vh] flex flex-col">
+        <div className="text-xs uppercase opacity-60 mb-2">Log</div>
+        <div className="flex-1 overflow-y-auto text-sm space-y-1 pr-1">
+          {state.log.map((e) => (
+            <div
+              key={e.id}
+              className={[
+                'leading-snug',
+                e.kind === 'combat' ? 'text-red-300' :
+                e.kind === 'curse' ? 'text-purple-300' :
+                e.kind === 'level' ? 'text-amber-300' :
+                e.kind === 'system' ? 'text-emerald-300 font-bold' : 'opacity-80'
+              ].join(' ')}
+            >
+              {e.text}
+            </div>
+          ))}
+          <div ref={logEnd} />
+        </div>
+        <div className="text-xs opacity-60 mt-2 border-t border-slate-700 pt-2">
+          door {state.doorDeckSize} · treasure {state.treasureDeckSize}
+        </div>
+      </aside>
+    </div>
+  );
+}
