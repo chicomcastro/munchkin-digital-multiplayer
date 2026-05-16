@@ -1,0 +1,16 @@
+{
+  "name": "munchkin-e2e",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "cy:run": "cypress run",
+    "cy:open": "cypress open"
+  },
+  "devDependencies": {
+    "cypress": "^13.13.0"
+  },
+  "dependencies": {
+    "socket.io-client": "^4.8.3"
+  }
+}

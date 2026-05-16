@@ -1,0 +1,187 @@
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
+import { mockSocket, resetMockSocket } from '../test/mockSocket';
+import { PlayerView } from './PlayerView';
+import { makeCard, makeCombat, makePlayer, makeState } from '../test/fixtures';
+
+beforeEach(() => {
+  resetMockSocket();
+});
+
+describe('PlayerView', () => {
+  function renderView(state = makeState(), hand = [makeCard()], fist: any[] = []) {
+    return render(
+      <PlayerView state={state} hand={hand} fist={fist} myId="p1" onBoardMode={vi.fn()} />,
+    );
+  }
+
+  it('renders status header with room code, turn, and player info', () => {
+    renderView();
+    expect(screen.getByText(/MNK-AAA/)).toBeInTheDocument();
+    expect(screen.getByText(/Turn 1/)).toBeInTheDocument();
+    expect(screen.getByText('Alice')).toBeInTheDocument();
+  });
+
+  it('disables kick door when not active', () => {
+    const state = makeState({ activePlayerId: 'p2' });
+    renderView(state);
+    expect(screen.getByRole('button', { name: /kick door/i })).toBeDisabled();
+  });
+
+  it('emits kickDoor when active', async () => {
+    mockSocket.queueAck('game:kickDoor', { ok: true });
+    renderView();
+    fireEvent.click(screen.getByRole('button', { name: /kick door/i }));
+    await waitFor(() => expect(mockSocket.lastEmit('game:kickDoor')).toBeTruthy());
+  });
+
+  it('emits listenDoor button when feature enabled', async () => {
+    mockSocket.queueAck('game:listenDoor', { ok: true });
+    renderView();
+    fireEvent.click(screen.getByRole('button', { name: /listen/i }));
+    await waitFor(() => expect(mockSocket.lastEmit('game:listenDoor')).toBeTruthy());
+  });
+
+  it('emits endTurn', async () => {
+    mockSocket.queueAck('game:endTurn', { ok: true });
+    renderView();
+    fireEvent.click(screen.getByRole('button', { name: /end turn/i }));
+    await waitFor(() => expect(mockSocket.lastEmit('game:endTurn')).toBeTruthy());
+  });
+
+  it('lootRoom only enabled in look phase', () => {
+    const state = makeState({ turnPhase: 'lookForTroubleOrLoot' });
+    renderView(state);
+    expect(screen.getByRole('button', { name: /loot room/i })).not.toBeDisabled();
+  });
+
+  it('selecting a card shows action panel and equipping emits playCard', async () => {
+    mockSocket.queueAck('game:playCard', { ok: true });
+    const c = makeCard({ name: 'Long Sword' });
+    renderView(makeState(), [c]);
+    fireEvent.click(screen.getByText('Long Sword'));
+    fireEvent.click(screen.getByRole('button', { name: /equip/i }));
+    await waitFor(() => {
+      expect(mockSocket.lastEmit('game:playCard')?.payload.cardId).toBe(c.id);
+    });
+  });
+
+  it('selecting a race card shows "Become" action', async () => {
+    mockSocket.queueAck('game:playCard', { ok: true });
+    const c = makeCard({ type: 'race', deck: 'door', name: 'Elf', slot: undefined, bonus: undefined, value: undefined });
+    renderView(makeState(), [c]);
+    fireEvent.click(screen.getByText('Elf'));
+    fireEvent.click(screen.getByRole('button', { name: /become/i }));
+    await waitFor(() => expect(mockSocket.lastEmit('game:playCard')).toBeTruthy());
+  });
+
+  it('selecting a curse card lets user pick a target', async () => {
+    mockSocket.queueAck('game:playCard', { ok: true });
+    const c = makeCard({ type: 'curse', deck: 'door', name: 'Bad Curse', special: 'loseLevel', bonus: undefined, value: undefined, slot: undefined });
+    renderView(makeState(), [c]);
+    fireEvent.click(screen.getByText('Bad Curse'));
+    fireEvent.click(screen.getByRole('button', { name: /cast on/i }));
+    fireEvent.click(screen.getByRole('button', { name: 'Bob' }));
+    await waitFor(() => {
+      const last = mockSocket.lastEmit('game:playCard');
+      expect(last?.payload.targetId).toBe('p2');
+    });
+  });
+
+  it('selling marks total and confirms sell', async () => {
+    mockSocket.queueAck('game:sellItems', { ok: true });
+    const item = makeCard({ name: 'Gold Sword', value: 1200 });
+    renderView(makeState(), [item]);
+    fireEvent.click(screen.getByText('Gold Sword'));
+    fireEvent.click(screen.getByRole('button', { name: /mark for sale/i }));
+    expect(screen.getByText(/Selling 1 items/)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: /sell for levels/i }));
+    await waitFor(() => {
+      expect(mockSocket.lastEmit('game:sellItems')?.payload.cardIds).toContain(item.id);
+    });
+  });
+
+  it('shows combat arena and a resolve button when attacker', async () => {
+    mockSocket.queueAck('game:resolveCombat', { ok: true });
+    const combat = makeCombat({ attackerId: 'p1', playerPower: 7, monsterPower: 4 });
+    const state = makeState({ combatState: combat, turnPhase: 'combat' });
+    renderView(state, []);
+    fireEvent.click(screen.getByRole('button', { name: /resolve combat/i }));
+    await waitFor(() => expect(mockSocket.lastEmit('game:resolveCombat')).toBeTruthy());
+  });
+
+  it('shows flee button and emits flee', async () => {
+    mockSocket.queueAck('game:flee', { ok: true });
+    const combat = makeCombat({ attackerId: 'p1' });
+    const state = makeState({ combatState: combat, turnPhase: 'combat' });
+    renderView(state, []);
+    fireEvent.click(screen.getByRole('button', { name: /flee/i }));
+    await waitFor(() => expect(mockSocket.lastEmit('game:flee')).toBeTruthy());
+  });
+
+  it('non-combatants see a help button when combat has no ally', async () => {
+    mockSocket.queueAck('game:helpInCombat', { ok: true });
+    const combat = makeCombat({ attackerId: 'p2' });
+    const state = makeState({ activePlayerId: 'p2', combatState: combat, turnPhase: 'combat' });
+    renderView(state, []);
+    fireEvent.click(screen.getByRole('button', { name: /help in combat/i }));
+    await waitFor(() => expect(mockSocket.lastEmit('game:helpInCombat')).toBeTruthy());
+  });
+
+  it('shows turn timer countdown', () => {
+    const state = makeState({ turnTimerEndsAt: Date.now() + 30_000 });
+    renderView(state, []);
+    expect(screen.getByText(/\d+s/)).toBeInTheDocument();
+  });
+
+  it('clicking board mode triggers callback', () => {
+    const cb = vi.fn();
+    render(<PlayerView state={makeState()} hand={[]} fist={[]} myId="p1" onBoardMode={cb} />);
+    fireEvent.click(screen.getByRole('button', { name: /board mode/i }));
+    expect(cb).toHaveBeenCalled();
+  });
+
+  it('renders fist reserve cards when present', () => {
+    const fistCard = makeCard({ name: 'Fist Card' });
+    renderView(makeState(), [], [fistCard]);
+    expect(screen.getByText('Fist Card')).toBeInTheDocument();
+  });
+
+  it('emits fist play on click', async () => {
+    mockSocket.queueAck('fist:playCard', { ok: true });
+    const fistCard = makeCard({ name: 'Fist Card' });
+    renderView(makeState(), [], [fistCard]);
+    fireEvent.click(screen.getByText('Fist Card'));
+    await waitFor(() => expect(mockSocket.lastEmit('fist:playCard')).toBeTruthy());
+  });
+
+  it('look-for-trouble emits monster play', async () => {
+    mockSocket.queueAck('game:playCard', { ok: true });
+    const m = makeCard({ type: 'monster', deck: 'door', name: 'Bad Beast', level: 2, value: undefined, slot: undefined, bonus: undefined });
+    const state = makeState({ turnPhase: 'lookForTroubleOrLoot' });
+    renderView(state, [m]);
+    fireEvent.click(screen.getByText('Bad Beast'));
+    fireEvent.click(screen.getByRole('button', { name: /look for trouble/i }));
+    await waitFor(() => expect(mockSocket.lastEmit('game:playCard')).toBeTruthy());
+  });
+
+  it('playing a one-shot into combat works', async () => {
+    mockSocket.queueAck('game:playCard', { ok: true });
+    const potion = makeCard({ type: 'oneShot', name: 'Magic Missile', combatBonus: 5, value: undefined, slot: undefined, bonus: undefined });
+    const combat = makeCombat({ attackerId: 'p1' });
+    const state = makeState({ combatState: combat, turnPhase: 'combat' });
+    renderView(state, [potion]);
+    fireEvent.click(screen.getByText('Magic Missile'));
+    fireEvent.click(screen.getByRole('button', { name: /play into combat/i }));
+    await waitFor(() => expect(mockSocket.lastEmit('game:playCard')).toBeTruthy());
+  });
+
+  it('toggling sale selection clears total when unmarked', () => {
+    const item = makeCard({ name: 'Gold Sword', value: 1200 });
+    renderView(makeState(), [item]);
+    fireEvent.click(screen.getByText('Gold Sword'));
+    fireEvent.click(screen.getByRole('button', { name: /mark for sale/i }));
+    fireEvent.click(screen.getByRole('button', { name: /unmark for sale/i }));
+    expect(screen.queryByText(/Selling \d+ items/)).not.toBeInTheDocument();
+  });
+});

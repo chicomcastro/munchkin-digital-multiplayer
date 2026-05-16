@@ -651,9 +651,10 @@ export class GameRoom {
       }
     }
     if (total < 1000) throw new Error('Need at least 1000 gold to sell for a level.');
+    const removedIds = new Set(removed.map((c) => c.id));
     player.equipped = remainEquipped;
     player.carried = remainCarried;
-    player.hand = player.hand.filter((c) => !cardIds.includes(c.id));
+    player.hand = player.hand.filter((c) => !removedIds.has(c.id));
     for (const c of removed) this.treasures.discardCard(c);
     const lvls = Math.floor(total / 1000);
     this.gainLevel(player, lvls, `sold items for ${total} gold`);

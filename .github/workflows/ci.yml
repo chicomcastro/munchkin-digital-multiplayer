@@ -1,0 +1,165 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+
+jobs:
+  server-tests:
+    name: Server — unit + integration + coverage
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: server
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: server/package-lock.json
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm run test:coverage
+      - name: Upload server coverage
+        uses: actions/upload-artifact@v4
+        with:
+          name: server-coverage
+          path: server/coverage
+          retention-days: 14
+
+  client-tests:
+    name: Client — unit + integration + coverage
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: client
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: client/package-lock.json
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm run test:coverage
+      - name: Upload client coverage
+        uses: actions/upload-artifact@v4
+        with:
+          name: client-coverage
+          path: client/coverage
+          retention-days: 14
+
+  e2e:
+    name: Cypress E2E + visual catalog
+    runs-on: ubuntu-latest
+    needs: [server-tests, client-tests]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      # Server
+      - name: Install server
+        working-directory: server
+        run: npm ci
+      - name: Build server
+        working-directory: server
+        run: npm run build
+      - name: Start server
+        working-directory: server
+        env:
+          PORT: '3001'
+          CLIENT_URL: 'http://localhost:5173'
+        run: node dist/index.js &
+      - name: Wait for server
+        run: |
+          for i in {1..40}; do
+            if curl -sf http://localhost:3001/health; then exit 0; fi
+            sleep 0.5
+          done
+          echo "Server failed to start"; exit 1
+
+      # Client
+      - name: Install client
+        working-directory: client
+        run: npm ci
+      - name: Build client
+        working-directory: client
+        env:
+          VITE_SERVER_URL: 'http://localhost:3001'
+        run: npm run build
+      - name: Start client preview
+        working-directory: client
+        run: npx vite preview --host 0.0.0.0 --port 5173 &
+      - name: Wait for client
+        run: |
+          for i in {1..40}; do
+            if curl -sf http://localhost:5173 >/dev/null; then exit 0; fi
+            sleep 0.5
+          done
+          echo "Client failed to start"; exit 1
+
+      # Cypress
+      - name: Install Cypress
+        working-directory: e2e
+        run: npm ci
+      - name: Run Cypress
+        working-directory: e2e
+        env:
+          CYPRESS_BASE_URL: 'http://localhost:5173'
+          CYPRESS_SERVER_URL: 'http://localhost:3001'
+        run: npx cypress run
+
+      - name: Build visual catalog HTML
+        if: always()
+        run: node scripts/build-visual-catalog.mjs
+      - name: Upload screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: visual-catalog
+          path: e2e/cypress/screenshots
+          retention-days: 30
+      - name: Upload visual catalog HTML
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: visual-catalog-html
+          path: e2e/visual-catalog.html
+          retention-days: 30
+
+  coverage-comment:
+    name: Comment coverage on PR
+    runs-on: ubuntu-latest
+    needs: [server-tests, client-tests]
+    if: github.event_name == 'pull_request'
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download server coverage
+        uses: actions/download-artifact@v4
+        with:
+          name: server-coverage
+          path: server-coverage
+      - name: Download client coverage
+        uses: actions/download-artifact@v4
+        with:
+          name: client-coverage
+          path: client-coverage
+      - name: Build coverage comment
+        id: build
+        run: node scripts/build-coverage-comment.mjs
+      - name: Post or update comment
+        uses: marocchino/sticky-pull-request-comment@v2
+        with:
+          header: coverage-summary
+          path: coverage-comment.md
