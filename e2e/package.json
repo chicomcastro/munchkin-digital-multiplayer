@@ -7,7 +7,8 @@
     "cy:open": "cypress open"
   },
   "devDependencies": {
-    "cypress": "^13.13.0"
+    "cypress": "^13.13.0",
+    "typescript": "^5.4.5"
   },
   "dependencies": {
     "socket.io-client": "^4.8.3"
