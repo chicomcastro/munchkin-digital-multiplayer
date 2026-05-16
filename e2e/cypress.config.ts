@@ -1,12 +1,12 @@
 import { defineConfig } from 'cypress';
 import fs from 'fs';
 import path from 'path';
-import { fileURLToPath } from 'url';
 import { io as ioc, type Socket as ClientSocket } from 'socket.io-client';
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
+// e2e/ is the project root (working-directory in CI).
+const ROOT = __dirname;
 
-// Ghost players (server-side socket.io-clients used to simulate other phones).
+// Ghost players: server-side socket.io clients used to simulate other phones.
 const ghosts = new Map<string, ClientSocket>();
 
 function rpc(socket: ClientSocket, event: string, payload?: any): Promise<any> {
@@ -53,7 +53,7 @@ export default defineConfig({
       });
 
       on('after:run', () => {
-        const dir = path.join(__dirname, 'cypress', 'screenshots');
+        const dir = path.join(ROOT, 'cypress', 'screenshots');
         const out: { path: string; size: number }[] = [];
         function walk(p: string) {
           if (!fs.existsSync(p)) return;
@@ -62,14 +62,14 @@ export default defineConfig({
             const stat = fs.statSync(full);
             if (stat.isDirectory()) walk(full);
             else if (full.endsWith('.png')) {
-              out.push({ path: path.relative(__dirname, full), size: stat.size });
+              out.push({ path: path.relative(ROOT, full), size: stat.size });
             }
           }
         }
         walk(dir);
         out.sort((a, b) => a.path.localeCompare(b.path));
         fs.writeFileSync(
-          path.join(__dirname, 'cypress', 'screenshots-manifest.json'),
+          path.join(ROOT, 'cypress', 'screenshots-manifest.json'),
           JSON.stringify(out, null, 2),
         );
       });
