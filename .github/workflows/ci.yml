@@ -87,11 +87,11 @@ jobs:
         with:
           working-directory: e2e
           install-command: npm ci
-          # `start` lines run in parallel; `wait-on` blocks until both are healthy.
-          # Each line runs from `working-directory: e2e`.
+          # Each `start` line runs in parallel as its own process.
+          # We invoke vite via the client's own node_modules so it resolves.
           start: |
             node ${{ github.workspace }}/server/dist/index.js
-            npx vite preview --root ${{ github.workspace }}/client --host 0.0.0.0 --port 5173
+            bash -c "cd ${{ github.workspace }}/client && ./node_modules/.bin/vite preview --host 0.0.0.0 --port 5173"
           wait-on: 'http://localhost:3001/health,http://localhost:5173'
           wait-on-timeout: 120
           browser: chrome
