@@ -73,6 +73,8 @@ jobs:
         run: |
           npm ci
           npm run build
+          echo "--- server/dist contents ---"
+          ls -la dist
 
       - name: Install + build client
         working-directory: client
@@ -81,25 +83,95 @@ jobs:
         run: |
           npm ci
           npm run build
+          echo "--- client/dist contents ---"
+          ls -la dist
 
-      - name: Cypress run
-        uses: cypress-io/github-action@v6
+      - name: Install Cypress + deps
+        working-directory: e2e
+        run: |
+          npm ci
+          npx cypress install
+          npx cypress info
+
+      - name: Cache Cypress binary
+        uses: actions/cache@v4
         with:
-          working-directory: e2e
-          install-command: npm ci
-          # Each `start` line runs in parallel as its own process.
-          # We invoke vite via the client's own node_modules so it resolves.
-          start: |
-            node ${{ github.workspace }}/server/dist/index.js
-            bash -c "cd ${{ github.workspace }}/client && ./node_modules/.bin/vite preview --host 0.0.0.0 --port 5173"
-          wait-on: 'http://localhost:3001/health,http://localhost:5173'
-          wait-on-timeout: 120
-          browser: chrome
+          path: ~/.cache/Cypress
+          key: cypress-${{ runner.os }}-${{ hashFiles('e2e/package-lock.json') }}
+
+      - name: Run E2E with full diagnostics
         env:
           PORT: '3001'
           CLIENT_URL: 'http://localhost:5173'
           CYPRESS_BASE_URL: 'http://localhost:5173'
           CYPRESS_SERVER_URL: 'http://localhost:3001'
+        run: |
+          set +e
+          mkdir -p logs
+
+          echo "================ Starting server ================"
+          ( cd server && PORT=3001 CLIENT_URL='http://localhost:5173' \
+            nohup node dist/index.js > "$GITHUB_WORKSPACE/logs/server.log" 2>&1 < /dev/null & )
+          SERVER_BG=$!
+          echo "Server background subshell pid: $SERVER_BG"
+          sleep 1
+
+          echo "--- Waiting up to 60s for server /health ---"
+          for i in $(seq 1 120); do
+            if curl -sf http://localhost:3001/health >/dev/null 2>&1; then
+              echo "Server ready after ${i} polls"
+              curl -s http://localhost:3001/health
+              echo
+              break
+            fi
+            if [ "$i" = "120" ]; then
+              echo "!!! Server failed to start !!!"
+              echo "--- server.log ---"
+              cat logs/server.log 2>/dev/null || echo "(no log)"
+              exit 1
+            fi
+            sleep 0.5
+          done
+
+          echo "================ Starting client preview ================"
+          ( cd client && \
+            nohup ./node_modules/.bin/vite preview --host 0.0.0.0 --port 5173 > "$GITHUB_WORKSPACE/logs/client.log" 2>&1 < /dev/null & )
+          CLIENT_BG=$!
+          echo "Client background subshell pid: $CLIENT_BG"
+          sleep 1
+
+          echo "--- Waiting up to 60s for client 5173 ---"
+          for i in $(seq 1 120); do
+            if curl -sf http://localhost:5173 >/dev/null 2>&1; then
+              echo "Client ready after ${i} polls"
+              break
+            fi
+            if [ "$i" = "120" ]; then
+              echo "!!! Client failed to start !!!"
+              echo "--- client.log ---"
+              cat logs/client.log 2>/dev/null || echo "(no log)"
+              exit 1
+            fi
+            sleep 0.5
+          done
+
+          echo "================ Pre-test sanity checks ================"
+          echo "--- ports ---"
+          (ss -tlnp 2>/dev/null || netstat -tlnp 2>/dev/null) | grep -E "5173|3001" || true
+          echo "--- node procs ---"
+          pgrep -af node || true
+
+          echo "================ Running Cypress ================"
+          ( cd e2e && npx cypress run --reporter spec )
+          CYPRESS_EXIT=$?
+          echo "Cypress exit code: $CYPRESS_EXIT"
+
+          echo "================ Final server log tail ================"
+          tail -n 40 logs/server.log || true
+          echo "================ Final client log tail ================"
+          tail -n 40 logs/client.log || true
+
+          exit $CYPRESS_EXIT
 
       - name: Build visual catalog HTML
         if: always()
@@ -122,6 +194,15 @@ jobs:
           path: e2e/visual-catalog.html
           if-no-files-found: warn
           retention-days: 30
+
+      - name: Upload service logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-service-logs
+          path: logs
+          if-no-files-found: warn
+          retention-days: 14
 
   coverage-comment:
     name: Comment coverage on PR
