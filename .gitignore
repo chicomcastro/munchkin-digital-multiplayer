@@ -7,3 +7,9 @@ build/
 *.log
 .vite/
 coverage/
+tsconfig.tsbuildinfo
+e2e/cypress/screenshots/
+e2e/cypress/videos/
+e2e/cypress/downloads/
+e2e/cypress/screenshots-manifest.json
+e2e/visual-catalog.html

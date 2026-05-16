@@ -1,0 +1,14 @@
+{
+  "name": "munchkin-digital-multiplayer",
+  "private": true,
+  "scripts": {
+    "install:all": "npm --prefix server install && npm --prefix client install && npm --prefix e2e install",
+    "test:server": "npm --prefix server run test",
+    "test:client": "npm --prefix client run test",
+    "test": "npm run test:server && npm run test:client",
+    "coverage:server": "npm --prefix server run test:coverage",
+    "coverage:client": "npm --prefix client run test:coverage",
+    "coverage": "npm run coverage:server && npm run coverage:client",
+    "coverage:report": "node scripts/build-coverage-comment.mjs"
+  }
+}
