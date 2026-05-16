@@ -1,27 +1,26 @@
-import { defineConfig } from 'cypress';
-import fs from 'fs';
-import path from 'path';
-import { io as ioc } from 'socket.io-client';
-import type { Socket as ClientSocket } from 'socket.io-client';
+const { defineConfig } = require('cypress');
+const fs = require('fs');
+const path = require('path');
+const { io } = require('socket.io-client');
 
 // e2e/ is the project root (working-directory in CI).
 const ROOT = __dirname;
 
 // Ghost players: server-side socket.io clients used to simulate other phones.
-const ghosts = new Map<string, ClientSocket>();
+const ghosts = new Map();
 
-function rpc(socket: ClientSocket, event: string, payload?: any): Promise<any> {
+function rpc(socket, event, payload) {
   return new Promise((resolve, reject) => {
-    socket.emit(event, payload, (res: any) => {
-      if (res?.ok) resolve(res);
-      else reject(new Error(res?.error ?? 'no callback'));
+    socket.emit(event, payload, (res) => {
+      if (res && res.ok) resolve(res);
+      else reject(new Error((res && res.error) || 'no callback'));
     });
   });
 }
 
-export default defineConfig({
+module.exports = defineConfig({
   e2e: {
-    baseUrl: process.env.CYPRESS_BASE_URL ?? 'http://localhost:5173',
+    baseUrl: process.env.CYPRESS_BASE_URL || 'http://localhost:5173',
     specPattern: 'cypress/e2e/**/*.cy.ts',
     supportFile: 'cypress/support/e2e.ts',
     screenshotsFolder: 'cypress/screenshots',
@@ -31,9 +30,9 @@ export default defineConfig({
     viewportHeight: 896,
     setupNodeEvents(on, _config) {
       on('task', {
-        async 'ghost:join'(payload: { serverUrl: string; roomCode: string; name: string }) {
-          const s = ioc(payload.serverUrl, { transports: ['websocket'], forceNew: true });
-          await new Promise<void>((res, rej) => {
+        async 'ghost:join'(payload) {
+          const s = io(payload.serverUrl, { transports: ['websocket'], forceNew: true });
+          await new Promise((res, rej) => {
             s.once('connect', () => res());
             s.once('connect_error', rej);
           });
@@ -41,7 +40,7 @@ export default defineConfig({
           ghosts.set(payload.name, s);
           return join;
         },
-        'ghost:disconnect'(name: string) {
+        'ghost:disconnect'(name) {
           const s = ghosts.get(name);
           if (s) { s.disconnect(); ghosts.delete(name); }
           return null;
@@ -55,8 +54,8 @@ export default defineConfig({
 
       on('after:run', () => {
         const dir = path.join(ROOT, 'cypress', 'screenshots');
-        const out: { path: string; size: number }[] = [];
-        function walk(p: string) {
+        const out = [];
+        function walk(p) {
           if (!fs.existsSync(p)) return;
           for (const entry of fs.readdirSync(p)) {
             const full = path.join(p, entry);
