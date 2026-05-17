@@ -89,4 +89,56 @@ describe('Home', () => {
     const input = screen.getByPlaceholderText(t.namePlaceholder) as HTMLInputElement;
     expect(input.value).toBe('PreviousName');
   });
+
+  it('pre-fills code from prefilledCode prop (deep-link)', () => {
+    render(<Home onJoined={vi.fn()} prefilledCode="MNK-ABC" />);
+    const codeInput = screen.getByPlaceholderText(t.roomCodePlaceholder) as HTMLInputElement;
+    expect(codeInput.value).toBe('MNK-ABC');
+  });
+
+  it('paste button reads a bare code from clipboard', async () => {
+    const readText = vi.fn().mockResolvedValue('MNK-XYZ');
+    Object.defineProperty(navigator, 'clipboard', { value: { readText }, configurable: true });
+    render(<Home onJoined={vi.fn()} />);
+    fireEvent.click(screen.getByRole('button', { name: new RegExp(t.pasteCode) }));
+    await waitFor(() => {
+      const input = screen.getByPlaceholderText(t.roomCodePlaceholder) as HTMLInputElement;
+      expect(input.value).toBe('MNK-XYZ');
+    });
+    expect(screen.getByText(new RegExp(t.pasted))).toBeInTheDocument();
+  });
+
+  it('paste button extracts code from a deep-link URL', async () => {
+    const readText = vi.fn().mockResolvedValue('Entra na sala https://app.example/?code=MNK-JX6 agora');
+    Object.defineProperty(navigator, 'clipboard', { value: { readText }, configurable: true });
+    render(<Home onJoined={vi.fn()} />);
+    fireEvent.click(screen.getByRole('button', { name: new RegExp(t.pasteCode) }));
+    await waitFor(() => {
+      const input = screen.getByPlaceholderText(t.roomCodePlaceholder) as HTMLInputElement;
+      expect(input.value).toBe('MNK-JX6');
+    });
+  });
+
+  it('paste button ignores clipboard text without a code', async () => {
+    const readText = vi.fn().mockResolvedValue('something random');
+    Object.defineProperty(navigator, 'clipboard', { value: { readText }, configurable: true });
+    render(<Home onJoined={vi.fn()} />);
+    fireEvent.click(screen.getByRole('button', { name: new RegExp(t.pasteCode) }));
+    await waitFor(() => expect(readText).toHaveBeenCalled());
+    const input = screen.getByPlaceholderText(t.roomCodePlaceholder) as HTMLInputElement;
+    expect(input.value).toBe('');
+  });
+
+  it('paste button swallows clipboard errors silently', async () => {
+    const readText = vi.fn().mockRejectedValue(new Error('denied'));
+    Object.defineProperty(navigator, 'clipboard', { value: { readText }, configurable: true });
+    render(<Home onJoined={vi.fn()} />);
+    fireEvent.click(screen.getByRole('button', { name: new RegExp(t.pasteCode) }));
+    await waitFor(() => expect(readText).toHaveBeenCalled());
+  });
+
+  it('renders the brand tagline', () => {
+    render(<Home onJoined={vi.fn()} />);
+    expect(screen.getByText(t.brandTagline)).toBeInTheDocument();
+  });
 });

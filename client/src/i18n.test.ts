@@ -31,6 +31,22 @@ describe('i18n.waitingForHost', () => {
   });
 });
 
+describe('event interpolations', () => {
+  it('youGotCard puts the card name in the message', () => {
+    expect(t.youGotCard('Big Sword')).toContain('Big Sword');
+  });
+  it('combatWon and combatLost both name the opponent', () => {
+    expect(t.combatWon('Goblin')).toContain('Goblin');
+    expect(t.combatLost('Goblin')).toContain('Goblin');
+  });
+  it('gameWon includes the winner name', () => {
+    expect(t.gameWon('Alice')).toContain('Alice');
+  });
+  it('youLeveledUp includes the level number', () => {
+    expect(t.youLeveledUp(7)).toContain('7');
+  });
+});
+
 describe('label tables', () => {
   it('exposes a label for every card type', () => {
     for (const k of ['monster', 'curse', 'race', 'class', 'item', 'oneShot', 'levelUp', 'helper'] as const) {

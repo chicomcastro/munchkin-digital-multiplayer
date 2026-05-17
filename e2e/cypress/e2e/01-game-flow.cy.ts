@@ -17,6 +17,8 @@ describe('Munchkin — full game flow', () => {
   it('walks through Home → Lobby → PlayerView → BoardView', () => {
     cy.visit('/');
     cy.cleanState();
+    // Pre-mark onboarding seen so it doesn't cover the home for this flow.
+    cy.window().then((w) => w.localStorage.setItem('munchkin:onboarding', '1'));
     cy.reload();
 
     // ----- Home -----
@@ -92,15 +94,36 @@ describe('Munchkin — full game flow', () => {
     cy.contains(/Vez de:/i, { timeout: 15000 }).should('be.visible');
     cy.snapshot('09-board-mode');
 
+    // Capture board view in a tablet/notebook-sized viewport — this is the
+    // intended layout for the shared screen, which the mobile viewport hides.
+    cy.viewport(1280, 800);
+    cy.snapshot('09b-board-mode-landscape');
+    cy.viewport(414, 896);
+
     // Toggle back.
     cy.contains('button', /modo jogador/i).click();
     cy.contains('Chutar porta').should('be.visible');
     cy.snapshot('10-player-mode-again');
   });
 
+  it('shows the onboarding modal on first visit', () => {
+    cy.visit('/');
+    cy.cleanState();
+    cy.reload();
+    cy.contains(/Bem-vindo ao Munchkin/i).should('be.visible');
+    cy.snapshot('13-onboarding-step-1');
+    cy.contains('button', /Próximo/i).click();
+    cy.snapshot('14-onboarding-step-2');
+    cy.contains('button', /Próximo/i).click();
+    cy.snapshot('15-onboarding-step-3');
+    cy.contains('button', /Começar/i).click();
+    cy.contains(/Bem-vindo ao Munchkin/i).should('not.exist');
+  });
+
   it('Home: validates name and room code', () => {
     cy.visit('/');
     cy.cleanState();
+    cy.window().then((w) => w.localStorage.setItem('munchkin:onboarding', '1'));
     cy.reload();
 
     cy.contains('button', 'Criar sala').click();

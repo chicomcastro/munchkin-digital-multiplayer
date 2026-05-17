@@ -92,10 +92,29 @@ export function Lobby({
             <div key={p.id} className="flex items-center gap-3 bg-slate-900/60 rounded-lg px-3 py-2">
               <div className="w-3 h-3 rounded-full shrink-0" style={{ background: p.color }} />
               <div className="flex-1 truncate">{p.name}{p.id === myId && ' (você)'}</div>
+              {p.ready ? (
+                <span className="text-xs bg-emerald-600/80 text-white rounded-full px-2 py-0.5 font-bold">✓ {t.ready}</span>
+              ) : (
+                <span className="text-xs opacity-50">{t.notReady}</span>
+              )}
               <div className="text-xs opacity-60">{p.socketId ? t.online : t.offline}</div>
             </div>
           ))}
         </div>
+        {me && (
+          <button
+            type="button"
+            onClick={() => emit('room:toggleReady', { ready: !me.ready }).catch(() => {})}
+            className={[
+              'mt-3 w-full text-sm py-2 rounded-xl font-bold transition-colors',
+              me.ready
+                ? 'bg-slate-700 hover:bg-slate-600 text-white'
+                : 'bg-emerald-600 hover:bg-emerald-500 text-white',
+            ].join(' ')}
+          >
+            {me.ready ? t.toggleNotReady : t.toggleReady}
+          </button>
+        )}
       </div>
 
       <button

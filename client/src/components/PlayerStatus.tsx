@@ -40,16 +40,18 @@ export function PlayerStatus({
           </div>
         </div>
       </div>
-      {detailed && (
+      {detailed && player.equipped.length > 0 && (
         <div className="mt-3">
           <div className="text-xs opacity-60 mb-1">{t.equipped}</div>
           <div className="flex gap-2 overflow-x-auto scroll-thin pb-1">
-            {player.equipped.length === 0 && <span className="text-xs opacity-50">{t.none}</span>}
             {player.equipped.map((c) => (
               <CardView key={c.id} card={c} compact />
             ))}
           </div>
         </div>
+      )}
+      {detailed && player.equipped.length === 0 && (
+        <div className="mt-2 text-xs italic opacity-40">{t.emptyEquipped}</div>
       )}
     </div>
   );

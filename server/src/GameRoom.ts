@@ -164,6 +164,51 @@ export class GameRoom {
     this.emit();
   }
 
+  setReady(playerId: string, ready: boolean) {
+    if (this.phase !== 'lobby') throw new Error('Game already started.');
+    const p = this.playerById(playerId);
+    p.ready = ready;
+    this.write(`${p.name} ${ready ? 'is ready' : 'is no longer ready'}.`);
+    this.emit();
+  }
+
+  stealItem(thiefId: string, targetId: string) {
+    if (this.phase !== 'playing') throw new Error('Game not running.');
+    if (this.config.noStealing) throw new Error('Stealing disabled.');
+    if (thiefId === targetId) throw new Error('Cannot steal from yourself.');
+    const thief = this.playerById(thiefId);
+    const target = this.playerById(targetId);
+    if (thief.class?.name !== 'Thief') throw new Error('Only Thieves can steal.');
+    // d6 4+ succeeds (Thief special)
+    const roll = 1 + Math.floor(Math.random() * 6);
+    if (roll < 4) {
+      this.write(`${thief.name} tried to steal from ${target.name} and failed (${roll}).`, 'combat');
+      // On a 1, the Thief loses a level.
+      if (roll === 1) {
+        target.level = target.level; // unchanged
+        thief.level = Math.max(1, thief.level - 1);
+        this.write(`${thief.name} fumbled and lost a level.`, 'curse');
+      }
+      this.emit();
+      return { roll, success: false };
+    }
+    // Steal a small (non-big) item — prefer equipped, fall back to carried.
+    const small = target.equipped.find((c) => !c.bigItem) ?? target.carried.find((c) => !c.bigItem);
+    if (!small) {
+      this.write(`${thief.name} stole from ${target.name} but found nothing small.`, 'combat');
+      this.emit();
+      return { roll, success: false };
+    }
+    target.equipped = target.equipped.filter((c) => c.id !== small.id);
+    target.carried = target.carried.filter((c) => c.id !== small.id);
+    thief.carried.push(small);
+    this.recomputePower(target);
+    this.recomputePower(thief);
+    this.write(`${thief.name} stole ${small.name} from ${target.name}!`, 'combat');
+    this.emit();
+    return { roll, success: true };
+  }
+
   updateConfig(patch: Partial<RoomConfig>) {
     if (this.phase !== 'lobby') return;
     this.config = applyVariant({ ...this.config, ...patch });

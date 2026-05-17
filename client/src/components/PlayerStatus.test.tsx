@@ -39,9 +39,9 @@ describe('PlayerStatus', () => {
     expect(screen.getByText('Sword')).toBeInTheDocument();
   });
 
-  it('shows "nada" placeholder when no equipped cards', () => {
+  it('shows a flavorful empty-state when no equipped cards', () => {
     render(<PlayerStatus player={makePlayer({ equipped: [] })} active={false} detailed />);
-    expect(screen.getByText(t.none)).toBeInTheDocument();
+    expect(screen.getByText(t.emptyEquipped)).toBeInTheDocument();
   });
 
   it('fades dead players', () => {

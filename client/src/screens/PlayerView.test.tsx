@@ -25,34 +25,34 @@ describe('PlayerView', () => {
   it('disables kick door when not active', () => {
     const state = makeState({ activePlayerId: 'p2' });
     renderView(state);
-    expect(screen.getByRole('button', { name: t.kickDoor })).toBeDisabled();
+    expect(screen.getByRole('button', { name: new RegExp(t.kickDoor) })).toBeDisabled();
   });
 
   it('emits kickDoor when active', async () => {
     mockSocket.queueAck('game:kickDoor', { ok: true });
     renderView();
-    fireEvent.click(screen.getByRole('button', { name: t.kickDoor }));
+    fireEvent.click(screen.getByRole('button', { name: new RegExp(t.kickDoor) }));
     await waitFor(() => expect(mockSocket.lastEmit('game:kickDoor')).toBeTruthy());
   });
 
   it('emits listenDoor button when feature enabled', async () => {
     mockSocket.queueAck('game:listenDoor', { ok: true });
     renderView();
-    fireEvent.click(screen.getByRole('button', { name: t.listen }));
+    fireEvent.click(screen.getByRole('button', { name: new RegExp(t.listen) }));
     await waitFor(() => expect(mockSocket.lastEmit('game:listenDoor')).toBeTruthy());
   });
 
   it('emits endTurn', async () => {
     mockSocket.queueAck('game:endTurn', { ok: true });
     renderView();
-    fireEvent.click(screen.getByRole('button', { name: t.endTurn }));
+    fireEvent.click(screen.getByRole('button', { name: new RegExp(t.endTurn) }));
     await waitFor(() => expect(mockSocket.lastEmit('game:endTurn')).toBeTruthy());
   });
 
   it('lootRoom only enabled in look phase', () => {
     const state = makeState({ turnPhase: 'lookForTroubleOrLoot' });
     renderView(state);
-    expect(screen.getByRole('button', { name: t.lootRoom })).not.toBeDisabled();
+    expect(screen.getByRole('button', { name: new RegExp(t.lootRoom) })).not.toBeDisabled();
   });
 
   it('selecting a card shows action panel and equipping emits playCard', async () => {
@@ -106,7 +106,7 @@ describe('PlayerView', () => {
     const combat = makeCombat({ attackerId: 'p1', playerPower: 7, monsterPower: 4 });
     const state = makeState({ combatState: combat, turnPhase: 'combat' });
     renderView(state, []);
-    fireEvent.click(screen.getByRole('button', { name: t.resolveCombat }));
+    fireEvent.click(screen.getByRole('button', { name: new RegExp(t.resolveCombat) }));
     await waitFor(() => expect(mockSocket.lastEmit('game:resolveCombat')).toBeTruthy());
   });
 
@@ -115,7 +115,7 @@ describe('PlayerView', () => {
     const combat = makeCombat({ attackerId: 'p1' });
     const state = makeState({ combatState: combat, turnPhase: 'combat' });
     renderView(state, []);
-    fireEvent.click(screen.getByRole('button', { name: t.flee }));
+    fireEvent.click(screen.getByRole('button', { name: new RegExp(t.flee) }));
     await waitFor(() => expect(mockSocket.lastEmit('game:flee')).toBeTruthy());
   });
 
@@ -124,7 +124,7 @@ describe('PlayerView', () => {
     const combat = makeCombat({ attackerId: 'p2' });
     const state = makeState({ activePlayerId: 'p2', combatState: combat, turnPhase: 'combat' });
     renderView(state, []);
-    fireEvent.click(screen.getByRole('button', { name: t.helpInCombat }));
+    fireEvent.click(screen.getByRole('button', { name: new RegExp(t.helpInCombat) }));
     await waitFor(() => expect(mockSocket.lastEmit('game:helpInCombat')).toBeTruthy());
   });
 

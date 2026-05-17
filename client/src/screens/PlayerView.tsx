@@ -2,8 +2,17 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import type { Card, GameState } from '../types';
 import { CardView } from '../components/Card';
 import { CombatArena } from '../components/CombatArena';
+import { CardPreview } from '../components/CardPreview';
+import { ToastStack } from '../components/Toast';
+import { DeathBanner } from '../components/DeathBanner';
+import { Confetti } from '../components/Confetti';
 import { emit } from '../hooks/useSocket';
+import { useToasts } from '../hooks/useToasts';
 import { t } from '../i18n';
+
+interface SoundHandle {
+  play: (name: 'kick' | 'levelUp' | 'death' | 'victory' | 'flee' | 'select' | 'error') => void;
+}
 
 export function PlayerView({
   state,
@@ -11,12 +20,14 @@ export function PlayerView({
   fist,
   myId,
   onBoardMode,
+  sound,
 }: {
   state: GameState;
   hand: Card[];
   fist: Card[];
   myId: string;
   onBoardMode: () => void;
+  sound?: SoundHandle;
 }) {
   const me = state.players.find((p) => p.id === myId)!;
   const opponents = state.players.filter((p) => p.id !== myId);
@@ -27,10 +38,44 @@ export function PlayerView({
   const amInCombat =
     inCombat && (combat!.attackerId === myId || combat!.alliedPlayerId === myId);
   const [selectedCard, setSelectedCard] = useState<string | null>(null);
+  const [previewCard, setPreviewCard] = useState<Card | null>(null);
   const [sellPicker, setSellPicker] = useState<Set<string>>(new Set());
   const [targetMode, setTargetMode] = useState(false);
   const [secondsLeft, setSecondsLeft] = useState<number | null>(null);
   const [pulseLevel, setPulseLevel] = useState(false);
+  const { toasts, dismiss } = useToasts(state, myId);
+  const [deathTrigger, setDeathTrigger] = useState(0);
+  const [confettiTrigger, setConfettiTrigger] = useState(0);
+  const lastSeenLog = useRef<string | null>(null);
+  useEffect(() => {
+    // Detect a fresh "<myName> died!" log entry → trigger banner.
+    const log = state.log;
+    let start = 0;
+    if (lastSeenLog.current) {
+      const idx = log.findIndex((e) => e.id === lastSeenLog.current);
+      if (idx >= 0) start = idx + 1;
+    }
+    for (let i = start; i < log.length; i++) {
+      const entry = log[i]!;
+      if (entry.kind === 'system' && entry.text.startsWith(`${me.name}`) && /died/.test(entry.text)) {
+        setDeathTrigger((n) => n + 1);
+        sound?.play('death');
+      }
+      // Player-side combat victory or game-end → confetti
+      if (entry.kind === 'combat' && entry.text.startsWith(`${me.name}`) && /defeated/i.test(entry.text)) {
+        setConfettiTrigger((n) => n + 1);
+        sound?.play('victory');
+      }
+      if (entry.kind === 'system' && /hit level|won the game/i.test(entry.text)) {
+        setConfettiTrigger((n) => n + 1);
+        sound?.play('victory');
+      }
+      if (entry.kind === 'level' && entry.text.startsWith(`${me.name}`)) {
+        sound?.play('levelUp');
+      }
+    }
+    if (log.length > 0) lastSeenLog.current = log[log.length - 1]!.id;
+  }, [state.log, me.name]);
 
   useEffect(() => {
     if (!state.turnTimerEndsAt) {
@@ -139,17 +184,17 @@ export function PlayerView({
               <>
                 {combat.attackerId === myId && (
                   <button className="btn-primary" onClick={() => emit('game:resolveCombat').catch((e) => alert(e.message))}>
-                    {t.resolveCombat}
+                    {t.iconResolve} {t.resolveCombat}
                   </button>
                 )}
-                <button className="btn-danger" onClick={() => emit('game:flee').catch((e) => alert(e.message))}>
-                  {t.flee}
+                <button className="btn-danger" onClick={() => { sound?.play('flee'); emit('game:flee').catch((e) => alert(e.message)); }}>
+                  {t.iconFlee} {t.flee}
                 </button>
               </>
             ) : (
               !combat.alliedPlayerId && (
                 <button className="btn col-span-2" onClick={() => emit('game:helpInCombat').catch((e) => alert(e.message))}>
-                  {t.helpInCombat}
+                  {t.iconHelp} {t.helpInCombat}
                 </button>
               )
             )}
@@ -161,7 +206,7 @@ export function PlayerView({
         <div>
           <div className="text-xs uppercase opacity-60 mb-1">{t.hand} ({hand.length})</div>
           <div className="flex gap-2 overflow-x-auto scroll-thin pb-2 -mx-1 px-1">
-            {hand.length === 0 && <div className="opacity-50 text-sm">{t.empty}</div>}
+            {hand.length === 0 && <div className="opacity-50 text-sm italic">{t.emptyHand}</div>}
             {hand.map((c) => (
               <div key={c.id} className="anim-slide-in">
                 <CardView
@@ -176,8 +221,19 @@ export function PlayerView({
 
         {selectedCardObj && (
           <div className="card-shell p-3 anim-slide-in">
-            <div className="font-bold">{selectedCardObj.name}</div>
-            <div className="text-sm opacity-80">{selectedCardObj.description}</div>
+            <div className="flex items-start justify-between gap-2">
+              <div>
+                <div className="font-bold">{selectedCardObj.name}</div>
+                <div className="text-sm opacity-80">{selectedCardObj.description}</div>
+              </div>
+              <button
+                type="button"
+                className="text-xs underline opacity-70 shrink-0"
+                onClick={() => setPreviewCard(selectedCardObj)}
+              >
+                🔍
+              </button>
+            </div>
             <div className="grid grid-cols-2 gap-2 mt-3">
               {(selectedCardObj.type === 'item' || selectedCardObj.type === 'race' || selectedCardObj.type === 'class' || selectedCardObj.type === 'levelUp') && (
                 <button className="btn-primary col-span-2" onClick={() => playCard(selectedCardObj)}>
@@ -281,44 +337,51 @@ export function PlayerView({
               size={state.doorDeckSize}
               discard={state.doorDiscardTop}
               accent="text-red-300"
+              emptyMsg={t.emptyDiscardDoor}
             />
             <DeckBox
               label={t.treasures}
               size={state.treasureDeckSize}
               discard={state.treasureDiscardTop}
               accent="text-amber-300"
+              emptyMsg={t.emptyDiscardTreasure}
             />
           </div>
         </div>
       </main>
 
+      <ToastStack toasts={toasts} onDismiss={dismiss} />
+      <CardPreview card={previewCard} onClose={() => setPreviewCard(null)} />
+      <DeathBanner trigger={deathTrigger} />
+      <Confetti trigger={confettiTrigger} />
+
       <footer className="card-shell m-3 p-3 sticky bottom-0">
         <div className="grid grid-cols-2 gap-2">
           {state.turnPhase === 'turnStart' && state.config.listeningAtTheDoor && (
             <button className="btn" disabled={!active} onClick={() => emit('game:listenDoor').catch((e) => alert(e.message))}>
-              {t.listen}
+              {t.iconListen} {t.listen}
             </button>
           )}
           <button
             className="btn-primary"
             disabled={!active || !(state.turnPhase === 'turnStart' || state.turnPhase === 'kickDoor')}
-            onClick={() => emit('game:kickDoor').catch((e) => alert(e.message))}
+            onClick={() => { sound?.play('kick'); emit('game:kickDoor').catch((e) => alert(e.message)); }}
           >
-            {t.kickDoor}
+            {t.iconKick} {t.kickDoor}
           </button>
           <button
             className="btn"
             disabled={!active || state.turnPhase !== 'lookForTroubleOrLoot'}
             onClick={() => emit('game:lootRoom').catch((e) => alert(e.message))}
           >
-            {t.lootRoom}
+            {t.iconLoot} {t.lootRoom}
           </button>
           <button
             className="btn"
             disabled={!active}
             onClick={() => emit('game:endTurn').catch((e) => alert(e.message))}
           >
-            {t.endTurn}
+            {t.iconEndTurn} {t.endTurn}
           </button>
         </div>
       </footer>
@@ -331,11 +394,13 @@ function DeckBox({
   size,
   discard,
   accent,
+  emptyMsg,
 }: {
   label: string;
   size: number;
   discard: Card | null;
   accent: string;
+  emptyMsg: string;
 }) {
   return (
     <div className="rounded-xl bg-slate-900/60 border border-slate-700 p-2">
@@ -347,7 +412,7 @@ function DeckBox({
         <div className="text-xs flex-1 min-w-0">
           <div className="opacity-60 text-[10px] uppercase">{t.discard}</div>
           <div className={['truncate', accent].join(' ')}>
-            {discard?.name ?? '—'}
+            {discard?.name ?? <span className="italic opacity-50">{emptyMsg}</span>}
           </div>
         </div>
       </div>

@@ -1127,3 +1127,112 @@ describe('GameRoom — victory conditions', () => {
     expect(room.phase).toBe('ended');
   });
 });
+
+describe('GameRoom — ready toggle', () => {
+  it('flips a player ready flag', () => {
+    const r = new GameRoom();
+    const a = r.addPlayer('A', 's');
+    r.addPlayer('B', 's2');
+    expect(a.ready).toBe(false);
+    r.setReady(a.id, true);
+    expect(a.ready).toBe(true);
+    r.setReady(a.id, false);
+    expect(a.ready).toBe(false);
+  });
+
+  it('refuses to flip ready after game starts', () => {
+    const { room, players } = buildTestRoom({
+      players: 2,
+      doors: Array.from({ length: 10 }, () => monster()),
+      treasures: Array.from({ length: 10 }, () => item()),
+    });
+    room.start();
+    expect(() => room.setReady(players[0]!.id, true)).toThrow(/already started/i);
+  });
+});
+
+describe('GameRoom — stealItem', () => {
+  function setupThief(noStealing = false) {
+    const { room, players } = buildTestRoom({
+      players: 2,
+      config: { noStealing },
+      doors: Array.from({ length: 10 }, () => monster()),
+      treasures: Array.from({ length: 10 }, () => item()),
+    });
+    room.start();
+    players[0]!.class = clazz({ name: 'Thief' });
+    return { room, players };
+  }
+
+  it('Thief succeeds on a 4+ roll and takes a small item from the target', () => {
+    const spy = vi.spyOn(Math, 'random').mockReturnValue(0.5); // roll = 4
+    const { room, players } = setupThief();
+    const small = item({ bigItem: false, name: 'Tiny Knife' });
+    players[1]!.equipped = [small];
+    const res = room.stealItem(players[0]!.id, players[1]!.id);
+    expect(res.success).toBe(true);
+    expect(players[0]!.carried.find((c) => c.id === small.id)).toBeTruthy();
+    expect(players[1]!.equipped).toEqual([]);
+    spy.mockRestore();
+  });
+
+  it('falls back to a carried item when no equipped small item is available', () => {
+    const spy = vi.spyOn(Math, 'random').mockReturnValue(0.5);
+    const { room, players } = setupThief();
+    const small = item({ bigItem: false, name: 'Pouch' });
+    players[1]!.carried = [small];
+    const res = room.stealItem(players[0]!.id, players[1]!.id);
+    expect(res.success).toBe(true);
+    expect(players[0]!.carried.find((c) => c.id === small.id)).toBeTruthy();
+    spy.mockRestore();
+  });
+
+  it('ignores big items when picking what to steal', () => {
+    const spy = vi.spyOn(Math, 'random').mockReturnValue(0.5);
+    const { room, players } = setupThief();
+    const big = item({ bigItem: true, name: 'Big' });
+    players[1]!.equipped = [big];
+    const res = room.stealItem(players[0]!.id, players[1]!.id);
+    expect(res.success).toBe(false); // no small item to steal
+    expect(players[1]!.equipped).toEqual([big]);
+    spy.mockRestore();
+  });
+
+  it('fumble on 1 makes the Thief lose a level', () => {
+    const spy = vi.spyOn(Math, 'random').mockReturnValue(0);
+    const { room, players } = setupThief();
+    players[0]!.level = 4;
+    players[1]!.equipped = [item({ bigItem: false })];
+    const res = room.stealItem(players[0]!.id, players[1]!.id);
+    expect(res.success).toBe(false);
+    expect(players[0]!.level).toBe(3);
+    spy.mockRestore();
+  });
+
+  it('rejects steal when noStealing config is true', () => {
+    const { room, players } = setupThief(true);
+    expect(() => room.stealItem(players[0]!.id, players[1]!.id)).toThrow(/disabled/i);
+  });
+
+  it('rejects stealing from yourself', () => {
+    const { room, players } = setupThief();
+    expect(() => room.stealItem(players[0]!.id, players[0]!.id)).toThrow(/yourself/i);
+  });
+
+  it('rejects non-Thief players', () => {
+    const { room, players } = buildTestRoom({
+      players: 2,
+      doors: Array.from({ length: 10 }, () => monster()),
+      treasures: Array.from({ length: 10 }, () => item()),
+    });
+    room.start();
+    expect(() => room.stealItem(players[0]!.id, players[1]!.id)).toThrow(/Thieves/);
+  });
+
+  it('rejects steal before game starts', () => {
+    const r = new GameRoom();
+    const a = r.addPlayer('A', 's');
+    r.addPlayer('B', 's2');
+    expect(() => r.stealItem(a.id, a.id)).toThrow(/not running/i);
+  });
+});

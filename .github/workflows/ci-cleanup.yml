@@ -1,0 +1,38 @@
+name: CI cleanup
+
+on:
+  pull_request:
+    types: [closed]
+
+permissions:
+  contents: write
+
+jobs:
+  prune-evidence:
+    name: Prune ci-evidence directory for closed PR
+    runs-on: ubuntu-latest
+    steps:
+      - name: Remove pr-${{ github.event.pull_request.number }} from ci-evidence
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          set -e
+          REPO="${{ github.repository }}"
+          BRANCH="ci-evidence"
+          WORK=$(mktemp -d)
+          if ! git clone --depth=1 --branch "$BRANCH" --single-branch \
+            "https://x-access-token:${GITHUB_TOKEN}@github.com/${REPO}.git" "$WORK" 2>/dev/null; then
+            echo "Branch $BRANCH does not exist yet — nothing to prune."
+            exit 0
+          fi
+          cd "$WORK"
+          if [ ! -d "pr-$PR_NUMBER" ]; then
+            echo "No pr-$PR_NUMBER directory — nothing to prune."
+            exit 0
+          fi
+          git rm -rf "pr-$PR_NUMBER"
+          git config user.email 'actions@github.com'
+          git config user.name 'github-actions[bot]'
+          git commit -m "Prune evidence for closed PR #$PR_NUMBER [skip ci]"
+          git push origin "$BRANCH"
