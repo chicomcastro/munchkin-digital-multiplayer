@@ -3,8 +3,7 @@
 const SERVER_URL = Cypress.env('SERVER_URL') || 'http://localhost:3001';
 
 // Full game flow with one visible player (the phone) and one ghost player
-// joining the same room from the Node side. This both validates multiplayer
-// behavior and produces the per-screen visual catalog.
+// joining the same room from the Node side. UI labels are now PT-BR.
 
 describe('Munchkin — full game flow', () => {
   beforeEach(() => {
@@ -24,24 +23,25 @@ describe('Munchkin — full game flow', () => {
     cy.contains('Munchkin').should('be.visible');
     cy.snapshot('01-home');
 
-    cy.get('input[placeholder="Adventurer"]').type('Alice');
-    cy.contains('button', 'Create room').click();
+    cy.get('input[placeholder="Aventureiro"]').type('Alice');
+    cy.contains('button', 'Criar sala').click();
 
     // ----- Lobby (single creator) -----
     cy.contains(/^MNK-/, { timeout: 15000 }).should('be.visible');
     cy.snapshot('02-lobby-single-player');
 
-    // Show the quick presets panel.
-    cy.contains(/Quick presets/i).should('be.visible');
+    // Quick presets panel.
+    cy.contains(/Configurações rápidas/i).should('be.visible');
     cy.snapshot('02b-lobby-presets');
 
-    // Pick a preset to apply a full config in one click.
+    // Apply a preset in one click.
     cy.contains(/Duelo Longo/).click();
     cy.wait(300);
     cy.snapshot('02c-lobby-preset-applied');
 
-    // Pick the long variant explicitly to be 100% sure of the resulting config.
-    cy.contains('Variant').parent().find('select').select('long');
+    // Open advanced config and force the long variant (no auto-market, no global timer).
+    cy.contains('Mostrar configuração').click();
+    cy.contains('Variante').parent().find('select').select('long');
 
     // Bring in a ghost player from the Node side.
     cy.contains(/^MNK-/).invoke('text').then((text) => {
@@ -54,48 +54,47 @@ describe('Munchkin — full game flow', () => {
     cy.snapshot('03-lobby-with-ghost');
 
     // Tweak a config option to demonstrate the controls.
-    cy.contains('No death').parent().find('input[type="checkbox"]').check({ force: true });
-
+    cy.contains('Sem morte').parent().find('input[type="checkbox"]').check({ force: true });
     cy.snapshot('04-lobby-config-tweaked');
 
     // Start the game.
-    cy.contains('button', /^Start game/).should('not.be.disabled').click();
+    cy.contains('button', /^Iniciar jogo/).should('not.be.disabled').click();
 
     // ----- PlayerView, Alice's turn -----
-    cy.contains('button', 'Kick door', { timeout: 15000 }).should('be.visible');
+    cy.contains('button', 'Chutar porta', { timeout: 15000 }).should('be.visible');
     cy.snapshot('05-player-view-turn-start');
 
     // Kick the door (likely yields a monster, a curse, or a card into hand).
-    cy.contains('button', 'Kick door').click();
+    cy.contains('button', 'Chutar porta').click();
     cy.wait(600);
     cy.snapshot('06-player-view-after-kick');
 
     // Either resolve combat or loot the room — whatever the UI offers.
     cy.get('body').then(($body) => {
-      if ($body.find('button:contains("Resolve combat")').length > 0) {
-        cy.contains('button', 'Resolve combat').click();
+      if ($body.find('button:contains("Resolver combate")').length > 0) {
+        cy.contains('button', 'Resolver combate').click();
         cy.wait(500);
         cy.snapshot('07-player-view-combat-resolved');
-      } else if ($body.find('button:contains("Loot room")').length > 0) {
-        cy.contains('button', 'Loot room').click();
+      } else if ($body.find('button:contains("Saquear")').length > 0) {
+        cy.contains('button', 'Saquear').click();
         cy.wait(500);
         cy.snapshot('07-player-view-after-loot');
       }
     });
 
     // End the turn.
-    cy.contains('button', 'End turn').click();
+    cy.contains('button', 'Encerrar turno').click();
     cy.wait(600);
     cy.snapshot('08-player-view-turn-ended');
 
     // Toggle to BoardView.
-    cy.contains('button', /board mode/i).click();
-    cy.contains(/Active/i, { timeout: 15000 }).should('be.visible');
+    cy.contains('button', /modo tabuleiro/i).click();
+    cy.contains(/Vez de:/i, { timeout: 15000 }).should('be.visible');
     cy.snapshot('09-board-mode');
 
     // Toggle back.
-    cy.contains('button', /player mode/i).click();
-    cy.contains('Kick door').should('be.visible');
+    cy.contains('button', /modo jogador/i).click();
+    cy.contains('Chutar porta').should('be.visible');
     cy.snapshot('10-player-mode-again');
   });
 
@@ -104,13 +103,13 @@ describe('Munchkin — full game flow', () => {
     cy.cleanState();
     cy.reload();
 
-    cy.contains('button', 'Create room').click();
-    cy.contains(/choose a name/i).should('be.visible');
+    cy.contains('button', 'Criar sala').click();
+    cy.contains(/escolha um nome/i).should('be.visible');
     cy.snapshot('11-home-name-error');
 
-    cy.get('input[placeholder="Adventurer"]').type('Alice');
-    cy.contains('button', 'Join room').click();
-    cy.contains(/enter a room code/i).should('be.visible');
+    cy.get('input[placeholder="Aventureiro"]').type('Alice');
+    cy.contains('button', 'Entrar na sala').click();
+    cy.contains(/digite o código/i).should('be.visible');
     cy.snapshot('12-home-code-error');
   });
 });

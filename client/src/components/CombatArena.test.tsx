@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { CombatArena } from './CombatArena';
 import { makeCard, makeCombat, makePlayer } from '../test/fixtures';
+import { t } from '../i18n';
 
 describe('CombatArena', () => {
   it('renders monster and player powers', () => {
@@ -12,12 +13,12 @@ describe('CombatArena', () => {
 
   it('says players are winning when ahead', () => {
     render(<CombatArena combat={makeCombat({ playerPower: 8, monsterPower: 5 })} players={[makePlayer()]} />);
-    expect(screen.getByText(/winning/i)).toBeInTheDocument();
+    expect(screen.getByText(/ganhando/i)).toBeInTheDocument();
   });
 
   it('says monsters are winning when behind', () => {
     render(<CombatArena combat={makeCombat({ playerPower: 2, monsterPower: 5 })} players={[makePlayer()]} />);
-    expect(screen.getByText(/monsters are winning/i)).toBeInTheDocument();
+    expect(screen.getByText(/Monstros ganhando/i)).toBeInTheDocument();
   });
 
   it('shows resolved result label', () => {
@@ -27,8 +28,8 @@ describe('CombatArena', () => {
         players={[makePlayer()]}
       />,
     );
-    expect(screen.getByText(/result/i)).toBeInTheDocument();
-    expect(screen.getByText(/VICTORY/)).toBeInTheDocument();
+    expect(screen.getByText(new RegExp(t.result))).toBeInTheDocument();
+    expect(screen.getByText(/VITÓRIA/)).toBeInTheDocument();
   });
 
   it('includes the ally name when alliedPlayerId is set', () => {

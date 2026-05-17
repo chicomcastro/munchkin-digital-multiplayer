@@ -1,5 +1,6 @@
 import type { CombatState, Player } from '../types';
 import { CardView } from './Card';
+import { t } from '../i18n';
 
 export function CombatArena({ combat, players }: { combat: CombatState; players: Player[] }) {
   const attacker = players.find((p) => p.id === combat.attackerId);
@@ -8,10 +9,10 @@ export function CombatArena({ combat, players }: { combat: CombatState; players:
 
   return (
     <div className="card-shell p-4">
-      <div className="text-center text-xs uppercase tracking-widest opacity-60">Combat</div>
+      <div className="text-center text-xs uppercase tracking-widest opacity-60">{t.combat}</div>
       <div className="grid grid-cols-2 gap-3 mt-3 items-stretch">
         <div className="rounded-xl bg-slate-900/50 p-3">
-          <div className="text-xs opacity-60">Player Side</div>
+          <div className="text-xs opacity-60">{t.playerSide}</div>
           <div className="text-3xl font-bold text-emerald-300">{combat.playerPower}</div>
           <div className="text-sm mt-1">
             {attacker?.name}
@@ -26,7 +27,7 @@ export function CombatArena({ combat, players }: { combat: CombatState; players:
           </div>
         </div>
         <div className="rounded-xl bg-slate-900/50 p-3">
-          <div className="text-xs opacity-60">Monster Side</div>
+          <div className="text-xs opacity-60">{t.monsterSide}</div>
           <div className="text-3xl font-bold text-red-300">{combat.monsterPower}</div>
           <div className="flex flex-wrap gap-1 mt-2">
             {combat.monsters.map((m) => (
@@ -42,11 +43,11 @@ export function CombatArena({ combat, players }: { combat: CombatState; players:
       </div>
       <div className="mt-3 text-center text-sm">
         {combat.resolved ? (
-          <span className="font-bold">Result: {combat.result.toUpperCase()}</span>
+          <span className="font-bold">{t.result}: {t.resultLabel(combat.result)}</span>
         ) : winning ? (
-          <span className="text-emerald-300">Players are winning ({combat.playerPower - combat.monsterPower} ahead)</span>
+          <span className="text-emerald-300">{t.playersWinning(combat.playerPower - combat.monsterPower)}</span>
         ) : (
-          <span className="text-red-300">Monsters are winning ({combat.monsterPower - combat.playerPower} ahead)</span>
+          <span className="text-red-300">{t.monstersWinning(combat.monsterPower - combat.playerPower)}</span>
         )}
       </div>
     </div>

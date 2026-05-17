@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { mockSocket, resetMockSocket } from '../test/mockSocket';
 import { Home } from './Home';
+import { t } from '../i18n';
 
 beforeEach(() => {
   resetMockSocket();
@@ -12,44 +13,52 @@ describe('Home', () => {
   it('renders the title and two primary actions', () => {
     render(<Home onJoined={vi.fn()} />);
     expect(screen.getByText('Munchkin')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /create room/i })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /join room/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: t.createRoom })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: t.joinRoom })).toBeInTheDocument();
   });
 
-  it('requires a name to create a room', () => {
+  it('requires a name to create a room (inline error on the name field)', () => {
     render(<Home onJoined={vi.fn()} />);
-    fireEvent.click(screen.getByRole('button', { name: /create room/i }));
-    expect(screen.getByText(/choose a name/i)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: t.createRoom }));
+    expect(screen.getByText(t.errChooseName)).toBeInTheDocument();
   });
 
   it('requires a name to join a room', () => {
     render(<Home onJoined={vi.fn()} />);
-    fireEvent.click(screen.getByRole('button', { name: /join room/i }));
-    expect(screen.getByText(/choose a name/i)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: t.joinRoom }));
+    expect(screen.getByText(t.errChooseName)).toBeInTheDocument();
   });
 
   it('requires a code to join', () => {
     render(<Home onJoined={vi.fn()} />);
-    fireEvent.change(screen.getByPlaceholderText('Adventurer'), { target: { value: 'Alice' } });
-    fireEvent.click(screen.getByRole('button', { name: /join room/i }));
-    expect(screen.getByText(/enter a room code/i)).toBeInTheDocument();
+    fireEvent.change(screen.getByPlaceholderText(t.namePlaceholder), { target: { value: 'Alice' } });
+    fireEvent.click(screen.getByRole('button', { name: t.joinRoom }));
+    expect(screen.getByText(t.errEnterRoomCode)).toBeInTheDocument();
+  });
+
+  it('clears inline error once the user starts typing again', () => {
+    render(<Home onJoined={vi.fn()} />);
+    fireEvent.click(screen.getByRole('button', { name: t.createRoom }));
+    expect(screen.getByText(t.errChooseName)).toBeInTheDocument();
+    fireEvent.change(screen.getByPlaceholderText(t.namePlaceholder), { target: { value: 'A' } });
+    expect(screen.queryByText(t.errChooseName)).not.toBeInTheDocument();
   });
 
   it('emits room:create and calls onJoined on success', async () => {
     const onJoined = vi.fn();
     mockSocket.queueAck('room:create', { ok: true, roomCode: 'MNK-XYZ', playerId: 'p1' });
     render(<Home onJoined={onJoined} />);
-    fireEvent.change(screen.getByPlaceholderText('Adventurer'), { target: { value: 'Alice' } });
-    fireEvent.click(screen.getByRole('button', { name: /create room/i }));
+    fireEvent.change(screen.getByPlaceholderText(t.namePlaceholder), { target: { value: 'Alice' } });
+    fireEvent.click(screen.getByRole('button', { name: t.createRoom }));
     await waitFor(() => expect(onJoined).toHaveBeenCalledWith('MNK-XYZ', 'p1', 'Alice'));
     expect(localStorage.getItem('munchkin:name')).toBe('Alice');
   });
 
-  it('surfaces errors from room:create', async () => {
+  it('surfaces server errors from room:create as a generic error message', async () => {
     mockSocket.queueAck('room:create', { ok: false, error: 'Server boom.' });
     render(<Home onJoined={vi.fn()} />);
-    fireEvent.change(screen.getByPlaceholderText('Adventurer'), { target: { value: 'Alice' } });
-    fireEvent.click(screen.getByRole('button', { name: /create room/i }));
+    fireEvent.change(screen.getByPlaceholderText(t.namePlaceholder), { target: { value: 'Alice' } });
+    fireEvent.click(screen.getByRole('button', { name: t.createRoom }));
     await waitFor(() => expect(screen.getByText(/server boom/i)).toBeInTheDocument());
   });
 
@@ -57,9 +66,9 @@ describe('Home', () => {
     const onJoined = vi.fn();
     mockSocket.queueAck('room:join', { ok: true, roomCode: 'MNK-ABC', playerId: 'p2' });
     render(<Home onJoined={onJoined} />);
-    fireEvent.change(screen.getByPlaceholderText('Adventurer'), { target: { value: 'Bob' } });
-    fireEvent.change(screen.getByPlaceholderText('MNK-XXX'), { target: { value: 'mnk-abc' } });
-    fireEvent.click(screen.getByRole('button', { name: /join room/i }));
+    fireEvent.change(screen.getByPlaceholderText(t.namePlaceholder), { target: { value: 'Bob' } });
+    fireEvent.change(screen.getByPlaceholderText(t.roomCodePlaceholder), { target: { value: 'mnk-abc' } });
+    fireEvent.click(screen.getByRole('button', { name: t.joinRoom }));
     await waitFor(() => expect(onJoined).toHaveBeenCalledWith('MNK-ABC', 'p2', 'Bob'));
     const last = mockSocket.lastEmit('room:join');
     expect(last?.payload.roomCode).toBe('MNK-ABC');
@@ -68,16 +77,16 @@ describe('Home', () => {
   it('surfaces join errors', async () => {
     mockSocket.queueAck('room:join', { ok: false, error: 'Room not found.' });
     render(<Home onJoined={vi.fn()} />);
-    fireEvent.change(screen.getByPlaceholderText('Adventurer'), { target: { value: 'Alice' } });
-    fireEvent.change(screen.getByPlaceholderText('MNK-XXX'), { target: { value: 'mnk-xyz' } });
-    fireEvent.click(screen.getByRole('button', { name: /join room/i }));
+    fireEvent.change(screen.getByPlaceholderText(t.namePlaceholder), { target: { value: 'Alice' } });
+    fireEvent.change(screen.getByPlaceholderText(t.roomCodePlaceholder), { target: { value: 'mnk-xyz' } });
+    fireEvent.click(screen.getByRole('button', { name: t.joinRoom }));
     await waitFor(() => expect(screen.getByText(/not found/i)).toBeInTheDocument());
   });
 
   it('pre-fills name from localStorage', () => {
     localStorage.setItem('munchkin:name', 'PreviousName');
     render(<Home onJoined={vi.fn()} />);
-    const input = screen.getByPlaceholderText('Adventurer') as HTMLInputElement;
+    const input = screen.getByPlaceholderText(t.namePlaceholder) as HTMLInputElement;
     expect(input.value).toBe('PreviousName');
   });
 });

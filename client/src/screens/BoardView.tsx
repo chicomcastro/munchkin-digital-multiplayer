@@ -3,6 +3,7 @@ import type { GameState } from '../types';
 import { PlayerStatus } from '../components/PlayerStatus';
 import { CombatArena } from '../components/CombatArena';
 import { CardView } from '../components/Card';
+import { t } from '../i18n';
 
 export function BoardView({ state, onPlayerMode }: { state: GameState; onPlayerMode: () => void }) {
   const combat = state.combatState;
@@ -37,9 +38,9 @@ export function BoardView({ state, onPlayerMode }: { state: GameState; onPlayerM
       <div className="space-y-4">
         <div className="card-shell p-4 flex items-center justify-between">
           <div>
-            <div className="text-xs uppercase opacity-60">Room {state.roomCode} · Turn {state.turn} · {state.turnPhase}</div>
+            <div className="text-xs uppercase opacity-60">{t.room} {state.roomCode} · {t.turn} {state.turn} · {state.turnPhase}</div>
             <div className="text-3xl font-bold">
-              Active: <span style={{ color: activePlayer?.color }}>{activePlayer?.name ?? '—'}</span>
+              {t.active2} <span style={{ color: activePlayer?.color }}>{activePlayer?.name ?? '—'}</span>
             </div>
           </div>
           <div className="flex flex-col items-end gap-1">
@@ -48,33 +49,33 @@ export function BoardView({ state, onPlayerMode }: { state: GameState; onPlayerM
                 ⏱ {secondsLeft}s
               </div>
             )}
-            {globalLeft != null && <div className="text-sm opacity-70">global {globalLeft}</div>}
-            <button className="btn text-xs" onClick={onPlayerMode}>player mode</button>
+            {globalLeft != null && <div className="text-sm opacity-70">{t.globalTimer} {globalLeft}</div>}
+            <button className="btn text-xs" onClick={onPlayerMode}>{t.playerMode.toLowerCase()}</button>
           </div>
         </div>
 
         {state.config.variant === 'cooperative' && (
           <div className="card-shell p-4">
-            <div className="text-xs uppercase opacity-60 mb-2">Coop status</div>
+            <div className="text-xs uppercase opacity-60 mb-2">{t.coopStatus}</div>
             {state.config.coopObjective === 'bossFight' && (
               <div>
-                <div className="text-sm mb-1">Boss HP: {state.coopBossHpRemaining} / {state.config.coopBossLevel}</div>
+                <div className="text-sm mb-1">{t.bossHp}: {state.coopBossHpRemaining} / {state.config.coopBossLevel}</div>
                 <div className="h-3 bg-slate-800 rounded overflow-hidden">
-                  <div className="h-full bg-red-600" style={{ width: `${100 * state.coopBossHpRemaining / state.config.coopBossLevel}%` }} />
+                  <div className="h-full bg-red-600 transition-all duration-500" style={{ width: `${100 * state.coopBossHpRemaining / state.config.coopBossLevel}%` }} />
                 </div>
               </div>
             )}
             {state.config.coopObjective === 'dungeonTrail' && (
-              <div className="text-sm">Trail: {state.coopMonstersDefeated} / {state.config.coopTrailSize}</div>
+              <div className="text-sm">{t.trail}: {state.coopMonstersDefeated} / {state.config.coopTrailSize}</div>
             )}
             {state.config.coopObjective === 'surviveRounds' && (
-              <div className="text-sm">Round {state.turn} / {state.config.coopRounds}</div>
+              <div className="text-sm">{t.round} {state.turn} / {state.config.coopRounds}</div>
             )}
             {state.config.threatTrackEnabled && (
               <div className="mt-3">
-                <div className="text-xs mb-1">Threat: {state.threatTrack} / 10</div>
+                <div className="text-xs mb-1">{t.threat}: {state.threatTrack} / 10</div>
                 <div className="h-2 bg-slate-800 rounded overflow-hidden">
-                  <div className="h-full bg-purple-500" style={{ width: `${state.threatTrack * 10}%` }} />
+                  <div className="h-full bg-purple-500 transition-all duration-500" style={{ width: `${state.threatTrack * 10}%` }} />
                 </div>
               </div>
             )}
@@ -82,15 +83,15 @@ export function BoardView({ state, onPlayerMode }: { state: GameState; onPlayerM
         )}
 
         {combat ? (
-          <CombatArena combat={combat} players={state.players} />
+          <div className="anim-slide-in"><CombatArena combat={combat} players={state.players} /></div>
         ) : (
-          <div className="card-shell p-6 text-center opacity-60">No active combat</div>
+          <div className="card-shell p-3 text-center text-sm opacity-60">{t.noActiveCombat}</div>
         )}
 
         {state.config.marketEnabled && state.market.length > 0 && (
           <div className="card-shell p-4">
-            <div className="text-xs uppercase opacity-60 mb-2">Market</div>
-            <div className="flex gap-2 overflow-x-auto">
+            <div className="text-xs uppercase opacity-60 mb-2">{t.market}</div>
+            <div className="flex gap-2 overflow-x-auto scroll-thin">
               {state.market.map((c) => (
                 <CardView key={c.id} card={c} compact />
               ))}
@@ -105,10 +106,10 @@ export function BoardView({ state, onPlayerMode }: { state: GameState; onPlayerM
         </div>
 
         {state.phase === 'ended' && (
-          <div className="card-shell p-6 text-center">
-            <div className="text-3xl font-bold text-amber-400 mb-2">Game over</div>
+          <div className="card-shell p-6 text-center anim-fade">
+            <div className="text-3xl font-bold text-amber-400 mb-2">{t.gameOver}</div>
             {state.winnerId ? (
-              <div>Winner: {state.players.find((p) => p.id === state.winnerId)?.name}</div>
+              <div>{t.winner}: {state.players.find((p) => p.id === state.winnerId)?.name}</div>
             ) : (
               <div className="opacity-70">{state.log[state.log.length - 1]?.text}</div>
             )}
@@ -116,14 +117,14 @@ export function BoardView({ state, onPlayerMode }: { state: GameState; onPlayerM
         )}
       </div>
 
-      <aside className="card-shell p-3 max-h-[80vh] flex flex-col">
-        <div className="text-xs uppercase opacity-60 mb-2">Log</div>
-        <div className="flex-1 overflow-y-auto text-sm space-y-1 pr-1">
+      <aside className="card-shell p-3 max-h-[80vh] flex flex-col lg:sticky lg:top-4 lg:self-start">
+        <div className="text-xs uppercase opacity-60 mb-2">{t.log}</div>
+        <div className="flex-1 overflow-y-auto scroll-thin text-sm space-y-1 pr-1">
           {state.log.map((e) => (
             <div
               key={e.id}
               className={[
-                'leading-snug',
+                'leading-snug anim-fade',
                 e.kind === 'combat' ? 'text-red-300' :
                 e.kind === 'curse' ? 'text-purple-300' :
                 e.kind === 'level' ? 'text-amber-300' :
@@ -136,7 +137,7 @@ export function BoardView({ state, onPlayerMode }: { state: GameState; onPlayerM
           <div ref={logEnd} />
         </div>
         <div className="text-xs opacity-60 mt-2 border-t border-slate-700 pt-2">
-          door {state.doorDeckSize} · treasure {state.treasureDeckSize}
+          {t.doors.toLowerCase()} {state.doorDeckSize} · {t.treasures.toLowerCase()} {state.treasureDeckSize}
         </div>
       </aside>
     </div>

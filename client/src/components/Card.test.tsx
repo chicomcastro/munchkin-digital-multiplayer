@@ -2,17 +2,18 @@ import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { CardView } from './Card';
 import { makeCard } from '../test/fixtures';
+import { cardTypeLabels } from '../i18n';
 
 describe('CardView', () => {
-  it('renders the card name and type', () => {
+  it('renders the card name and translated type label', () => {
     render(<CardView card={makeCard({ name: 'Big Sword' })} />);
     expect(screen.getByText('Big Sword')).toBeInTheDocument();
-    expect(screen.getByText('item')).toBeInTheDocument();
+    expect(screen.getByText(cardTypeLabels.item)).toBeInTheDocument();
   });
 
   it('shows monster level', () => {
     render(<CardView card={makeCard({ type: 'monster', deck: 'door', level: 7, bonus: undefined })} />);
-    expect(screen.getByText(/lv\s*7/i)).toBeInTheDocument();
+    expect(screen.getByText(/nv\s*7/i)).toBeInTheDocument();
   });
 
   it('shows item bonus', () => {
@@ -30,9 +31,9 @@ describe('CardView', () => {
     expect(screen.getByText('Long description here')).toBeInTheDocument();
   });
 
-  it('renders BIG badge for big items', () => {
+  it('renders GRANDE badge for big items', () => {
     render(<CardView card={makeCard({ bigItem: true })} />);
-    expect(screen.getByText('BIG')).toBeInTheDocument();
+    expect(screen.getByText('GRANDE')).toBeInTheDocument();
   });
 
   it('renders value badge', () => {
@@ -64,11 +65,11 @@ describe('CardView', () => {
     expect(container.querySelector('.ring-4')).toBeTruthy();
   });
 
-  it('uses a different color class for each card type', () => {
+  it('renders distinct labels for every type', () => {
     const types = ['monster', 'curse', 'race', 'class', 'item', 'oneShot', 'levelUp', 'helper'] as const;
     for (const t of types) {
-      const { container } = render(<CardView card={makeCard({ type: t })} />);
-      expect(container.firstChild).toBeTruthy();
+      render(<CardView card={makeCard({ type: t })} />);
+      expect(screen.getAllByText(cardTypeLabels[t]).length).toBeGreaterThan(0);
     }
   });
 });

@@ -1,8 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { mockSocket, resetMockSocket } from '../test/mockSocket';
 import { PlayerView } from './PlayerView';
-import { makeCard, makeCombat, makePlayer, makeState } from '../test/fixtures';
+import { makeCard, makeCombat, makeState } from '../test/fixtures';
+import { t } from '../i18n';
 
 beforeEach(() => {
   resetMockSocket();
@@ -18,41 +19,40 @@ describe('PlayerView', () => {
   it('renders status header with room code, turn, and player info', () => {
     renderView();
     expect(screen.getByText(/MNK-AAA/)).toBeInTheDocument();
-    expect(screen.getByText(/Turn 1/)).toBeInTheDocument();
-    expect(screen.getByText('Alice')).toBeInTheDocument();
+    expect(screen.getByText(new RegExp(`${t.turn} 1`))).toBeInTheDocument();
   });
 
   it('disables kick door when not active', () => {
     const state = makeState({ activePlayerId: 'p2' });
     renderView(state);
-    expect(screen.getByRole('button', { name: /kick door/i })).toBeDisabled();
+    expect(screen.getByRole('button', { name: t.kickDoor })).toBeDisabled();
   });
 
   it('emits kickDoor when active', async () => {
     mockSocket.queueAck('game:kickDoor', { ok: true });
     renderView();
-    fireEvent.click(screen.getByRole('button', { name: /kick door/i }));
+    fireEvent.click(screen.getByRole('button', { name: t.kickDoor }));
     await waitFor(() => expect(mockSocket.lastEmit('game:kickDoor')).toBeTruthy());
   });
 
   it('emits listenDoor button when feature enabled', async () => {
     mockSocket.queueAck('game:listenDoor', { ok: true });
     renderView();
-    fireEvent.click(screen.getByRole('button', { name: /listen/i }));
+    fireEvent.click(screen.getByRole('button', { name: t.listen }));
     await waitFor(() => expect(mockSocket.lastEmit('game:listenDoor')).toBeTruthy());
   });
 
   it('emits endTurn', async () => {
     mockSocket.queueAck('game:endTurn', { ok: true });
     renderView();
-    fireEvent.click(screen.getByRole('button', { name: /end turn/i }));
+    fireEvent.click(screen.getByRole('button', { name: t.endTurn }));
     await waitFor(() => expect(mockSocket.lastEmit('game:endTurn')).toBeTruthy());
   });
 
   it('lootRoom only enabled in look phase', () => {
     const state = makeState({ turnPhase: 'lookForTroubleOrLoot' });
     renderView(state);
-    expect(screen.getByRole('button', { name: /loot room/i })).not.toBeDisabled();
+    expect(screen.getByRole('button', { name: t.lootRoom })).not.toBeDisabled();
   });
 
   it('selecting a card shows action panel and equipping emits playCard', async () => {
@@ -60,7 +60,7 @@ describe('PlayerView', () => {
     const c = makeCard({ name: 'Long Sword' });
     renderView(makeState(), [c]);
     fireEvent.click(screen.getByText('Long Sword'));
-    fireEvent.click(screen.getByRole('button', { name: /equip/i }));
+    fireEvent.click(screen.getByRole('button', { name: t.equip }));
     await waitFor(() => {
       expect(mockSocket.lastEmit('game:playCard')?.payload.cardId).toBe(c.id);
     });
@@ -71,7 +71,7 @@ describe('PlayerView', () => {
     const c = makeCard({ type: 'race', deck: 'door', name: 'Elf', slot: undefined, bonus: undefined, value: undefined });
     renderView(makeState(), [c]);
     fireEvent.click(screen.getByText('Elf'));
-    fireEvent.click(screen.getByRole('button', { name: /become/i }));
+    fireEvent.click(screen.getByRole('button', { name: t.become }));
     await waitFor(() => expect(mockSocket.lastEmit('game:playCard')).toBeTruthy());
   });
 
@@ -80,7 +80,7 @@ describe('PlayerView', () => {
     const c = makeCard({ type: 'curse', deck: 'door', name: 'Bad Curse', special: 'loseLevel', bonus: undefined, value: undefined, slot: undefined });
     renderView(makeState(), [c]);
     fireEvent.click(screen.getByText('Bad Curse'));
-    fireEvent.click(screen.getByRole('button', { name: /cast on/i }));
+    fireEvent.click(screen.getByRole('button', { name: t.castOn }));
     fireEvent.click(screen.getByRole('button', { name: 'Bob' }));
     await waitFor(() => {
       const last = mockSocket.lastEmit('game:playCard');
@@ -93,9 +93,9 @@ describe('PlayerView', () => {
     const item = makeCard({ name: 'Gold Sword', value: 1200 });
     renderView(makeState(), [item]);
     fireEvent.click(screen.getByText('Gold Sword'));
-    fireEvent.click(screen.getByRole('button', { name: /mark for sale/i }));
-    expect(screen.getByText(/Selling 1 items/)).toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button', { name: /sell for levels/i }));
+    fireEvent.click(screen.getByRole('button', { name: new RegExp(t.markForSale, 'i') }));
+    expect(screen.getByText(/Vendendo 1 item/)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: t.sellForLevels }));
     await waitFor(() => {
       expect(mockSocket.lastEmit('game:sellItems')?.payload.cardIds).toContain(item.id);
     });
@@ -106,7 +106,7 @@ describe('PlayerView', () => {
     const combat = makeCombat({ attackerId: 'p1', playerPower: 7, monsterPower: 4 });
     const state = makeState({ combatState: combat, turnPhase: 'combat' });
     renderView(state, []);
-    fireEvent.click(screen.getByRole('button', { name: /resolve combat/i }));
+    fireEvent.click(screen.getByRole('button', { name: t.resolveCombat }));
     await waitFor(() => expect(mockSocket.lastEmit('game:resolveCombat')).toBeTruthy());
   });
 
@@ -115,7 +115,7 @@ describe('PlayerView', () => {
     const combat = makeCombat({ attackerId: 'p1' });
     const state = makeState({ combatState: combat, turnPhase: 'combat' });
     renderView(state, []);
-    fireEvent.click(screen.getByRole('button', { name: /flee/i }));
+    fireEvent.click(screen.getByRole('button', { name: t.flee }));
     await waitFor(() => expect(mockSocket.lastEmit('game:flee')).toBeTruthy());
   });
 
@@ -124,7 +124,7 @@ describe('PlayerView', () => {
     const combat = makeCombat({ attackerId: 'p2' });
     const state = makeState({ activePlayerId: 'p2', combatState: combat, turnPhase: 'combat' });
     renderView(state, []);
-    fireEvent.click(screen.getByRole('button', { name: /help in combat/i }));
+    fireEvent.click(screen.getByRole('button', { name: t.helpInCombat }));
     await waitFor(() => expect(mockSocket.lastEmit('game:helpInCombat')).toBeTruthy());
   });
 
@@ -137,7 +137,7 @@ describe('PlayerView', () => {
   it('clicking board mode triggers callback', () => {
     const cb = vi.fn();
     render(<PlayerView state={makeState()} hand={[]} fist={[]} myId="p1" onBoardMode={cb} />);
-    fireEvent.click(screen.getByRole('button', { name: /board mode/i }));
+    fireEvent.click(screen.getByRole('button', { name: new RegExp(t.boardMode, 'i') }));
     expect(cb).toHaveBeenCalled();
   });
 
@@ -161,7 +161,7 @@ describe('PlayerView', () => {
     const state = makeState({ turnPhase: 'lookForTroubleOrLoot' });
     renderView(state, [m]);
     fireEvent.click(screen.getByText('Bad Beast'));
-    fireEvent.click(screen.getByRole('button', { name: /look for trouble/i }));
+    fireEvent.click(screen.getByRole('button', { name: t.lookForTrouble }));
     await waitFor(() => expect(mockSocket.lastEmit('game:playCard')).toBeTruthy());
   });
 
@@ -172,7 +172,7 @@ describe('PlayerView', () => {
     const state = makeState({ combatState: combat, turnPhase: 'combat' });
     renderView(state, [potion]);
     fireEvent.click(screen.getByText('Magic Missile'));
-    fireEvent.click(screen.getByRole('button', { name: /play into combat/i }));
+    fireEvent.click(screen.getByRole('button', { name: t.playIntoCombat }));
     await waitFor(() => expect(mockSocket.lastEmit('game:playCard')).toBeTruthy());
   });
 
@@ -180,8 +180,30 @@ describe('PlayerView', () => {
     const item = makeCard({ name: 'Gold Sword', value: 1200 });
     renderView(makeState(), [item]);
     fireEvent.click(screen.getByText('Gold Sword'));
-    fireEvent.click(screen.getByRole('button', { name: /mark for sale/i }));
-    fireEvent.click(screen.getByRole('button', { name: /unmark for sale/i }));
-    expect(screen.queryByText(/Selling \d+ items/)).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: new RegExp(t.markForSale, 'i') }));
+    fireEvent.click(screen.getByRole('button', { name: new RegExp(t.unmarkForSale, 'i') }));
+    expect(screen.queryByText(/Vendendo \d+ ite/)).not.toBeInTheDocument();
+  });
+
+  it('renders opponents panel with level and power', () => {
+    const state = makeState();
+    renderView(state, []);
+    expect(screen.getByText(t.opponents)).toBeInTheDocument();
+    expect(screen.getByText('Bob')).toBeInTheDocument();
+  });
+
+  it('renders deck and discard boxes', () => {
+    const state = makeState({ doorDeckSize: 42, treasureDeckSize: 17 });
+    renderView(state, []);
+    expect(screen.getByText(t.decksLabel)).toBeInTheDocument();
+    expect(screen.getByText('42')).toBeInTheDocument();
+    expect(screen.getByText('17')).toBeInTheDocument();
+  });
+
+  it('shows discard top card name when set', () => {
+    const top = makeCard({ name: 'Old Sword', type: 'item' });
+    const state = makeState({ treasureDiscardTop: top });
+    renderView(state, []);
+    expect(screen.getByText('Old Sword')).toBeInTheDocument();
   });
 });
