@@ -1,5 +1,6 @@
 import type { GameState, RoomConfig, Variant, CoopObjective } from '../types';
 import { emit } from '../hooks/useSocket';
+import { PRESETS, type Preset } from '../presets';
 
 export function Lobby({
   state,
@@ -19,6 +20,10 @@ export function Lobby({
     emit('room:updateConfig', { [key]: value }).catch(() => {});
   }
 
+  function applyPreset(p: Preset) {
+    emit('room:updateConfig', p.config).catch((e) => alert(e.message));
+  }
+
   function start() {
     emit('room:start').catch((e) => alert(e.message));
   }
@@ -32,6 +37,26 @@ export function Lobby({
         </div>
         <button className="btn" onClick={onBoardMode}>Board mode</button>
       </div>
+
+      {isCreator && (
+        <div className="card-shell p-4">
+          <div className="text-xs uppercase opacity-60 mb-2">Quick presets</div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            {PRESETS.map((p) => (
+              <button
+                key={p.id}
+                type="button"
+                onClick={() => applyPreset(p)}
+                className="text-left rounded-xl bg-slate-700 hover:bg-slate-600 active:bg-slate-800 px-3 py-2 transition-colors"
+              >
+                <div className="font-bold text-sm text-amber-300">{p.label}</div>
+                <div className="text-xs opacity-70 mt-0.5 leading-snug">{p.description}</div>
+              </button>
+            ))}
+          </div>
+          <div className="text-xs opacity-50 mt-2">Tap a preset to fill the config below — you can still tweak any field afterwards.</div>
+        </div>
+      )}
 
       <div className="card-shell p-4">
         <div className="text-xs uppercase opacity-60 mb-2">Players ({state.players.length})</div>

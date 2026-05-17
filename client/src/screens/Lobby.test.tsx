@@ -212,6 +212,48 @@ describe('Lobby', () => {
     expect(mockSocket.emittedEvents.filter((e) => e.event === 'room:updateConfig').length).toBeGreaterThanOrEqual(togglesToCheck.length);
   });
 
+  it('shows quick presets only for the creator', () => {
+    const stateCreator = makeState({
+      phase: 'lobby',
+      players: [makePlayer({ id: 'p1' }), makePlayer({ id: 'p2', name: 'Bob' })],
+    });
+    const { rerender } = render(<Lobby state={stateCreator} myId="p1" onBoardMode={vi.fn()} />);
+    expect(screen.getByText(/Quick presets/i)).toBeInTheDocument();
+    expect(screen.getByText(/Rápida · 4P/)).toBeInTheDocument();
+    expect(screen.getByText(/Coop: Chefão/)).toBeInTheDocument();
+
+    rerender(<Lobby state={stateCreator} myId="p2" onBoardMode={vi.fn()} />);
+    expect(screen.queryByText(/Quick presets/i)).not.toBeInTheDocument();
+  });
+
+  it('clicking a preset emits room:updateConfig with its full config', async () => {
+    const state = makeState({
+      phase: 'lobby',
+      players: [makePlayer({ id: 'p1' })],
+    });
+    render(<Lobby state={state} myId="p1" onBoardMode={vi.fn()} />);
+    fireEvent.click(screen.getByText(/Coop: Chefão/));
+    await waitFor(() => {
+      const last = mockSocket.lastEmit('room:updateConfig');
+      expect(last?.payload).toMatchObject({
+        playerCount: 4,
+        variant: 'cooperative',
+        coopObjective: 'bossFight',
+        coopBossLevel: 20,
+      });
+    });
+  });
+
+  it('preset apply error surfaces via alert', async () => {
+    const alertSpy = vi.spyOn(window, 'alert').mockImplementation(() => {});
+    mockSocket.queueAck('room:updateConfig', { ok: false, error: 'Server boom.' });
+    const state = makeState({ phase: 'lobby', players: [makePlayer({ id: 'p1' })] });
+    render(<Lobby state={state} myId="p1" onBoardMode={vi.fn()} />);
+    fireEvent.click(screen.getByText(/Rápida · 4P/));
+    await waitFor(() => expect(alertSpy).toHaveBeenCalledWith('Server boom.'));
+    alertSpy.mockRestore();
+  });
+
   it('cooperative-specific selects and inputs work', async () => {
     const state = makeState({
       phase: 'lobby',

@@ -31,7 +31,16 @@ describe('Munchkin — full game flow', () => {
     cy.contains(/^MNK-/, { timeout: 15000 }).should('be.visible');
     cy.snapshot('02-lobby-single-player');
 
-    // Pick the long variant (no auto-market, no auto-listen, no global timer).
+    // Show the quick presets panel.
+    cy.contains(/Quick presets/i).should('be.visible');
+    cy.snapshot('02b-lobby-presets');
+
+    // Pick a preset to apply a full config in one click.
+    cy.contains(/Duelo Longo/).click();
+    cy.wait(300);
+    cy.snapshot('02c-lobby-preset-applied');
+
+    // Pick the long variant explicitly to be 100% sure of the resulting config.
     cy.contains('Variant').parent().find('select').select('long');
 
     // Bring in a ghost player from the Node side.
