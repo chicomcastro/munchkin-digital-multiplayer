@@ -3,6 +3,7 @@ import type { Card, GameState } from '../types';
 import { CardView } from '../components/Card';
 import { CombatArena } from '../components/CombatArena';
 import { emit } from '../hooks/useSocket';
+import { t } from '../i18n';
 
 export function PlayerView({
   state,
@@ -18,6 +19,7 @@ export function PlayerView({
   onBoardMode: () => void;
 }) {
   const me = state.players.find((p) => p.id === myId)!;
+  const opponents = state.players.filter((p) => p.id !== myId);
   const active = state.activePlayerId === myId;
   const activePlayer = state.players.find((p) => p.id === state.activePlayerId);
   const combat = state.combatState;
@@ -28,6 +30,7 @@ export function PlayerView({
   const [sellPicker, setSellPicker] = useState<Set<string>>(new Set());
   const [targetMode, setTargetMode] = useState(false);
   const [secondsLeft, setSecondsLeft] = useState<number | null>(null);
+  const [pulseLevel, setPulseLevel] = useState(false);
 
   useEffect(() => {
     if (!state.turnTimerEndsAt) {
@@ -43,7 +46,7 @@ export function PlayerView({
     return () => clearInterval(id);
   }, [state.turnTimerEndsAt]);
 
-  // Vibrate at start of your turn
+  // Vibrate on your turn
   const wasActive = useRef(active);
   useEffect(() => {
     if (active && !wasActive.current) {
@@ -51,6 +54,18 @@ export function PlayerView({
     }
     wasActive.current = active;
   }, [active]);
+
+  // Animate level changes
+  const prevLevel = useRef(me.level);
+  useEffect(() => {
+    if (me.level > prevLevel.current) {
+      setPulseLevel(true);
+      const t = setTimeout(() => setPulseLevel(false), 600);
+      prevLevel.current = me.level;
+      return () => clearTimeout(t);
+    }
+    prevLevel.current = me.level;
+  }, [me.level]);
 
   const selectedCardObj = useMemo(() => hand.find((c) => c.id === selectedCard) ?? null, [hand, selectedCard]);
 
@@ -82,28 +97,31 @@ export function PlayerView({
 
   return (
     <div className="min-h-screen flex flex-col">
-      <header className="card-shell m-3 p-3" style={{ borderTop: `4px solid ${me.color}` }}>
-        <div className="flex justify-between items-baseline">
-          <div>
-            <div className="text-xs opacity-60">Room {state.roomCode} · Turn {state.turn}</div>
+      <header className="card-shell m-3 p-3 anim-fade" style={{ borderTop: `4px solid ${me.color}` }}>
+        <div className="flex justify-between items-baseline gap-3">
+          <div className="min-w-0">
+            <div className="text-xs opacity-60 truncate">{t.room} {state.roomCode} · {t.turn} {state.turn}</div>
             <div className="text-2xl font-bold">
-              Level <span className="text-amber-400">{me.level}</span> · Power {me.combatPower}
+              {t.level}{' '}
+              <span className={['text-amber-400 inline-block', pulseLevel ? 'anim-pop' : ''].join(' ')}>{me.level}</span>
+              {' '}· {t.power} {me.combatPower}
             </div>
             <div className="text-xs opacity-70 mt-1">
-              {me.race?.name ?? 'No race'} / {me.class?.name ?? 'No class'}
+              {me.race?.name ?? t.noRace} / {me.class?.name ?? t.noClass}
             </div>
           </div>
-          <div className="text-right">
-            <div className="text-xs uppercase opacity-60">Active</div>
-            <div className="font-bold" style={{ color: activePlayer?.color }}>{activePlayer?.name}</div>
+          <div className="text-right shrink-0">
+            <div className="text-xs uppercase opacity-60">{active ? t.yourTurn : t.active}</div>
+            {!active && <div className="font-bold" style={{ color: activePlayer?.color }}>{activePlayer?.name}</div>}
+            {active && <div className="font-bold text-amber-300 anim-pulse-active rounded px-1.5 inline-block">●</div>}
             {secondsLeft != null && (
               <div className={['text-sm font-bold', secondsLeft < 10 ? 'text-red-400' : ''].join(' ')}>{secondsLeft}s</div>
             )}
-            <button onClick={onBoardMode} className="text-xs underline opacity-70 mt-1">board mode</button>
+            <button onClick={onBoardMode} className="text-xs underline opacity-70 mt-1 block ml-auto">{t.boardMode.toLowerCase()}</button>
           </div>
         </div>
         {me.equipped.length > 0 && (
-          <div className="flex gap-1 overflow-x-auto mt-2 pb-1">
+          <div className="flex gap-1 overflow-x-auto scroll-thin mt-2 pb-1">
             {me.equipped.map((c) => (
               <div key={c.id} className="bg-amber-900/60 border border-amber-700 px-2 py-1 rounded text-xs whitespace-nowrap">
                 {c.name} <span className="opacity-70">+{c.bonus ?? 0}</span>
@@ -114,24 +132,24 @@ export function PlayerView({
       </header>
 
       {inCombat && combat && (
-        <div className="px-3 mb-2">
+        <div className="px-3 mb-2 anim-slide-in">
           <CombatArena combat={combat} players={state.players} />
           <div className="grid grid-cols-2 gap-2 mt-2">
             {amInCombat ? (
               <>
                 {combat.attackerId === myId && (
                   <button className="btn-primary" onClick={() => emit('game:resolveCombat').catch((e) => alert(e.message))}>
-                    Resolve combat
+                    {t.resolveCombat}
                   </button>
                 )}
                 <button className="btn-danger" onClick={() => emit('game:flee').catch((e) => alert(e.message))}>
-                  Flee
+                  {t.flee}
                 </button>
               </>
             ) : (
               !combat.alliedPlayerId && (
                 <button className="btn col-span-2" onClick={() => emit('game:helpInCombat').catch((e) => alert(e.message))}>
-                  Help in combat
+                  {t.helpInCombat}
                 </button>
               )
             )}
@@ -139,40 +157,43 @@ export function PlayerView({
         </div>
       )}
 
-      <main className="flex-1 px-3">
-        <div className="text-xs uppercase opacity-60 mb-1">Your hand ({hand.length})</div>
-        <div className="flex gap-2 overflow-x-auto pb-2 -mx-1 px-1">
-          {hand.length === 0 && <div className="opacity-50 text-sm">empty</div>}
-          {hand.map((c) => (
-            <CardView
-              key={c.id}
-              card={c}
-              selected={selectedCard === c.id}
-              onClick={() => setSelectedCard(selectedCard === c.id ? null : c.id)}
-            />
-          ))}
+      <main className="flex-1 px-3 space-y-3">
+        <div>
+          <div className="text-xs uppercase opacity-60 mb-1">{t.hand} ({hand.length})</div>
+          <div className="flex gap-2 overflow-x-auto scroll-thin pb-2 -mx-1 px-1">
+            {hand.length === 0 && <div className="opacity-50 text-sm">{t.empty}</div>}
+            {hand.map((c) => (
+              <div key={c.id} className="anim-slide-in">
+                <CardView
+                  card={c}
+                  selected={selectedCard === c.id}
+                  onClick={() => setSelectedCard(selectedCard === c.id ? null : c.id)}
+                />
+              </div>
+            ))}
+          </div>
         </div>
 
         {selectedCardObj && (
-          <div className="card-shell p-3 mt-2">
+          <div className="card-shell p-3 anim-slide-in">
             <div className="font-bold">{selectedCardObj.name}</div>
             <div className="text-sm opacity-80">{selectedCardObj.description}</div>
             <div className="grid grid-cols-2 gap-2 mt-3">
               {(selectedCardObj.type === 'item' || selectedCardObj.type === 'race' || selectedCardObj.type === 'class' || selectedCardObj.type === 'levelUp') && (
                 <button className="btn-primary col-span-2" onClick={() => playCard(selectedCardObj)}>
-                  {selectedCardObj.type === 'item' ? 'Equip' : selectedCardObj.type === 'levelUp' ? 'Use' : 'Become'}
+                  {selectedCardObj.type === 'item' ? t.equip : selectedCardObj.type === 'levelUp' ? t.use : t.become}
                 </button>
               )}
               {(selectedCardObj.type === 'oneShot' || selectedCardObj.type === 'helper') && (
                 <button className="btn-primary col-span-2" disabled={!inCombat} onClick={() => playCard(selectedCardObj)}>
-                  Play into combat
+                  {t.playIntoCombat}
                 </button>
               )}
               {selectedCardObj.type === 'curse' && (
                 <>
                   {!targetMode ? (
                     <button className="btn-danger col-span-2" onClick={() => setTargetMode(true)}>
-                      Cast on…
+                      {t.castOn}
                     </button>
                   ) : (
                     <div className="col-span-2 grid grid-cols-2 gap-1">
@@ -187,12 +208,12 @@ export function PlayerView({
               )}
               {selectedCardObj.type === 'monster' && active && state.turnPhase === 'lookForTroubleOrLoot' && (
                 <button className="btn-danger col-span-2" onClick={() => playCard(selectedCardObj)}>
-                  Look for trouble
+                  {t.lookForTrouble}
                 </button>
               )}
               {selectedCardObj.value != null && selectedCardObj.value > 0 && (
                 <button className="btn col-span-2" onClick={() => toggleSell(selectedCardObj.id)}>
-                  {sellPicker.has(selectedCardObj.id) ? 'Unmark for sale' : 'Mark for sale'} ({selectedCardObj.value}gp)
+                  {sellPicker.has(selectedCardObj.id) ? t.unmarkForSale : t.markForSale} ({selectedCardObj.value}gp)
                 </button>
               )}
             </div>
@@ -200,29 +221,82 @@ export function PlayerView({
         )}
 
         {sellPicker.size > 0 && (
-          <div className="card-shell p-3 mt-2">
-            <div className="text-sm">Selling {sellPicker.size} items · total {sellTotal}gp ({Math.floor(sellTotal / 1000)} levels)</div>
-            <button className="btn-primary w-full mt-2" disabled={sellTotal < 1000} onClick={confirmSell}>Sell for levels</button>
+          <div className="card-shell p-3 anim-slide-in">
+            <div className="text-sm">{t.selling(sellPicker.size)} · total {sellTotal}gp ({Math.floor(sellTotal / 1000)} níveis)</div>
+            <button className="btn-primary w-full mt-2" disabled={sellTotal < 1000} onClick={confirmSell}>{t.sellForLevels}</button>
           </div>
         )}
 
         {fist.length > 0 && (
-          <div className="mt-3">
-            <div className="text-xs uppercase opacity-60 mb-1">Fist (reserve)</div>
-            <div className="flex gap-2 overflow-x-auto">
+          <div>
+            <div className="text-xs uppercase opacity-60 mb-1">{t.fistReserve}</div>
+            <div className="flex gap-2 overflow-x-auto scroll-thin">
               {fist.map((c) => (
                 <CardView key={c.id} card={c} compact onClick={() => emit('fist:playCard', { cardId: c.id, targetCombat: inCombat }).catch((e) => alert(e.message))} />
               ))}
             </div>
           </div>
         )}
+
+        {/* Mini opponents row — fills the previously empty middle area */}
+        {opponents.length > 0 && (
+          <div>
+            <div className="text-xs uppercase opacity-60 mb-1">{t.opponents}</div>
+            <div className="grid grid-cols-2 gap-2">
+              {opponents.map((p) => (
+                <div
+                  key={p.id}
+                  className={[
+                    'rounded-xl bg-slate-900/60 border border-slate-700 px-3 py-2',
+                    !p.isAlive ? 'opacity-40' : '',
+                    state.activePlayerId === p.id ? 'ring-2 ring-amber-400' : '',
+                  ].join(' ')}
+                  style={{ borderLeft: `4px solid ${p.color}` }}
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="font-bold truncate text-sm">{p.name}</div>
+                    {!p.socketId && <span className="text-[10px] opacity-50">{t.offline}</span>}
+                  </div>
+                  <div className="flex items-baseline gap-3 text-xs mt-0.5">
+                    <span><span className="opacity-50">{t.level}</span> <span className="text-amber-300 font-bold">{p.level}</span></span>
+                    <span><span className="opacity-50">{t.power}</span> <span className="font-bold">{p.combatPower}</span></span>
+                  </div>
+                  {(p.race || p.class) && (
+                    <div className="text-[10px] opacity-60 truncate">
+                      {p.race?.name ?? '—'} / {p.class?.name ?? '—'}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Deck / discard summary */}
+        <div>
+          <div className="text-xs uppercase opacity-60 mb-1">{t.decksLabel}</div>
+          <div className="grid grid-cols-2 gap-2">
+            <DeckBox
+              label={t.doors}
+              size={state.doorDeckSize}
+              discard={state.doorDiscardTop}
+              accent="text-red-300"
+            />
+            <DeckBox
+              label={t.treasures}
+              size={state.treasureDeckSize}
+              discard={state.treasureDiscardTop}
+              accent="text-amber-300"
+            />
+          </div>
+        </div>
       </main>
 
       <footer className="card-shell m-3 p-3 sticky bottom-0">
         <div className="grid grid-cols-2 gap-2">
           {state.turnPhase === 'turnStart' && state.config.listeningAtTheDoor && (
             <button className="btn" disabled={!active} onClick={() => emit('game:listenDoor').catch((e) => alert(e.message))}>
-              Listen
+              {t.listen}
             </button>
           )}
           <button
@@ -230,24 +304,53 @@ export function PlayerView({
             disabled={!active || !(state.turnPhase === 'turnStart' || state.turnPhase === 'kickDoor')}
             onClick={() => emit('game:kickDoor').catch((e) => alert(e.message))}
           >
-            Kick door
+            {t.kickDoor}
           </button>
           <button
             className="btn"
             disabled={!active || state.turnPhase !== 'lookForTroubleOrLoot'}
             onClick={() => emit('game:lootRoom').catch((e) => alert(e.message))}
           >
-            Loot room
+            {t.lootRoom}
           </button>
           <button
             className="btn"
             disabled={!active}
             onClick={() => emit('game:endTurn').catch((e) => alert(e.message))}
           >
-            End turn
+            {t.endTurn}
           </button>
         </div>
       </footer>
+    </div>
+  );
+}
+
+function DeckBox({
+  label,
+  size,
+  discard,
+  accent,
+}: {
+  label: string;
+  size: number;
+  discard: Card | null;
+  accent: string;
+}) {
+  return (
+    <div className="rounded-xl bg-slate-900/60 border border-slate-700 p-2">
+      <div className="text-[10px] uppercase opacity-50">{label}</div>
+      <div className="flex items-center gap-2 mt-1">
+        <div className="w-10 h-14 rounded-md bg-slate-800 border-2 border-slate-600 flex items-center justify-center text-xs font-bold">
+          {size}
+        </div>
+        <div className="text-xs flex-1 min-w-0">
+          <div className="opacity-60 text-[10px] uppercase">{t.discard}</div>
+          <div className={['truncate', accent].join(' ')}>
+            {discard?.name ?? '—'}
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { PlayerStatus } from './PlayerStatus';
 import { makeCard, makePlayer } from '../test/fixtures';
+import { t } from '../i18n';
 
 describe('PlayerStatus', () => {
   it('renders name, level and power', () => {
@@ -13,12 +14,12 @@ describe('PlayerStatus', () => {
 
   it('shows online indicator when socketId present', () => {
     render(<PlayerStatus player={makePlayer({ socketId: 's1' })} active={false} />);
-    expect(screen.getByText('online')).toBeInTheDocument();
+    expect(screen.getByText(t.online)).toBeInTheDocument();
   });
 
   it('shows offline when socketId is null', () => {
     render(<PlayerStatus player={makePlayer({ socketId: null })} active={false} />);
-    expect(screen.getByText('offline')).toBeInTheDocument();
+    expect(screen.getByText(t.offline)).toBeInTheDocument();
   });
 
   it('applies active ring class when active', () => {
@@ -38,9 +39,9 @@ describe('PlayerStatus', () => {
     expect(screen.getByText('Sword')).toBeInTheDocument();
   });
 
-  it('shows "none" placeholder when no equipped cards', () => {
+  it('shows "nada" placeholder when no equipped cards', () => {
     render(<PlayerStatus player={makePlayer({ equipped: [] })} active={false} detailed />);
-    expect(screen.getByText('none')).toBeInTheDocument();
+    expect(screen.getByText(t.none)).toBeInTheDocument();
   });
 
   it('fades dead players', () => {

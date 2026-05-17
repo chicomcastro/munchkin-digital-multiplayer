@@ -3,6 +3,7 @@ import { render, screen, fireEvent, waitFor, act } from '@testing-library/react'
 import { mockSocket, resetMockSocket } from './test/mockSocket';
 import App from './App';
 import { makeState, makeCard, makePlayer } from './test/fixtures';
+import { t } from './i18n';
 
 beforeEach(() => {
   resetMockSocket();
@@ -22,15 +23,15 @@ describe('App', () => {
   it('shows ConnectingBanner when disconnected', () => {
     mockSocket.connected = false;
     render(<App />);
-    expect(screen.getByText(/Disconnected/i)).toBeInTheDocument();
+    expect(screen.getByText(t.disconnectedBanner)).toBeInTheDocument();
   });
 
   it('after create, transitions to Lobby once state arrives', async () => {
     mockSocket.queueAck('room:create', { ok: true, roomCode: 'MNK-ZZZ', playerId: 'p1' });
     render(<App />);
-    fireEvent.change(screen.getByPlaceholderText('Adventurer'), { target: { value: 'Alice' } });
-    fireEvent.click(screen.getByRole('button', { name: /create room/i }));
-    await waitFor(() => expect(screen.getByText(/Connecting/i)).toBeInTheDocument());
+    fireEvent.change(screen.getByPlaceholderText(t.namePlaceholder), { target: { value: 'Alice' } });
+    fireEvent.click(screen.getByRole('button', { name: t.createRoom }));
+    await waitFor(() => expect(screen.getByText(t.connecting)).toBeInTheDocument());
     // Server pushes lobby state
     act(() => {
       mockSocket.serverEmit('game:stateUpdate', makeState({
@@ -50,7 +51,7 @@ describe('App', () => {
       mockSocket.serverEmit('game:stateUpdate', makeState({ phase: 'playing' }));
       mockSocket.serverEmit('game:yourHand', { hand: [makeCard()], fist: [] });
     });
-    await waitFor(() => expect(screen.getByText(/Kick door/)).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText(t.kickDoor)).toBeInTheDocument());
   });
 
   it('toggles to BoardView and back', async () => {
@@ -61,11 +62,11 @@ describe('App', () => {
       mockSocket.serverEmit('game:stateUpdate', makeState({ phase: 'playing' }));
       mockSocket.serverEmit('game:yourHand', { hand: [], fist: [] });
     });
-    await waitFor(() => expect(screen.getByText(/Kick door/)).toBeInTheDocument());
-    fireEvent.click(screen.getByRole('button', { name: /board mode/i }));
-    await waitFor(() => expect(screen.getByRole('button', { name: /player mode/i })).toBeInTheDocument());
-    fireEvent.click(screen.getByRole('button', { name: /player mode/i }));
-    await waitFor(() => expect(screen.getByText(/Kick door/)).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText(t.kickDoor)).toBeInTheDocument());
+    fireEvent.click(screen.getByRole('button', { name: new RegExp(t.boardMode, 'i') }));
+    await waitFor(() => expect(screen.getByRole('button', { name: new RegExp(t.playerMode, 'i') })).toBeInTheDocument());
+    fireEvent.click(screen.getByRole('button', { name: new RegExp(t.playerMode, 'i') }));
+    await waitFor(() => expect(screen.getByText(t.kickDoor)).toBeInTheDocument());
   });
 
   it('shows error toast when error event fires', async () => {
@@ -88,8 +89,8 @@ describe('App', () => {
       mockSocket.serverEmit('game:stateUpdate', makeState({ phase: 'playing' }));
       mockSocket.serverEmit('game:yourHand', { hand: [], fist: [] });
     });
-    await waitFor(() => expect(screen.getByText(/Kick door/)).toBeInTheDocument());
-    fireEvent.click(screen.getByText('leave'));
+    await waitFor(() => expect(screen.getByText(t.kickDoor)).toBeInTheDocument());
+    fireEvent.click(screen.getByText(t.leave));
     expect(window.location.reload).toHaveBeenCalled();
   });
 

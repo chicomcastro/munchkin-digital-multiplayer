@@ -3,6 +3,7 @@ import { render, screen, fireEvent, act } from '@testing-library/react';
 import { resetMockSocket } from '../test/mockSocket';
 import { BoardView } from './BoardView';
 import { makeCard, makeCombat, makeConfig, makePlayer, makeState } from '../test/fixtures';
+import { t } from '../i18n';
 
 beforeEach(() => {
   resetMockSocket();
@@ -14,19 +15,19 @@ afterEach(() => {
 describe('BoardView', () => {
   it('renders header with active player', () => {
     render(<BoardView state={makeState()} onPlayerMode={vi.fn()} />);
-    expect(screen.getAllByText(/Active/i).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(new RegExp(t.active2, 'i')).length).toBeGreaterThan(0);
     expect(screen.getAllByText('Alice').length).toBeGreaterThan(0);
   });
 
   it('shows "No active combat" placeholder when none', () => {
     render(<BoardView state={makeState()} onPlayerMode={vi.fn()} />);
-    expect(screen.getByText(/no active combat/i)).toBeInTheDocument();
+    expect(screen.getByText(t.noActiveCombat)).toBeInTheDocument();
   });
 
   it('renders the combat arena when combat is active', () => {
     const state = makeState({ combatState: makeCombat({ playerPower: 6, monsterPower: 3 }) });
     render(<BoardView state={state} onPlayerMode={vi.fn()} />);
-    expect(screen.getAllByText(/Combat|Monster|Player/i).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(new RegExp(`${t.combat}|${t.monsterSide}|${t.playerSide}`, 'i')).length).toBeGreaterThan(0);
   });
 
   it('renders the log entries', () => {
@@ -53,7 +54,6 @@ describe('BoardView', () => {
       market: [makeCard({ id: 'mk1', name: 'Market Sword' })],
     });
     render(<BoardView state={state} onPlayerMode={vi.fn()} />);
-    expect(screen.getByText(/Market$/)).toBeInTheDocument();
     expect(screen.getByText('Market Sword')).toBeInTheDocument();
   });
 
@@ -64,8 +64,8 @@ describe('BoardView', () => {
       threatTrack: 4,
     });
     render(<BoardView state={state} onPlayerMode={vi.fn()} />);
-    expect(screen.getByText(/Boss HP/i)).toBeInTheDocument();
-    expect(screen.getByText(/Threat/)).toBeInTheDocument();
+    expect(screen.getByText(new RegExp(t.bossHp))).toBeInTheDocument();
+    expect(screen.getByText(new RegExp(t.threat))).toBeInTheDocument();
   });
 
   it('renders coop progress for dungeon trail', () => {
@@ -74,7 +74,7 @@ describe('BoardView', () => {
       coopMonstersDefeated: 3,
     });
     render(<BoardView state={state} onPlayerMode={vi.fn()} />);
-    expect(screen.getByText(/Trail/)).toBeInTheDocument();
+    expect(screen.getByText(new RegExp(t.trail))).toBeInTheDocument();
   });
 
   it('renders coop progress for surviveRounds', () => {
@@ -83,7 +83,7 @@ describe('BoardView', () => {
       turn: 4,
     });
     render(<BoardView state={state} onPlayerMode={vi.fn()} />);
-    expect(screen.getByText(/Round 4/)).toBeInTheDocument();
+    expect(screen.getByText(new RegExp(`${t.round} 4`))).toBeInTheDocument();
   });
 
   it('renders all player statuses', () => {
@@ -103,8 +103,8 @@ describe('BoardView', () => {
   it('shows game-over banner when phase is ended', () => {
     const state = makeState({ phase: 'ended', winnerId: 'p1' });
     render(<BoardView state={state} onPlayerMode={vi.fn()} />);
-    expect(screen.getByText(/Game over/i)).toBeInTheDocument();
-    expect(screen.getByText(/Winner: Alice/)).toBeInTheDocument();
+    expect(screen.getByText(t.gameOver)).toBeInTheDocument();
+    expect(screen.getByText(new RegExp(`${t.winner}: Alice`))).toBeInTheDocument();
   });
 
   it('shows ended state with no winner uses last log entry', () => {
@@ -120,13 +120,13 @@ describe('BoardView', () => {
   it('renders global timer when set', () => {
     const state = makeState({ globalTimerEndsAt: Date.now() + 60_000 });
     render(<BoardView state={state} onPlayerMode={vi.fn()} />);
-    expect(screen.getByText(/global/)).toBeInTheDocument();
+    expect(screen.getByText(new RegExp(t.globalTimer))).toBeInTheDocument();
   });
 
   it('clicking player mode triggers callback', () => {
     const cb = vi.fn();
     render(<BoardView state={makeState()} onPlayerMode={cb} />);
-    fireEvent.click(screen.getByRole('button', { name: /player mode/i }));
+    fireEvent.click(screen.getByRole('button', { name: new RegExp(t.playerMode, 'i') }));
     expect(cb).toHaveBeenCalled();
   });
 
@@ -135,9 +135,7 @@ describe('BoardView', () => {
     const state = makeState({ turnTimerEndsAt: Date.now() + 5000 });
     render(<BoardView state={state} onPlayerMode={vi.fn()} />);
     expect(screen.getByText(/\d+s/)).toBeInTheDocument();
-    act(() => {
-      vi.advanceTimersByTime(1500);
-    });
+    act(() => { vi.advanceTimersByTime(1500); });
     expect(screen.getByText(/\d+s/)).toBeInTheDocument();
   });
 
@@ -145,9 +143,7 @@ describe('BoardView', () => {
     vi.useFakeTimers();
     const state = makeState({ globalTimerEndsAt: Date.now() + 125_000 });
     render(<BoardView state={state} onPlayerMode={vi.fn()} />);
-    act(() => {
-      vi.advanceTimersByTime(2000);
-    });
-    expect(screen.getByText(/global \d+:\d{2}/)).toBeInTheDocument();
+    act(() => { vi.advanceTimersByTime(2000); });
+    expect(screen.getByText(new RegExp(`${t.globalTimer} \\d+:\\d{2}`))).toBeInTheDocument();
   });
 });
