@@ -154,6 +154,17 @@ export function buildTestRoom(opts: {
     for (const p of room.players) {
       p.hand.push(...room.doors.drawMany(room.config.startingHandDoors));
       p.hand.push(...room.treasures.drawMany(room.config.startingHandTreasures));
+      if (room.config.twoPlayerDualCharacter) {
+        p.characters = [{
+          level: 1,
+          hand: [],
+          equipped: [],
+          carried: [],
+          race: null,
+          class: null,
+          combatPower: 1,
+        }];
+      }
     }
     if (room.config.marketEnabled) {
       room.market = room.treasures.drawMany(room.config.marketSize);

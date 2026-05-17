@@ -31,7 +31,9 @@ export function CombatArena({ combat, players }: { combat: CombatState; players:
           <div className="text-3xl font-bold text-red-300">{combat.monsterPower}</div>
           <div className="flex flex-wrap gap-1 mt-2">
             {combat.monsters.map((m) => (
-              <CardView key={m.id} card={m} compact />
+              <div key={m.id} className="anim-card-fly">
+                <CardView card={m} compact />
+              </div>
             ))}
             {combat.cardsPlayedThisRound
               .filter((p) => p.side === 'monster')

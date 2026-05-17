@@ -30,6 +30,7 @@ export interface Card {
   raceRestriction?: string;
   combatBonus?: number;
   special?: string;
+  tags?: string[];
 }
 
 export type Variant = 'quick' | 'medium' | 'long' | 'cooperative';
@@ -59,21 +60,26 @@ export interface RoomConfig {
   noDeath: boolean;
 }
 
-export interface Player {
-  id: string;
-  name: string;
-  socketId: string | null;
+export interface Munchkin {
   level: number;
   hand: Card[];
   equipped: Card[];
   carried: Card[];
   race: Card | null;
   class: Card | null;
-  isAlive: boolean;
   combatPower: number;
+}
+
+export interface Player extends Munchkin {
+  id: string;
+  name: string;
+  socketId: string | null;
+  isAlive: boolean;
   fistCards: Card[];
   color: string;
   ready: boolean;
+  halflingSoldThisTurn?: boolean;
+  characters?: Munchkin[];
 }
 
 export type TurnPhase =

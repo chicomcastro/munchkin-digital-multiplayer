@@ -91,3 +91,53 @@ html, body, #root {
   0% { transform: translateY(0) rotate(0deg); opacity: 1; }
   100% { transform: translateY(110vh) rotate(720deg); opacity: 0.4; }
 }
+
+/* Monster cards drop in from above when combat begins. */
+.anim-card-fly {
+  animation: cardFly 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  transform-origin: center top;
+}
+@keyframes cardFly {
+  0% {
+    transform: translateY(-100vh) rotate(-30deg) scale(0.4);
+    opacity: 0;
+  }
+  60% {
+    transform: translateY(8px) rotate(4deg) scale(1.05);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(0) rotate(0) scale(1);
+    opacity: 1;
+  }
+}
+
+/* Generic accessibility focus styles — all interactive elements gain
+   a visible amber ring on keyboard focus. */
+:focus-visible {
+  outline: 3px solid rgba(245, 158, 11, 0.7);
+  outline-offset: 2px;
+  border-radius: 8px;
+}
+
+/* sr-only utility from Tailwind, just in case. */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+.focus\:not-sr-only:focus {
+  position: static;
+  width: auto;
+  height: auto;
+  margin: 0;
+  overflow: visible;
+  clip: auto;
+  white-space: normal;
+}

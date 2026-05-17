@@ -6,8 +6,10 @@ import { BoardView } from './screens/BoardView';
 import { useGameState } from './hooks/useGameState';
 import { emit, useSocket } from './hooks/useSocket';
 import { useSounds } from './hooks/useSounds';
+import { useLocale } from './hooks/useLocale';
 import { Onboarding, shouldShowOnboarding } from './components/Onboarding';
-import { t } from './i18n';
+import { t, LOCALES } from './i18n';
+import { trackHomeViewed } from './analytics';
 
 interface Session {
   roomCode: string;
@@ -46,7 +48,14 @@ export default function App() {
   const [reconnecting, setReconnecting] = useState(false);
   const [deepLinkCode] = useState<string | null>(() => (loadSession() ? null : readDeepLinkCode()));
   const sound = useSounds();
+  const [locale, setLocaleHook] = useLocale();
   const [showOnboarding, setShowOnboarding] = useState<boolean>(() => shouldShowOnboarding());
+
+  // Track home-viewed on first mount only (no-op without VITE_AMPLITUDE_KEY).
+  useEffect(() => {
+    if (!session) trackHomeViewed({ has_deep_link: deepLinkCode != null });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Persist session on changes
   useEffect(() => {
@@ -79,14 +88,17 @@ export default function App() {
         <Home onJoined={onJoined} prefilledCode={deepLinkCode} />
         {!connected && <ConnectingBanner />}
         <Onboarding open={showOnboarding} onClose={() => setShowOnboarding(false)} />
-        <button
-          onClick={() => setShowOnboarding(true)}
-          className="fixed top-2 right-2 z-50 text-xs opacity-60 hover:opacity-100"
-          aria-label={t.onboardingHelp}
-          title={t.onboardingHelp}
-        >
-          ❓
-        </button>
+        <div className="fixed top-2 right-2 z-50 flex items-center gap-3 text-xs">
+          <LocalePicker locale={locale} onChange={setLocaleHook} />
+          <button
+            onClick={() => setShowOnboarding(true)}
+            className="opacity-60 hover:opacity-100"
+            aria-label={t.onboardingHelp}
+            title={t.onboardingHelp}
+          >
+            ❓
+          </button>
+        </div>
       </>
     );
   }
@@ -123,6 +135,7 @@ export default function App() {
       {!connected && <ConnectingBanner />}
       <Onboarding open={showOnboarding} onClose={() => setShowOnboarding(false)} />
       <div className="fixed top-2 right-2 z-50 flex items-center gap-3 text-xs">
+        <LocalePicker locale={locale} onChange={setLocaleHook} />
         <button
           onClick={() => setShowOnboarding(true)}
           className="opacity-60 hover:opacity-100"
@@ -142,6 +155,25 @@ export default function App() {
         <button onClick={leave} className="opacity-50 underline">{t.leave}</button>
       </div>
     </>
+  );
+}
+
+function LocalePicker({ locale, onChange }: { locale: string; onChange: (l: any) => void }) {
+  const current = LOCALES.find((l) => l.code === locale) ?? LOCALES[0]!;
+  return (
+    <select
+      aria-label="Language"
+      value={locale}
+      onChange={(e) => onChange(e.target.value)}
+      className="bg-transparent text-xs opacity-70 hover:opacity-100 cursor-pointer"
+    >
+      {LOCALES.map((l) => (
+        <option key={l.code} value={l.code} className="bg-slate-900 text-white">
+          {l.flag} {l.label}
+        </option>
+      ))}
+      <option hidden value={current.code}>{current.flag}</option>
+    </select>
   );
 }
 

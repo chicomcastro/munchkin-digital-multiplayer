@@ -202,7 +202,7 @@ export function PlayerView({
         </div>
       )}
 
-      <main className="flex-1 px-3 space-y-3">
+      <main id="main-content" className="flex-1 px-3 space-y-3">
         <div>
           <div className="text-xs uppercase opacity-60 mb-1">{t.hand} ({hand.length})</div>
           <div className="flex gap-2 overflow-x-auto scroll-thin pb-2 -mx-1 px-1">
@@ -272,8 +272,45 @@ export function PlayerView({
                   {sellPicker.has(selectedCardObj.id) ? t.unmarkForSale : t.markForSale} ({selectedCardObj.value}gp)
                 </button>
               )}
+              {/* Fist deposit: any door card can be reserved when the mechanic is on. */}
+              {state.config.fistMechanicEnabled && selectedCardObj.deck === 'door' && me.fistCards.length < 3 && (
+                <button
+                  className="btn col-span-2"
+                  onClick={() => emit('fist:deposit', { cardId: selectedCardObj.id })
+                    .then(() => setSelectedCard(null))
+                    .catch((e) => alert(e.message))}
+                >
+                  ✊ {t.reserveInFist}
+                </button>
+              )}
             </div>
           </div>
+        )}
+
+        {/* Class abilities panel — shown when the player has an active class and the context is right. */}
+        {me.class && (
+          <AbilitiesPanel
+            klass={me.class.name}
+            inCombat={inCombat}
+            combatHasUndead={!!combat?.monsters.some((m) => (m.tags ?? []).includes('undead'))}
+            opponents={opponents}
+            hand={hand}
+            onSteal={(targetId) => emit('game:stealItem', { targetId }).catch((e) => alert(e.message))}
+            onClericCharge={(ids) => emit('game:clericVsUndead', { cardIds: ids }).catch((e) => alert(e.message))}
+            onWizardCharm={(ids) => emit('game:wizardCharm', { cardIds: ids }).catch((e) => alert(e.message))}
+            stealingEnabled={!state.config.noStealing}
+          />
+        )}
+
+        {/* Dual-character swap, when configured. */}
+        {state.config.twoPlayerDualCharacter && (me.characters?.length ?? 0) > 0 && (
+          <button
+            type="button"
+            className="btn w-full text-sm"
+            onClick={() => emit('game:swapCharacter', { alternateIdx: 0 }).catch((e) => alert(e.message))}
+          >
+            🔄 {t.swapCharacter} (nv {me.characters![0]!.level})
+          </button>
         )}
 
         {sellPicker.size > 0 && (
@@ -387,6 +424,124 @@ export function PlayerView({
       </footer>
     </div>
   );
+}
+
+function AbilitiesPanel({
+  klass,
+  inCombat,
+  combatHasUndead,
+  opponents,
+  hand,
+  onSteal,
+  onClericCharge,
+  onWizardCharm,
+  stealingEnabled,
+}: {
+  klass: string;
+  inCombat: boolean;
+  combatHasUndead: boolean;
+  opponents: { id: string; name: string; color: string }[];
+  hand: Card[];
+  onSteal: (targetId: string) => void;
+  onClericCharge: (cardIds: string[]) => void;
+  onWizardCharm: (cardIds: string[]) => void;
+  stealingEnabled: boolean;
+}) {
+  const [stealMode, setStealMode] = useState(false);
+  const [chargePicker, setChargePicker] = useState<Set<string>>(new Set());
+
+  function toggleCharge(id: string) {
+    const next = new Set(chargePicker);
+    next.has(id) ? next.delete(id) : next.add(id);
+    setChargePicker(next);
+  }
+
+  if (klass === 'Thief' && stealingEnabled) {
+    return (
+      <div className="card-shell p-3 anim-slide-in">
+        {!stealMode ? (
+          <button className="btn w-full" onClick={() => setStealMode(true)}>🥷 {t.steal}</button>
+        ) : (
+          <div>
+            <div className="text-sm opacity-70 mb-2">{t.stealFrom}</div>
+            <div className="grid grid-cols-2 gap-1">
+              {opponents.map((o) => (
+                <button key={o.id} className="btn text-sm" style={{ borderLeft: `4px solid ${o.color}` }} onClick={() => { onSteal(o.id); setStealMode(false); }}>
+                  {o.name}
+                </button>
+              ))}
+              <button className="btn text-xs col-span-2" onClick={() => setStealMode(false)}>{t.cancel}</button>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  if (klass === 'Cleric' && inCombat && combatHasUndead) {
+    return (
+      <div className="card-shell p-3 anim-slide-in">
+        <div className="text-sm font-bold mb-2">⚡ {t.cleric}</div>
+        <div className="text-xs opacity-70 mb-2">Selecione cartas da mão pra descartar (+3 por carta).</div>
+        <div className="flex gap-1 overflow-x-auto scroll-thin">
+          {hand.map((c) => (
+            <button
+              key={c.id}
+              type="button"
+              onClick={() => toggleCharge(c.id)}
+              className={[
+                'text-xs px-2 py-1 rounded whitespace-nowrap',
+                chargePicker.has(c.id) ? 'bg-amber-500 text-slate-950 font-bold' : 'bg-slate-700 text-white',
+              ].join(' ')}
+            >
+              {c.name}
+            </button>
+          ))}
+        </div>
+        <button
+          className="btn-primary w-full mt-2 text-sm"
+          disabled={chargePicker.size === 0}
+          onClick={() => { onClericCharge([...chargePicker]); setChargePicker(new Set()); }}
+        >
+          +{3 * chargePicker.size}
+        </button>
+      </div>
+    );
+  }
+
+  if (klass === 'Wizard' && inCombat) {
+    const enough = chargePicker.size >= 3;
+    return (
+      <div className="card-shell p-3 anim-slide-in">
+        <div className="text-sm font-bold mb-2">🪄 {t.wizard}</div>
+        <div className="text-xs opacity-70 mb-2">Selecione 3 cartas pra fugir sem coisa ruim.</div>
+        <div className="flex gap-1 overflow-x-auto scroll-thin">
+          {hand.map((c) => (
+            <button
+              key={c.id}
+              type="button"
+              onClick={() => toggleCharge(c.id)}
+              className={[
+                'text-xs px-2 py-1 rounded whitespace-nowrap',
+                chargePicker.has(c.id) ? 'bg-amber-500 text-slate-950 font-bold' : 'bg-slate-700 text-white',
+              ].join(' ')}
+            >
+              {c.name}
+            </button>
+          ))}
+        </div>
+        <button
+          className="btn-primary w-full mt-2 text-sm"
+          disabled={!enough}
+          onClick={() => { onWizardCharm([...chargePicker]); setChargePicker(new Set()); }}
+        >
+          {chargePicker.size}/3
+        </button>
+      </div>
+    );
+  }
+
+  return null;
 }
 
 function DeckBox({

@@ -231,4 +231,22 @@ describe('createServer — socket flow', () => {
     await expect(rpc(c, 'game:stealItem', { targetId: 'x' })).rejects.toThrow(/not in a room/i);
     c.disconnect();
   });
+
+  it('persists rooms when a repository is supplied', async () => {
+    // Spin up an isolated server with an in-memory repo.
+    const { InMemoryRoomRepository } = await import('./persistence/in-memory.js');
+    const repo = new InMemoryRoomRepository();
+    const { createServer } = await import('./server.js');
+    const handle2 = createServer({ clientUrl: '*', repository: repo });
+    await new Promise<void>((res) => handle2.http.listen(0, () => res()));
+    const addr = handle2.http.address() as { port: number };
+    const url2 = `http://localhost:${addr.port}`;
+    const a = ioc(url2, { transports: ['websocket'], forceNew: true });
+    await new Promise<void>((r) => { a.once('connect', () => r()); });
+    const create = await rpc(a, 'room:create', { name: 'A', config: { playerCount: 2 } });
+    await wait(700); // wait past the 500ms debounce
+    expect(await repo.load(create.roomCode)).not.toBeNull();
+    a.disconnect();
+    await handle2.close();
+  }, 10000);
 });

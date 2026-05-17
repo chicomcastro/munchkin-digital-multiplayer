@@ -14,6 +14,9 @@ export default defineConfig({
         'src/test-helpers.ts',
         'src/types.ts',
         'src/index.ts',
+        // Optional infrastructure — only fully exercised with live credentials.
+        'src/persistence/firestore.ts',
+        'src/analytics.ts',
       ],
       thresholds: {
         lines: 90,
