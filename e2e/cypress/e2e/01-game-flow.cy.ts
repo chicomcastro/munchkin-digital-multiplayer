@@ -17,8 +17,11 @@ describe('Munchkin — full game flow', () => {
   it('walks through Home → Lobby → PlayerView → BoardView', () => {
     cy.visit('/');
     cy.cleanState();
-    // Pre-mark onboarding seen so it doesn't cover the home for this flow.
-    cy.window().then((w) => w.localStorage.setItem('munchkin:onboarding', '1'));
+    // Pre-mark onboarding seen + force PT-BR (Chrome headless detects en-US).
+    cy.window().then((w) => {
+      w.localStorage.setItem('munchkin:onboarding', '1');
+      w.localStorage.setItem('munchkin:locale', 'pt-BR');
+    });
     cy.reload();
 
     // ----- Home -----
@@ -109,6 +112,7 @@ describe('Munchkin — full game flow', () => {
   it('shows the onboarding modal on first visit', () => {
     cy.visit('/');
     cy.cleanState();
+    cy.window().then((w) => w.localStorage.setItem('munchkin:locale', 'pt-BR'));
     cy.reload();
     cy.contains(/Bem-vindo ao Munchkin/i).should('be.visible');
     cy.snapshot('13-onboarding-step-1');
@@ -142,7 +146,10 @@ describe('Munchkin — full game flow', () => {
   it('language picker switches strings live', () => {
     cy.visit('/');
     cy.cleanState();
-    cy.window().then((w) => w.localStorage.setItem('munchkin:onboarding', '1'));
+    cy.window().then((w) => {
+      w.localStorage.setItem('munchkin:onboarding', '1');
+      w.localStorage.setItem('munchkin:locale', 'pt-BR');
+    });
     cy.reload();
 
     cy.contains('Criar sala').should('be.visible');
@@ -160,7 +167,10 @@ describe('Munchkin — full game flow', () => {
   it('deep-link prefills the join code field', () => {
     cy.visit('/?code=MNK-XYZ');
     cy.cleanState();
-    cy.window().then((w) => w.localStorage.setItem('munchkin:onboarding', '1'));
+    cy.window().then((w) => {
+      w.localStorage.setItem('munchkin:onboarding', '1');
+      w.localStorage.setItem('munchkin:locale', 'pt-BR');
+    });
     cy.visit('/?code=MNK-XYZ');
     cy.get('input[placeholder="MNK-XXX"]').should('have.value', 'MNK-XYZ');
     cy.snapshot('19-home-deep-link');
