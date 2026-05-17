@@ -147,6 +147,12 @@ export function createServer(opts: { clientUrl?: string } = {}): ServerHandle {
     socket.on('fist:playCard', (p: { cardId: string; targetCombat: boolean }, cb) =>
       withRoom(cb, (r, pid) => r.playFist(pid, p.cardId, p.targetCombat))
     );
+    socket.on('room:toggleReady', (p: { ready: boolean }, cb) =>
+      withRoom(cb, (r, pid) => r.setReady(pid, p.ready))
+    );
+    socket.on('game:stealItem', (p: { targetId: string }, cb) =>
+      withRoom(cb, (r, pid) => r.stealItem(pid, p.targetId))
+    );
 
     socket.on('disconnect', () => {
       if (!bound) return;

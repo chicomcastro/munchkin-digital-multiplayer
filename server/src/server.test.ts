@@ -218,4 +218,17 @@ describe('createServer — socket flow', () => {
     a.disconnect();
     b.disconnect();
   });
+
+  it('room:toggleReady reaches the server', async () => {
+    const a = await connect();
+    await rpc(a, 'room:create', { name: 'A', config: { playerCount: 2 } });
+    await rpc(a, 'room:toggleReady', { ready: true });
+    a.disconnect();
+  });
+
+  it('game:stealItem before room exists is rejected', async () => {
+    const c = await connect();
+    await expect(rpc(c, 'game:stealItem', { targetId: 'x' })).rejects.toThrow(/not in a room/i);
+    c.disconnect();
+  });
 });

@@ -148,6 +148,66 @@ export const t = {
   race: 'Raça',
   klass: 'Classe',
   equipped: 'Equipado',
+
+  // Foundation additions
+  pasteCode: 'Colar',
+  pasted: 'Colado!',
+  brandTagline: 'Saqueia. Sobe de nível. Apunhala teus amigos.',
+  ready: 'Pronto',
+  notReady: 'Aguardando',
+  toggleReady: 'Marcar como pronto',
+  toggleNotReady: 'Marcar como não pronto',
+
+  // Toasts / event banners
+  youGotCard: (name: string) => `Você ganhou ${name}`,
+  youLeveledUp: (n: number) => `Subiu para o nível ${n}!`,
+  youDied: 'Você morreu — renasceu com uma nova mão.',
+  combatWon: (name: string) => `Derrotou ${name}!`,
+  combatLost: (name: string) => `${name} te derrotou.`,
+  gameWon: (name: string) => `${name} venceu o jogo!`,
+
+  // Card preview
+  expandCard: 'Toque pra ampliar',
+  closePreview: 'Fechar',
+
+  // Death feedback
+  deathBanner: 'Você morreu!',
+  deathSub: 'Suas coisas viraram pó. Você renasce no nível 1 com uma nova mão.',
+
+  // Sounds
+  soundOn: 'Som ligado',
+  soundOff: 'Som mudo',
+  toggleSound: 'Alternar som',
+
+  // Onboarding
+  onboardingSkip: 'Pular',
+  onboardingNext: 'Próximo',
+  onboardingDone: 'Começar',
+  onboardingTitle1: 'Bem-vindo ao Munchkin!',
+  onboardingBody1: 'Um RPG cartesiano de baralho: você saqueia masmorras, sobe de nível, equipa itens absurdos e tenta chegar ao nível alvo antes dos outros (ou contra um chefão, no modo cooperativo).',
+  onboardingTitle2: 'O turno tem fases',
+  onboardingBody2: '1. **Chutar a porta** — vira a carta do topo do baralho de Portas. Se for monstro, combate começa. 2. **Procurar encrenca ou Saquear** — joga um monstro da mão ou compra uma carta. 3. **Caridade** — descarta se a mão tiver mais de 5.',
+  onboardingTitle3: 'Combate é matemática',
+  onboardingBody3: 'Seu nível + bônus de itens vs. nível do monstro. Empate o monstro vence (salvo classes). Cartas de poção/ajudante mudam o total. Se perder, pode fugir num d6 (5+) ou levar a Coisa Ruim.',
+  onboardingHelp: 'Ajuda',
+
+  // Empty-state flavor
+  emptyEquipped: 'Pelado como um Halfling sem botas',
+  emptyDiscardDoor: 'Porta nunca virada',
+  emptyDiscardTreasure: 'Baú vazio',
+  emptyNoCombat: 'A masmorra está silenciosa…',
+  emptyHand: 'Sem cartas — chuta uma porta!',
+  emptyOpponents: 'Sem inimigos à vista',
+
+  // Buttons icons (emoji wrappers for clarity)
+  iconKick: '🚪',
+  iconLoot: '💰',
+  iconListen: '👂',
+  iconEndTurn: '⏭️',
+  iconFlee: '💨',
+  iconResolve: '⚔️',
+  iconHelp: '🤝',
+  iconShare: '📤',
 };
 
 export type CardTypeLabel = 'monster' | 'curse' | 'race' | 'class' | 'item' | 'oneShot' | 'levelUp' | 'helper';

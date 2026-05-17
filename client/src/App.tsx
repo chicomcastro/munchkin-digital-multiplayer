@@ -5,6 +5,8 @@ import { PlayerView } from './screens/PlayerView';
 import { BoardView } from './screens/BoardView';
 import { useGameState } from './hooks/useGameState';
 import { emit, useSocket } from './hooks/useSocket';
+import { useSounds } from './hooks/useSounds';
+import { Onboarding, shouldShowOnboarding } from './components/Onboarding';
 import { t } from './i18n';
 
 interface Session {
@@ -24,12 +26,27 @@ function loadSession(): Session | null {
   }
 }
 
+function readDeepLinkCode(): string | null {
+  try {
+    const params = new URLSearchParams(window.location.search);
+    const raw = params.get('code') ?? params.get('room');
+    if (!raw) return null;
+    const code = raw.toUpperCase().trim();
+    return /^MNK-[A-Z0-9]{3}$/.test(code) ? code : null;
+  } catch {
+    return null;
+  }
+}
+
 export default function App() {
   const { connected } = useSocket();
   const { state, hand, fist, errorMsg } = useGameState();
   const [session, setSession] = useState<Session | null>(() => loadSession());
   const [boardMode, setBoardMode] = useState(false);
   const [reconnecting, setReconnecting] = useState(false);
+  const [deepLinkCode] = useState<string | null>(() => (loadSession() ? null : readDeepLinkCode()));
+  const sound = useSounds();
+  const [showOnboarding, setShowOnboarding] = useState<boolean>(() => shouldShowOnboarding());
 
   // Persist session on changes
   useEffect(() => {
@@ -59,8 +76,17 @@ export default function App() {
   if (!session) {
     return (
       <>
-        <Home onJoined={onJoined} />
+        <Home onJoined={onJoined} prefilledCode={deepLinkCode} />
         {!connected && <ConnectingBanner />}
+        <Onboarding open={showOnboarding} onClose={() => setShowOnboarding(false)} />
+        <button
+          onClick={() => setShowOnboarding(true)}
+          className="fixed top-2 right-2 z-50 text-xs opacity-60 hover:opacity-100"
+          aria-label={t.onboardingHelp}
+          title={t.onboardingHelp}
+        >
+          ❓
+        </button>
       </>
     );
   }
@@ -83,7 +109,7 @@ export default function App() {
   } else if (boardMode) {
     screen = <BoardView state={state} onPlayerMode={() => setBoardMode(false)} />;
   } else {
-    screen = <PlayerView state={state} hand={hand} fist={fist} myId={session.playerId} onBoardMode={() => setBoardMode(true)} />;
+    screen = <PlayerView state={state} hand={hand} fist={fist} myId={session.playerId} onBoardMode={() => setBoardMode(true)} sound={sound} />;
   }
 
   return (
@@ -95,7 +121,26 @@ export default function App() {
         </div>
       )}
       {!connected && <ConnectingBanner />}
-      <button onClick={leave} className="fixed top-2 right-2 text-xs opacity-50 underline z-50">{t.leave}</button>
+      <Onboarding open={showOnboarding} onClose={() => setShowOnboarding(false)} />
+      <div className="fixed top-2 right-2 z-50 flex items-center gap-3 text-xs">
+        <button
+          onClick={() => setShowOnboarding(true)}
+          className="opacity-60 hover:opacity-100"
+          aria-label={t.onboardingHelp}
+          title={t.onboardingHelp}
+        >
+          ❓
+        </button>
+        <button
+          onClick={sound.toggle}
+          className="opacity-60 hover:opacity-100"
+          aria-label={t.toggleSound}
+          title={sound.enabled ? t.soundOn : t.soundOff}
+        >
+          {sound.enabled ? '🔊' : '🔇'}
+        </button>
+        <button onClick={leave} className="opacity-50 underline">{t.leave}</button>
+      </div>
     </>
   );
 }

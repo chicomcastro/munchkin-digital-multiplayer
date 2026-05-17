@@ -337,4 +337,34 @@ describe('Lobby', () => {
     await waitFor(() => expect(share).toHaveBeenCalled());
     delete (navigator as any).share;
   });
+
+  it('ready toggle emits room:toggleReady', async () => {
+    mockSocket.queueAck('room:toggleReady', { ok: true });
+    const state = makeState({ phase: 'lobby', players: [makePlayer({ id: 'p1', ready: false })] });
+    render(<Lobby state={state} myId="p1" onBoardMode={vi.fn()} />);
+    fireEvent.click(screen.getByRole('button', { name: t.toggleReady }));
+    await waitFor(() => {
+      const last = mockSocket.lastEmit('room:toggleReady');
+      expect(last?.payload.ready).toBe(true);
+    });
+  });
+
+  it('shows Pronto badge for ready players', () => {
+    const state = makeState({
+      phase: 'lobby',
+      players: [
+        makePlayer({ id: 'p1', name: 'Alice', ready: true }),
+        makePlayer({ id: 'p2', name: 'Bob', ready: false }),
+      ],
+    });
+    render(<Lobby state={state} myId="p1" onBoardMode={vi.fn()} />);
+    expect(screen.getByText(new RegExp(t.ready))).toBeInTheDocument();
+    expect(screen.getByText(t.notReady)).toBeInTheDocument();
+  });
+
+  it('ready button text flips after marking ready', () => {
+    const state = makeState({ phase: 'lobby', players: [makePlayer({ id: 'p1', ready: true })] });
+    render(<Lobby state={state} myId="p1" onBoardMode={vi.fn()} />);
+    expect(screen.getByRole('button', { name: t.toggleNotReady })).toBeInTheDocument();
+  });
 });

@@ -51,7 +51,7 @@ describe('App', () => {
       mockSocket.serverEmit('game:stateUpdate', makeState({ phase: 'playing' }));
       mockSocket.serverEmit('game:yourHand', { hand: [makeCard()], fist: [] });
     });
-    await waitFor(() => expect(screen.getByText(t.kickDoor)).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText(new RegExp(t.kickDoor))).toBeInTheDocument());
   });
 
   it('toggles to BoardView and back', async () => {
@@ -62,11 +62,11 @@ describe('App', () => {
       mockSocket.serverEmit('game:stateUpdate', makeState({ phase: 'playing' }));
       mockSocket.serverEmit('game:yourHand', { hand: [], fist: [] });
     });
-    await waitFor(() => expect(screen.getByText(t.kickDoor)).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText(new RegExp(t.kickDoor))).toBeInTheDocument());
     fireEvent.click(screen.getByRole('button', { name: new RegExp(t.boardMode, 'i') }));
     await waitFor(() => expect(screen.getByRole('button', { name: new RegExp(t.playerMode, 'i') })).toBeInTheDocument());
     fireEvent.click(screen.getByRole('button', { name: new RegExp(t.playerMode, 'i') }));
-    await waitFor(() => expect(screen.getByText(t.kickDoor)).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText(new RegExp(t.kickDoor))).toBeInTheDocument());
   });
 
   it('shows error toast when error event fires', async () => {
@@ -89,7 +89,7 @@ describe('App', () => {
       mockSocket.serverEmit('game:stateUpdate', makeState({ phase: 'playing' }));
       mockSocket.serverEmit('game:yourHand', { hand: [], fist: [] });
     });
-    await waitFor(() => expect(screen.getByText(t.kickDoor)).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText(new RegExp(t.kickDoor))).toBeInTheDocument());
     fireEvent.click(screen.getByText(t.leave));
     expect(window.location.reload).toHaveBeenCalled();
   });
@@ -107,5 +107,65 @@ describe('App', () => {
     localStorage.setItem('munchkin:session', 'not-json');
     render(<App />);
     expect(screen.getByText('Munchkin')).toBeInTheDocument();
+  });
+
+  it('shows onboarding modal on first visit and hides after dismiss', () => {
+    render(<App />);
+    expect(screen.getByText(t.onboardingTitle1)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: t.onboardingSkip }));
+    expect(screen.queryByText(t.onboardingTitle1)).not.toBeInTheDocument();
+  });
+
+  it('hides onboarding when localStorage flag is set', () => {
+    localStorage.setItem('munchkin:onboarding', '1');
+    render(<App />);
+    expect(screen.queryByText(t.onboardingTitle1)).not.toBeInTheDocument();
+  });
+
+  it('help button re-opens onboarding from the home screen', () => {
+    localStorage.setItem('munchkin:onboarding', '1');
+    render(<App />);
+    fireEvent.click(screen.getByRole('button', { name: t.onboardingHelp }));
+    expect(screen.getByText(t.onboardingTitle1)).toBeInTheDocument();
+  });
+
+  it('uses ?code= from the URL as a deep-link', () => {
+    const orig = window.location;
+    Object.defineProperty(window, 'location', {
+      configurable: true,
+      value: { ...orig, search: '?code=MNK-XYZ', reload: vi.fn() },
+    });
+    render(<App />);
+    const input = screen.getByPlaceholderText(t.roomCodePlaceholder) as HTMLInputElement;
+    expect(input.value).toBe('MNK-XYZ');
+    // restore
+    Object.defineProperty(window, 'location', { configurable: true, value: orig });
+  });
+
+  it('ignores ?code= when it does not match the MNK-XXX pattern', () => {
+    const orig = window.location;
+    Object.defineProperty(window, 'location', {
+      configurable: true,
+      value: { ...orig, search: '?code=garbage', reload: vi.fn() },
+    });
+    render(<App />);
+    const input = screen.getByPlaceholderText(t.roomCodePlaceholder) as HTMLInputElement;
+    expect(input.value).toBe('');
+    Object.defineProperty(window, 'location', { configurable: true, value: orig });
+  });
+
+  it('sound toggle button starts as 🔇 and flips to 🔊', () => {
+    localStorage.setItem('munchkin:session', JSON.stringify({ roomCode: 'MNK-AAA', playerId: 'p1', name: 'Alice' }));
+    localStorage.setItem('munchkin:onboarding', '1');
+    mockSocket.queueAck('room:join', { ok: true, roomCode: 'MNK-AAA', playerId: 'p1' });
+    render(<App />);
+    act(() => {
+      mockSocket.serverEmit('game:stateUpdate', makeState({ phase: 'playing' }));
+      mockSocket.serverEmit('game:yourHand', { hand: [], fist: [] });
+    });
+    const muted = screen.getByRole('button', { name: t.toggleSound });
+    expect(muted.textContent).toContain('🔇');
+    fireEvent.click(muted);
+    expect(screen.getByRole('button', { name: t.toggleSound }).textContent).toContain('🔊');
   });
 });

@@ -3,6 +3,7 @@ import type { GameState } from '../types';
 import { PlayerStatus } from '../components/PlayerStatus';
 import { CombatArena } from '../components/CombatArena';
 import { CardView } from '../components/Card';
+import { Confetti } from '../components/Confetti';
 import { t } from '../i18n';
 
 export function BoardView({ state, onPlayerMode }: { state: GameState; onPlayerMode: () => void }) {
@@ -36,22 +37,35 @@ export function BoardView({ state, onPlayerMode }: { state: GameState; onPlayerM
   return (
     <div className="min-h-screen p-4 grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-4">
       <div className="space-y-4">
-        <div className="card-shell p-4 flex items-center justify-between">
-          <div>
-            <div className="text-xs uppercase opacity-60">{t.room} {state.roomCode} · {t.turn} {state.turn} · {state.turnPhase}</div>
-            <div className="text-3xl font-bold">
-              {t.active2} <span style={{ color: activePlayer?.color }}>{activePlayer?.name ?? '—'}</span>
+        <div className="card-shell p-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="text-xs uppercase opacity-60">{t.room} {state.roomCode} · {t.turn} {state.turn} · {state.turnPhase}</div>
+              <div className="text-3xl font-bold">
+                {t.active2} <span style={{ color: activePlayer?.color }}>{activePlayer?.name ?? '—'}</span>
+              </div>
+            </div>
+            <div className="flex flex-col items-end gap-1">
+              {secondsLeft != null && (
+                <div className={['text-xl font-bold', secondsLeft < 10 ? 'text-red-400' : ''].join(' ')}>
+                  ⏱ {secondsLeft}s
+                </div>
+              )}
+              {globalLeft != null && <div className="text-sm opacity-70">{t.globalTimer} {globalLeft}</div>}
+              <button className="btn text-xs" onClick={onPlayerMode}>{t.playerMode.toLowerCase()}</button>
             </div>
           </div>
-          <div className="flex flex-col items-end gap-1">
-            {secondsLeft != null && (
-              <div className={['text-xl font-bold', secondsLeft < 10 ? 'text-red-400' : ''].join(' ')}>
-                ⏱ {secondsLeft}s
-              </div>
-            )}
-            {globalLeft != null && <div className="text-sm opacity-70">{t.globalTimer} {globalLeft}</div>}
-            <button className="btn text-xs" onClick={onPlayerMode}>{t.playerMode.toLowerCase()}</button>
-          </div>
+          {state.config.turnTimerSeconds && secondsLeft != null && (
+            <div className="mt-2 h-1.5 bg-slate-800 rounded-full overflow-hidden">
+              <div
+                className={[
+                  'h-full transition-all duration-500',
+                  secondsLeft < 10 ? 'bg-red-500' : 'bg-amber-400',
+                ].join(' ')}
+                style={{ width: `${Math.max(0, Math.min(100, (secondsLeft / state.config.turnTimerSeconds) * 100))}%` }}
+              />
+            </div>
+          )}
         </div>
 
         {state.config.variant === 'cooperative' && (
@@ -85,7 +99,7 @@ export function BoardView({ state, onPlayerMode }: { state: GameState; onPlayerM
         {combat ? (
           <div className="anim-slide-in"><CombatArena combat={combat} players={state.players} /></div>
         ) : (
-          <div className="card-shell p-3 text-center text-sm opacity-60">{t.noActiveCombat}</div>
+          <div className="card-shell p-3 text-center text-sm opacity-60 italic">{t.emptyNoCombat}</div>
         )}
 
         {state.config.marketEnabled && state.market.length > 0 && (
@@ -106,14 +120,18 @@ export function BoardView({ state, onPlayerMode }: { state: GameState; onPlayerM
         </div>
 
         {state.phase === 'ended' && (
-          <div className="card-shell p-6 text-center anim-fade">
-            <div className="text-3xl font-bold text-amber-400 mb-2">{t.gameOver}</div>
-            {state.winnerId ? (
-              <div>{t.winner}: {state.players.find((p) => p.id === state.winnerId)?.name}</div>
-            ) : (
-              <div className="opacity-70">{state.log[state.log.length - 1]?.text}</div>
-            )}
-          </div>
+          <>
+            <div className="card-shell p-6 text-center anim-fade">
+              <div className="text-6xl mb-2" aria-hidden="true">🏆</div>
+              <div className="text-3xl font-bold text-amber-400 mb-2">{t.gameOver}</div>
+              {state.winnerId ? (
+                <div className="text-xl">{t.winner}: <span className="font-bold">{state.players.find((p) => p.id === state.winnerId)?.name}</span></div>
+              ) : (
+                <div className="opacity-70">{state.log[state.log.length - 1]?.text}</div>
+              )}
+            </div>
+            <Confetti trigger={1} count={40} />
+          </>
         )}
       </div>
 

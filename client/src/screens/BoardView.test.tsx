@@ -19,9 +19,9 @@ describe('BoardView', () => {
     expect(screen.getAllByText('Alice').length).toBeGreaterThan(0);
   });
 
-  it('shows "No active combat" placeholder when none', () => {
+  it('shows a flavorful no-combat placeholder when none', () => {
     render(<BoardView state={makeState()} onPlayerMode={vi.fn()} />);
-    expect(screen.getByText(t.noActiveCombat)).toBeInTheDocument();
+    expect(screen.getByText(t.emptyNoCombat)).toBeInTheDocument();
   });
 
   it('renders the combat arena when combat is active', () => {
@@ -104,7 +104,8 @@ describe('BoardView', () => {
     const state = makeState({ phase: 'ended', winnerId: 'p1' });
     render(<BoardView state={state} onPlayerMode={vi.fn()} />);
     expect(screen.getByText(t.gameOver)).toBeInTheDocument();
-    expect(screen.getByText(new RegExp(`${t.winner}: Alice`))).toBeInTheDocument();
+    expect(screen.getByText(new RegExp(t.winner))).toBeInTheDocument();
+    expect(screen.getAllByText('Alice').length).toBeGreaterThan(0);
   });
 
   it('shows ended state with no winner uses last log entry', () => {
@@ -137,6 +138,17 @@ describe('BoardView', () => {
     expect(screen.getByText(/\d+s/)).toBeInTheDocument();
     act(() => { vi.advanceTimersByTime(1500); });
     expect(screen.getByText(/\d+s/)).toBeInTheDocument();
+  });
+
+  it('renders a turn timer progress bar when configured', () => {
+    const state = makeState({
+      config: makeConfig({ turnTimerSeconds: 30 }),
+      turnTimerEndsAt: Date.now() + 15_000,
+    });
+    const { container } = render(<BoardView state={state} onPlayerMode={vi.fn()} />);
+    // The progress bar is rendered with `width: NN%`
+    const bar = Array.from(container.querySelectorAll('div')).find((el) => /width:/.test(el.getAttribute('style') ?? ''));
+    expect(bar).toBeTruthy();
   });
 
   it('global timer ticks and renders M:SS', () => {
