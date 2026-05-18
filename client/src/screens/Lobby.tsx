@@ -49,7 +49,7 @@ export function Lobby({
   }
 
   return (
-    <div className="min-h-screen pb-24 p-4 space-y-4 max-w-2xl mx-auto">
+    <div className="min-h-screen pb-28 p-4 pt-12 space-y-4 max-w-2xl mx-auto">
       <div className="card-shell p-4 flex items-center justify-between gap-3 anim-fade">
         <div className="min-w-0">
           <div className="text-xs uppercase opacity-60">{t.room}</div>
@@ -275,7 +275,7 @@ export function Lobby({
       {me && !me.socketId && <div className="text-red-400 text-center">{t.disconnectedLabel}</div>}
 
       {/* Sticky footer — primary action stays in reach without scrolling */}
-      <div className="fixed bottom-0 inset-x-0 bg-gradient-to-t from-slate-950 via-slate-950/95 to-transparent p-4 pt-8 z-30">
+      <div className="fixed bottom-0 inset-x-0 z-30 bg-gradient-to-t from-slate-950 via-slate-950/95 to-transparent p-4 pt-8 backdrop-blur-sm border-t border-slate-800/50 shadow-[0_-16px_32px_-16px_rgba(0,0,0,0.7)]">
         <div className="max-w-2xl mx-auto">
           {isCreator ? (
             <button

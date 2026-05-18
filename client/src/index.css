@@ -1,9 +1,11 @@
 @import 'tailwindcss';
 
 @theme {
-  --color-munchkin-bg: #0f172a;
-  --color-munchkin-card: #1e293b;
-  --color-munchkin-gold: #f59e0b;
+  --color-munchkin-bg: #0b1120;
+  --color-munchkin-surface: #1c2433;
+  --color-munchkin-surface-2: #232f44;
+  --color-munchkin-border: #334155;
+  --color-munchkin-gold: #fbbf24;
   --color-munchkin-blood: #b91c1c;
 }
 
@@ -16,23 +18,54 @@ html, body, #root {
   -webkit-tap-highlight-color: transparent;
 }
 
+/* Page canvas: deep navy with a faint warm glow up top — gives the dark
+   theme a bit of soul without the colors feeling random. */
+body {
+  background:
+    radial-gradient(60% 40% at 50% -10%, rgba(251, 191, 36, 0.10), transparent 70%),
+    radial-gradient(50% 35% at 100% 110%, rgba(124, 58, 237, 0.08), transparent 70%),
+    #0b1120;
+  color: #e2e8f0;
+  min-height: 100vh;
+}
+
+/* Screen wrapper — leaves room for the 40px fixed AppBar on top. */
+.screen-root {
+  padding-top: 2.5rem;
+}
+
 .btn {
   @apply px-4 py-3 rounded-xl bg-slate-700 hover:bg-slate-600 active:bg-slate-800 text-white font-medium disabled:opacity-40 disabled:cursor-not-allowed transition-colors;
 }
 
 .btn-primary {
-  @apply px-4 py-3 rounded-xl bg-amber-500 hover:bg-amber-400 active:bg-amber-600 text-slate-950 font-bold disabled:opacity-40 disabled:cursor-not-allowed transition-colors;
+  @apply px-4 py-3 rounded-xl bg-amber-400 hover:bg-amber-300 active:bg-amber-500 text-slate-950 font-bold disabled:opacity-40 disabled:cursor-not-allowed transition-colors shadow-md shadow-amber-500/20;
 }
 
 .btn-danger {
   @apply px-4 py-3 rounded-xl bg-red-600 hover:bg-red-500 text-white font-medium disabled:opacity-40 disabled:cursor-not-allowed transition-colors;
 }
 
+/* Card shell — slightly lifted, soft border, mild glow on hover via parent. */
 .card-shell {
-  @apply rounded-2xl bg-slate-800/80 border border-slate-700 shadow-lg;
+  @apply rounded-2xl bg-slate-800/70 border border-slate-700/60 shadow-lg shadow-black/20;
 }
 
-/* Custom scrollbar — replaces native chrome with a subtle bar */
+/* Sticky footer — dark glass + upward shadow so it visibly hovers above content. */
+.sticky-footer {
+  position: sticky;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 30;
+  background: linear-gradient(180deg, rgba(11, 17, 32, 0.85), rgba(11, 17, 32, 0.98));
+  backdrop-filter: blur(10px);
+  border-top: 1px solid rgba(148, 163, 184, 0.18);
+  box-shadow: 0 -16px 32px -16px rgba(0, 0, 0, 0.7);
+  padding: 0.75rem;
+}
+
+/* Custom scrollbar */
 .scroll-thin::-webkit-scrollbar { height: 6px; width: 6px; }
 .scroll-thin::-webkit-scrollbar-track { background: transparent; }
 .scroll-thin::-webkit-scrollbar-thumb { background: rgba(148, 163, 184, 0.3); border-radius: 9999px; }
@@ -70,8 +103,8 @@ html, body, #root {
   animation: pulseActive 1.8s ease-in-out infinite;
 }
 @keyframes pulseActive {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.55); }
-  50% { box-shadow: 0 0 0 6px rgba(245, 158, 11, 0); }
+  0%, 100% { box-shadow: 0 0 0 0 rgba(251, 191, 36, 0.55); }
+  50% { box-shadow: 0 0 0 6px rgba(251, 191, 36, 0); }
 }
 
 .anim-fade {
@@ -92,7 +125,6 @@ html, body, #root {
   100% { transform: translateY(110vh) rotate(720deg); opacity: 0.4; }
 }
 
-/* Monster cards drop in from above when combat begins. */
 .anim-card-fly {
   animation: cardFly 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) both;
   transform-origin: center top;
@@ -112,15 +144,12 @@ html, body, #root {
   }
 }
 
-/* Generic accessibility focus styles — all interactive elements gain
-   a visible amber ring on keyboard focus. */
 :focus-visible {
-  outline: 3px solid rgba(245, 158, 11, 0.7);
+  outline: 3px solid rgba(251, 191, 36, 0.7);
   outline-offset: 2px;
   border-radius: 8px;
 }
 
-/* sr-only utility from Tailwind, just in case. */
 .sr-only {
   position: absolute;
   width: 1px;
