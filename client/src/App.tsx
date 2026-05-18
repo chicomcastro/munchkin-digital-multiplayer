@@ -8,7 +8,8 @@ import { emit, useSocket } from './hooks/useSocket';
 import { useSounds } from './hooks/useSounds';
 import { useLocale } from './hooks/useLocale';
 import { Onboarding, shouldShowOnboarding } from './components/Onboarding';
-import { t, LOCALES } from './i18n';
+import { AppBar } from './components/AppBar';
+import { t } from './i18n';
 import { trackHomeViewed } from './analytics';
 
 interface Session {
@@ -51,19 +52,16 @@ export default function App() {
   const [locale, setLocaleHook] = useLocale();
   const [showOnboarding, setShowOnboarding] = useState<boolean>(() => shouldShowOnboarding());
 
-  // Track home-viewed on first mount only (no-op without VITE_AMPLITUDE_KEY).
   useEffect(() => {
     if (!session) trackHomeViewed({ has_deep_link: deepLinkCode != null });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Persist session on changes
   useEffect(() => {
     if (session) localStorage.setItem(SESSION_KEY, JSON.stringify(session));
     else localStorage.removeItem(SESSION_KEY);
   }, [session]);
 
-  // Reconnect on socket reconnect
   useEffect(() => {
     if (!connected || !session || state) return;
     setReconnecting(true);
@@ -82,36 +80,43 @@ export default function App() {
     location.reload();
   }
 
+  // Common chrome — the AppBar at the top + onboarding modal + connecting banner.
+  const chrome = (
+    <>
+      {!connected && <ConnectingBanner />}
+      <Onboarding open={showOnboarding} onClose={() => setShowOnboarding(false)} />
+      <AppBar
+        locale={locale}
+        onLocale={setLocaleHook}
+        soundEnabled={sound.enabled}
+        onToggleSound={sound.toggle}
+        onOpenHelp={() => setShowOnboarding(true)}
+        onLeave={session ? leave : undefined}
+      />
+    </>
+  );
+
   if (!session) {
     return (
       <>
         <Home onJoined={onJoined} prefilledCode={deepLinkCode} />
-        {!connected && <ConnectingBanner />}
-        <Onboarding open={showOnboarding} onClose={() => setShowOnboarding(false)} />
-        <div className="fixed top-2 right-2 z-50 flex items-center gap-3 text-xs">
-          <LocalePicker locale={locale} onChange={setLocaleHook} />
-          <button
-            onClick={() => setShowOnboarding(true)}
-            className="opacity-60 hover:opacity-100"
-            aria-label={t.onboardingHelp}
-            title={t.onboardingHelp}
-          >
-            ❓
-          </button>
-        </div>
+        {chrome}
       </>
     );
   }
 
   if (!state) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="card-shell p-6 text-center anim-fade">
-          <div className="text-amber-400 font-bold mb-2">{reconnecting ? t.reconnecting : t.connecting}</div>
-          <div className="text-sm opacity-60 font-mono">{session.roomCode}</div>
-          <button className="btn mt-4" onClick={leave}>{t.leave}</button>
+      <>
+        <div className="min-h-screen flex items-center justify-center pt-12">
+          <div className="card-shell p-6 text-center anim-fade">
+            <div className="text-amber-400 font-bold mb-2">{reconnecting ? t.reconnecting : t.connecting}</div>
+            <div className="text-sm opacity-60 font-mono">{session.roomCode}</div>
+            <button className="btn mt-4" onClick={leave}>{t.leave}</button>
+          </div>
         </div>
-      </div>
+        {chrome}
+      </>
     );
   }
 
@@ -128,58 +133,26 @@ export default function App() {
     <>
       {screen}
       {errorMsg && (
-        <div className="fixed bottom-4 left-1/2 -translate-x-1/2 bg-red-700/90 text-white px-4 py-2 rounded-xl shadow-lg z-50 anim-slide-in">
+        <div
+          role="alert"
+          aria-live="polite"
+          className="fixed bottom-4 left-1/2 -translate-x-1/2 bg-red-700/95 text-white px-4 py-2 rounded-xl shadow-lg z-50 anim-slide-in"
+        >
           {errorMsg}
         </div>
       )}
-      {!connected && <ConnectingBanner />}
-      <Onboarding open={showOnboarding} onClose={() => setShowOnboarding(false)} />
-      <div className="fixed top-2 right-2 z-50 flex items-center gap-3 text-xs">
-        <LocalePicker locale={locale} onChange={setLocaleHook} />
-        <button
-          onClick={() => setShowOnboarding(true)}
-          className="opacity-60 hover:opacity-100"
-          aria-label={t.onboardingHelp}
-          title={t.onboardingHelp}
-        >
-          ❓
-        </button>
-        <button
-          onClick={sound.toggle}
-          className="opacity-60 hover:opacity-100"
-          aria-label={t.toggleSound}
-          title={sound.enabled ? t.soundOn : t.soundOff}
-        >
-          {sound.enabled ? '🔊' : '🔇'}
-        </button>
-        <button onClick={leave} className="opacity-50 underline">{t.leave}</button>
-      </div>
+      {chrome}
     </>
-  );
-}
-
-function LocalePicker({ locale, onChange }: { locale: string; onChange: (l: any) => void }) {
-  const current = LOCALES.find((l) => l.code === locale) ?? LOCALES[0]!;
-  return (
-    <select
-      aria-label="Language"
-      value={locale}
-      onChange={(e) => onChange(e.target.value)}
-      className="bg-transparent text-xs opacity-70 hover:opacity-100 cursor-pointer"
-    >
-      {LOCALES.map((l) => (
-        <option key={l.code} value={l.code} className="bg-slate-900 text-white">
-          {l.flag} {l.label}
-        </option>
-      ))}
-      <option hidden value={current.code}>{current.flag}</option>
-    </select>
   );
 }
 
 function ConnectingBanner() {
   return (
-    <div className="fixed top-0 inset-x-0 bg-red-700/90 text-white text-center text-xs py-1 z-50">
+    <div
+      role="status"
+      aria-live="polite"
+      className="fixed top-10 inset-x-0 bg-red-700/95 text-white text-center text-xs py-1 z-50"
+    >
       {t.disconnectedBanner}
     </div>
   );

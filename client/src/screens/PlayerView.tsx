@@ -141,8 +141,8 @@ export function PlayerView({
   }, [sellPicker, hand, me]);
 
   return (
-    <div className="min-h-screen flex flex-col">
-      <header className="card-shell m-3 p-3 anim-fade" style={{ borderTop: `4px solid ${me.color}` }}>
+    <div className="min-h-screen flex flex-col screen-root">
+      <header className="card-shell mx-3 mt-3 p-3 anim-fade" style={{ borderTop: `4px solid ${me.color}` }}>
         <div className="flex justify-between items-baseline gap-3">
           <div className="min-w-0">
             <div className="text-xs opacity-60 truncate">{t.room} {state.roomCode} · {t.turn} {state.turn}</div>
@@ -202,7 +202,7 @@ export function PlayerView({
         </div>
       )}
 
-      <main id="main-content" className="flex-1 px-3 space-y-3">
+      <main id="main-content" className="flex-1 px-3 pb-6 space-y-3">
         <div>
           <div className="text-xs uppercase opacity-60 mb-1">{t.hand} ({hand.length})</div>
           <div className="flex gap-2 overflow-x-auto scroll-thin pb-2 -mx-1 px-1">
@@ -392,8 +392,8 @@ export function PlayerView({
       <DeathBanner trigger={deathTrigger} />
       <Confetti trigger={confettiTrigger} />
 
-      <footer className="card-shell m-3 p-3 sticky bottom-0">
-        <div className="grid grid-cols-2 gap-2">
+      <footer className="sticky-footer">
+        <div className="grid grid-cols-2 gap-2 max-w-2xl mx-auto">
           {state.turnPhase === 'turnStart' && state.config.listeningAtTheDoor && (
             <button className="btn" disabled={!active} onClick={() => emit('game:listenDoor').catch((e) => alert(e.message))}>
               {t.iconListen} {t.listen}
