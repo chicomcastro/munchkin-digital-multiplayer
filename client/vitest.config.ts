@@ -20,6 +20,8 @@ export default defineConfig({
         'src/main.tsx',
         'src/vite-env.d.ts',
         'src/types.ts',
+        // Optional infrastructure — lazy-loaded; only exercises with a real key.
+        'src/analytics.ts',
       ],
       thresholds: {
         lines: 90,

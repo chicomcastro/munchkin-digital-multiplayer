@@ -206,4 +206,93 @@ describe('PlayerView', () => {
     renderView(state, []);
     expect(screen.getByText('Old Sword')).toBeInTheDocument();
   });
+
+  it('shows the Fist deposit button when a door card is selected and mechanic is on', async () => {
+    mockSocket.queueAck('fist:deposit', { ok: true });
+    const doorCard = makeCard({ type: 'race', deck: 'door', name: 'Elf', slot: undefined, bonus: undefined, value: undefined });
+    const state = makeState({ config: { ...makeState().config, fistMechanicEnabled: true } });
+    renderView(state, [doorCard]);
+    fireEvent.click(screen.getByText('Elf'));
+    const fistBtn = await screen.findByRole('button', { name: new RegExp(t.reserveInFist) });
+    fireEvent.click(fistBtn);
+    await waitFor(() => expect(mockSocket.lastEmit('fist:deposit')).toBeTruthy());
+  });
+
+  it('shows the Thief steal button only for Thieves', () => {
+    const me = { ...makeState().players[0]!, class: makeCard({ type: 'class', deck: 'door', name: 'Thief' }) };
+    const state = makeState({ players: [me, makeState().players[1]!] });
+    renderView(state, []);
+    expect(screen.getByRole('button', { name: new RegExp(t.steal) })).toBeInTheDocument();
+  });
+
+  it('Thief steal asks for a target and emits game:stealItem', async () => {
+    mockSocket.queueAck('game:stealItem', { ok: true });
+    const me = { ...makeState().players[0]!, class: makeCard({ type: 'class', deck: 'door', name: 'Thief' }) };
+    const state = makeState({ players: [me, makeState().players[1]!] });
+    renderView(state, []);
+    fireEvent.click(screen.getByRole('button', { name: new RegExp(t.steal) }));
+    fireEvent.click(screen.getByRole('button', { name: 'Bob' }));
+    await waitFor(() => {
+      expect(mockSocket.lastEmit('game:stealItem')?.payload.targetId).toBe('p2');
+    });
+  });
+
+  it('Thief steal cancellable from target selection', () => {
+    const me = { ...makeState().players[0]!, class: makeCard({ type: 'class', deck: 'door', name: 'Thief' }) };
+    const state = makeState({ players: [me, makeState().players[1]!] });
+    renderView(state, []);
+    fireEvent.click(screen.getByRole('button', { name: new RegExp(t.steal) }));
+    fireEvent.click(screen.getByRole('button', { name: t.cancel }));
+    expect(screen.getByRole('button', { name: new RegExp(t.steal) })).toBeInTheDocument();
+  });
+
+  it('Cleric panel shows when in combat with undead and emits clericVsUndead', async () => {
+    mockSocket.queueAck('game:clericVsUndead', { ok: true });
+    const me = { ...makeState().players[0]!, class: makeCard({ type: 'class', deck: 'door', name: 'Cleric' }) };
+    const combat = makeCombat({
+      attackerId: 'p1',
+      monsters: [makeCard({ type: 'monster', deck: 'door', name: 'Undead Horse', level: 4, tags: ['undead'] })],
+    });
+    const state = makeState({ players: [me, makeState().players[1]!], combatState: combat, turnPhase: 'combat' });
+    const discardCard = makeCard({ id: 'c-1', name: 'Discard Me' });
+    renderView(state, [discardCard]);
+    expect(screen.getAllByText(/Clérigo/).length).toBeGreaterThan(0);
+    fireEvent.click(screen.getByRole('button', { name: 'Discard Me' }));
+    fireEvent.click(screen.getByRole('button', { name: /\+3/ }));
+    await waitFor(() => expect(mockSocket.lastEmit('game:clericVsUndead')).toBeTruthy());
+  });
+
+  it('Wizard panel emits wizardCharm when 3 cards selected', async () => {
+    mockSocket.queueAck('game:wizardCharm', { ok: true });
+    const me = { ...makeState().players[0]!, class: makeCard({ type: 'class', deck: 'door', name: 'Wizard' }) };
+    const combat = makeCombat({ attackerId: 'p1' });
+    const state = makeState({ players: [me, makeState().players[1]!], combatState: combat, turnPhase: 'combat' });
+    const hand = [makeCard({ id: 'w1', name: 'W1' }), makeCard({ id: 'w2', name: 'W2' }), makeCard({ id: 'w3', name: 'W3' })];
+    renderView(state, hand);
+    fireEvent.click(screen.getByRole('button', { name: 'W1' }));
+    fireEvent.click(screen.getByRole('button', { name: 'W2' }));
+    fireEvent.click(screen.getByRole('button', { name: 'W3' }));
+    fireEvent.click(screen.getByRole('button', { name: '3/3' }));
+    await waitFor(() => expect(mockSocket.lastEmit('game:wizardCharm')).toBeTruthy());
+  });
+
+  it('Dual-character swap button emits swapCharacter', async () => {
+    mockSocket.queueAck('game:swapCharacter', { ok: true });
+    const me = {
+      ...makeState().players[0]!,
+      characters: [{
+        level: 3, hand: [], equipped: [], carried: [], race: null, class: null, combatPower: 3,
+      }],
+    };
+    const state = makeState({
+      players: [me, makeState().players[1]!],
+      config: { ...makeState().config, twoPlayerDualCharacter: true },
+    });
+    renderView(state, []);
+    fireEvent.click(screen.getByRole('button', { name: new RegExp(t.swapCharacter) }));
+    await waitFor(() => {
+      const last = mockSocket.lastEmit('game:swapCharacter');
+      expect(last?.payload.alternateIdx).toBe(0);
+    });
+  });
 });

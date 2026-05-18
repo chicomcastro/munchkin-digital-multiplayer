@@ -17,8 +17,11 @@ describe('Munchkin — full game flow', () => {
   it('walks through Home → Lobby → PlayerView → BoardView', () => {
     cy.visit('/');
     cy.cleanState();
-    // Pre-mark onboarding seen so it doesn't cover the home for this flow.
-    cy.window().then((w) => w.localStorage.setItem('munchkin:onboarding', '1'));
+    // Pre-mark onboarding seen + force PT-BR (Chrome headless detects en-US).
+    cy.window().then((w) => {
+      w.localStorage.setItem('munchkin:onboarding', '1');
+      w.localStorage.setItem('munchkin:locale', 'pt-BR');
+    });
     cy.reload();
 
     // ----- Home -----
@@ -109,6 +112,7 @@ describe('Munchkin — full game flow', () => {
   it('shows the onboarding modal on first visit', () => {
     cy.visit('/');
     cy.cleanState();
+    cy.window().then((w) => w.localStorage.setItem('munchkin:locale', 'pt-BR'));
     cy.reload();
     cy.contains(/Bem-vindo ao Munchkin/i).should('be.visible');
     cy.snapshot('13-onboarding-step-1');
@@ -123,7 +127,10 @@ describe('Munchkin — full game flow', () => {
   it('Home: validates name and room code', () => {
     cy.visit('/');
     cy.cleanState();
-    cy.window().then((w) => w.localStorage.setItem('munchkin:onboarding', '1'));
+    cy.window().then((w) => {
+      w.localStorage.setItem('munchkin:onboarding', '1');
+      w.localStorage.setItem('munchkin:locale', 'pt-BR');
+    });
     cy.reload();
 
     cy.contains('button', 'Criar sala').click();
@@ -134,5 +141,38 @@ describe('Munchkin — full game flow', () => {
     cy.contains('button', 'Entrar na sala').click();
     cy.contains(/digite o código/i).should('be.visible');
     cy.snapshot('12-home-code-error');
+  });
+
+  it('language picker switches strings live', () => {
+    cy.visit('/');
+    cy.cleanState();
+    cy.window().then((w) => {
+      w.localStorage.setItem('munchkin:onboarding', '1');
+      w.localStorage.setItem('munchkin:locale', 'pt-BR');
+    });
+    cy.reload();
+
+    cy.contains('Criar sala').should('be.visible');
+    cy.snapshot('16-home-pt');
+
+    cy.get('select[aria-label="Language"]').select('en');
+    cy.contains('Create room').should('be.visible');
+    cy.snapshot('17-home-en');
+
+    cy.get('select[aria-label="Language"]').select('es');
+    cy.contains('Crear sala').should('be.visible');
+    cy.snapshot('18-home-es');
+  });
+
+  it('deep-link prefills the join code field', () => {
+    cy.visit('/?code=MNK-XYZ');
+    cy.cleanState();
+    cy.window().then((w) => {
+      w.localStorage.setItem('munchkin:onboarding', '1');
+      w.localStorage.setItem('munchkin:locale', 'pt-BR');
+    });
+    cy.visit('/?code=MNK-XYZ');
+    cy.get('input[placeholder="MNK-XXX"]').should('have.value', 'MNK-XYZ');
+    cy.snapshot('19-home-deep-link');
   });
 });

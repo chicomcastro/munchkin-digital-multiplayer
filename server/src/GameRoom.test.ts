@@ -1236,3 +1236,282 @@ describe('GameRoom — stealItem', () => {
     expect(() => r.stealItem(a.id, a.id)).toThrow(/not running/i);
   });
 });
+
+describe('GameRoom — passive abilities', () => {
+  function basicRoom() {
+    const { room, players } = buildTestRoom({
+      players: 2,
+      doors: Array.from({ length: 10 }, () => monster()),
+      treasures: Array.from({ length: 10 }, () => item()),
+    });
+    room.start();
+    return { room, players };
+  }
+
+  it('Elf gets +1 to combat power passively', () => {
+    const { room, players } = basicRoom();
+    const before = players[0]!.combatPower;
+    players[0]!.race = race({ name: 'Elf' });
+    (room as any).recomputePower(players[0]!);
+    expect(players[0]!.combatPower).toBe(before + 1);
+  });
+
+  it('Orc gets +1 only when armed', () => {
+    const { room, players } = basicRoom();
+    players[0]!.race = race({ name: 'Orc' });
+    (room as any).recomputePower(players[0]!);
+    const withoutWeapon = players[0]!.combatPower;
+    players[0]!.equipped = [item({ slot: 'hand', bonus: 0 })];
+    (room as any).recomputePower(players[0]!);
+    expect(players[0]!.combatPower).toBe(withoutWeapon + 1);
+  });
+
+  it('Warrior wins on ties', () => {
+    // Monster level 1, player level 1 (would normally lose).
+    const m = monster({ level: 1, levelsAwarded: 1 });
+    const { room, players } = buildTestRoom({
+      players: 2,
+      doors: [m],
+      treasures: Array.from({ length: 10 }, () => item()),
+    });
+    room.start();
+    players[0]!.class = clazz({ name: 'Warrior' });
+    (room as any).recomputePower(players[0]!);
+    room.kickDoor(players[0]!.id);
+    room.resolveCombat(players[0]!.id);
+    expect(room.combatState!.result).toBe('victory');
+  });
+
+  it('Warrior gets +1 to combat power passively', () => {
+    const { room, players } = basicRoom();
+    const before = players[0]!.combatPower;
+    players[0]!.class = clazz({ name: 'Warrior' });
+    (room as any).recomputePower(players[0]!);
+    expect(players[0]!.combatPower).toBe(before + 1);
+  });
+
+  it('Elf gets +100 gold bonus on sell', () => {
+    const { room, players } = basicRoom();
+    players[0]!.race = race({ name: 'Elf' });
+    // 900 worth of items → with +100 bonus = 1000 = 1 level
+    players[0]!.equipped = [item({ value: 900 })];
+    const before = players[0]!.level;
+    room.sellItems(players[0]!.id, players[0]!.equipped.map((c) => c.id));
+    expect(players[0]!.level).toBe(before + 1);
+  });
+
+  it('Halfling doubles the first sale per turn', () => {
+    const { room, players } = basicRoom();
+    players[0]!.race = race({ name: 'Halfling' });
+    players[0]!.equipped = [item({ value: 600 })]; // doubled = 1200 → 1 level
+    const before = players[0]!.level;
+    room.sellItems(players[0]!.id, players[0]!.equipped.map((c) => c.id));
+    expect(players[0]!.level).toBe(before + 1);
+    expect(players[0]!.halflingSoldThisTurn).toBe(true);
+  });
+
+  it('Halfling second sale of the same turn is NOT doubled', () => {
+    const { room, players } = basicRoom();
+    players[0]!.race = race({ name: 'Halfling' });
+    players[0]!.equipped = [item({ value: 600 }), item({ value: 600 })];
+    // First sale: 600 * 2 = 1200 (1 level). Then second: 600 * 1 = 600 (no level).
+    room.sellItems(players[0]!.id, [players[0]!.equipped[0]!.id]);
+    expect(() =>
+      room.sellItems(players[0]!.id, [players[0]!.equipped[0]!.id]),
+    ).toThrow(/1000/);
+  });
+
+  it('Halfling flag resets on endTurn', () => {
+    const { room, players } = basicRoom();
+    players[0]!.halflingSoldThisTurn = true;
+    room.endTurn();
+    expect(players[0]!.halflingSoldThisTurn).toBe(false);
+  });
+});
+
+describe('GameRoom — Cleric and Wizard active abilities', () => {
+  function combatWithUndead(undead = true) {
+    const m = monster({
+      level: 5,
+      treasures: 2,
+      levelsAwarded: 1,
+      tags: undead ? ['undead'] : [],
+    });
+    const { room, players } = buildTestRoom({
+      players: 2,
+      doors: [m],
+      treasures: Array.from({ length: 10 }, () => item()),
+    });
+    room.start();
+    room.kickDoor(players[0]!.id);
+    return { room, players, monsterCard: m };
+  }
+
+  it('Cleric +3 vs Undead per discarded card', () => {
+    const { room, players } = combatWithUndead();
+    players[0]!.class = clazz({ name: 'Cleric' });
+    players[0]!.hand.push(item({ id: 'discard-1' }), item({ id: 'discard-2' }));
+    const beforePower = room.combatState!.playerPower;
+    room.clericVsUndead(players[0]!.id, ['discard-1', 'discard-2']);
+    expect(room.combatState!.playerPower).toBe(beforePower + 6);
+  });
+
+  it('Cleric rejects when no undead in combat', () => {
+    const { room, players } = combatWithUndead(false);
+    players[0]!.class = clazz({ name: 'Cleric' });
+    players[0]!.hand.push(item({ id: 'd-1' }));
+    expect(() => room.clericVsUndead(players[0]!.id, ['d-1'])).toThrow(/undead/i);
+  });
+
+  it('Cleric rejects non-Cleric players', () => {
+    const { room, players } = combatWithUndead();
+    expect(() => room.clericVsUndead(players[0]!.id, [])).toThrow(/Clerics/);
+  });
+
+  it('Cleric requires at least one card', () => {
+    const { room, players } = combatWithUndead();
+    players[0]!.class = clazz({ name: 'Cleric' });
+    expect(() => room.clericVsUndead(players[0]!.id, [])).toThrow(/at least one/i);
+  });
+
+  it('Cleric rejects unknown card ids', () => {
+    const { room, players } = combatWithUndead();
+    players[0]!.class = clazz({ name: 'Cleric' });
+    expect(() => room.clericVsUndead(players[0]!.id, ['nope'])).toThrow(/not in hand/i);
+  });
+
+  it('Wizard charm forces flee on the active combat', () => {
+    const { room, players } = combatWithUndead(false);
+    players[0]!.class = clazz({ name: 'Wizard' });
+    players[0]!.hand.push(item({ id: 'w-1' }), item({ id: 'w-2' }), item({ id: 'w-3' }));
+    room.wizardCharm(players[0]!.id, ['w-1', 'w-2', 'w-3']);
+    expect(room.combatState!.result).toBe('flee');
+    expect(room.turnPhase).toBe('lookForTroubleOrLoot');
+  });
+
+  it('Wizard charm requires 3 cards', () => {
+    const { room, players } = combatWithUndead();
+    players[0]!.class = clazz({ name: 'Wizard' });
+    players[0]!.hand.push(item({ id: 'w-1' }), item({ id: 'w-2' }));
+    expect(() => room.wizardCharm(players[0]!.id, ['w-1', 'w-2'])).toThrow(/3 cards/);
+  });
+
+  it('Wizard charm rejects non-Wizard players', () => {
+    const { room, players } = combatWithUndead();
+    expect(() => room.wizardCharm(players[0]!.id, [])).toThrow(/Wizards/);
+  });
+
+  it('Cleric and Wizard fail outside combat', () => {
+    const { room, players } = buildTestRoom({
+      players: 2,
+      doors: Array.from({ length: 10 }, () => race()),
+      treasures: Array.from({ length: 10 }, () => item()),
+    });
+    room.start();
+    expect(() => room.clericVsUndead(players[0]!.id, [])).toThrow(/No active combat/);
+    expect(() => room.wizardCharm(players[0]!.id, [])).toThrow(/No active combat/);
+  });
+});
+
+describe('GameRoom — Fist deposit', () => {
+  it('moves a door card from hand to the Fist reserve', () => {
+    const { room, players } = buildTestRoom({
+      players: 2,
+      config: { fistMechanicEnabled: true },
+      doors: Array.from({ length: 10 }, () => race()),
+      treasures: Array.from({ length: 10 }, () => item()),
+    });
+    room.start();
+    const doorCard = race({ name: 'Halfling' });
+    players[0]!.hand.push(doorCard);
+    room.depositFist(players[0]!.id, doorCard.id);
+    expect(players[0]!.fistCards).toContain(doorCard);
+    expect(players[0]!.hand).not.toContain(doorCard);
+  });
+
+  it('refuses to deposit treasure cards', () => {
+    const { room, players } = buildTestRoom({
+      players: 2,
+      config: { fistMechanicEnabled: true },
+      doors: Array.from({ length: 10 }, () => monster()),
+      treasures: Array.from({ length: 10 }, () => item()),
+    });
+    room.start();
+    const treasure = item();
+    players[0]!.hand.push(treasure);
+    expect(() => room.depositFist(players[0]!.id, treasure.id)).toThrow(/door cards/i);
+  });
+
+  it('refuses when Fist is full (3 cards)', () => {
+    const { room, players } = buildTestRoom({
+      players: 2,
+      config: { fistMechanicEnabled: true },
+      doors: Array.from({ length: 10 }, () => race()),
+      treasures: Array.from({ length: 10 }, () => item()),
+    });
+    room.start();
+    players[0]!.fistCards = [race(), race(), race()];
+    const extra = race();
+    players[0]!.hand.push(extra);
+    expect(() => room.depositFist(players[0]!.id, extra.id)).toThrow(/full/i);
+  });
+
+  it('refuses when mechanic is disabled', () => {
+    const { room, players } = buildTestRoom({
+      players: 2,
+      doors: Array.from({ length: 10 }, () => monster()),
+      treasures: Array.from({ length: 10 }, () => item()),
+    });
+    room.start();
+    expect(() => room.depositFist(players[0]!.id, 'x')).toThrow(/disabled/i);
+  });
+});
+
+describe('GameRoom — Dual character', () => {
+  function dualRoom() {
+    const { room, players } = buildTestRoom({
+      players: 2,
+      config: { twoPlayerDualCharacter: true },
+      doors: Array.from({ length: 10 }, () => monster()),
+      treasures: Array.from({ length: 10 }, () => item()),
+    });
+    room.start();
+    return { room, players };
+  }
+
+  it('initializes one alternate character per player at level 1', () => {
+    const { players } = dualRoom();
+    for (const p of players) {
+      expect(p.characters).toHaveLength(1);
+      expect(p.characters![0]!.level).toBe(1);
+    }
+  });
+
+  it('swap exchanges current main state with the chosen alt', () => {
+    const { room, players } = dualRoom();
+    players[0]!.level = 5;
+    players[0]!.race = race({ name: 'Elf' });
+    (room as any).recomputePower(players[0]!);
+    room.swapCharacter(players[0]!.id, 0);
+    // Now main is the alt (lv 1, no race), and the saved alt has level 5
+    expect(players[0]!.level).toBe(1);
+    expect(players[0]!.race).toBeNull();
+    expect(players[0]!.characters![0]!.level).toBe(5);
+  });
+
+  it('rejects swap when mechanic disabled', () => {
+    // Use 3 players so the Long variant's auto-dual doesn't kick in.
+    const { room, players } = buildTestRoom({
+      players: 3,
+      doors: Array.from({ length: 10 }, () => monster()),
+      treasures: Array.from({ length: 10 }, () => item()),
+    });
+    room.start();
+    expect(() => room.swapCharacter(players[0]!.id, 0)).toThrow(/disabled/i);
+  });
+
+  it('rejects an out-of-range alternate index', () => {
+    const { room, players } = dualRoom();
+    expect(() => room.swapCharacter(players[0]!.id, 5)).toThrow(/invalid alternate/i);
+  });
+});

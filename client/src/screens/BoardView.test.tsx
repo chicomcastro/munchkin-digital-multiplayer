@@ -95,9 +95,10 @@ describe('BoardView', () => {
       ],
     });
     render(<BoardView state={state} onPlayerMode={vi.fn()} />);
+    // In jsdom both the mobile grid and the xl: sidebar render — getAll is fine.
     expect(screen.getAllByText('Alice').length).toBeGreaterThan(0);
-    expect(screen.getByText('Bob')).toBeInTheDocument();
-    expect(screen.getByText('Carol')).toBeInTheDocument();
+    expect(screen.getAllByText('Bob').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('Carol').length).toBeGreaterThan(0);
   });
 
   it('shows game-over banner when phase is ended', () => {

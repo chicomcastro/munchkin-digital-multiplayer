@@ -4,22 +4,26 @@ import cors from 'cors';
 import { Server } from 'socket.io';
 import { GameRoom } from './GameRoom.js';
 import type { RoomConfig } from './types.js';
+import { makeRepository } from './persistence/firestore.js';
+import type { RoomRepository } from './persistence/repository.js';
 
 export interface ServerHandle {
   app: express.Express;
   http: http.Server;
   io: Server;
   rooms: Map<string, GameRoom>;
+  repository: RoomRepository | null;
   close: () => Promise<void>;
 }
 
-export function createServer(opts: { clientUrl?: string } = {}): ServerHandle {
+export function createServer(opts: { clientUrl?: string; repository?: RoomRepository | null } = {}): ServerHandle {
   const clientUrl = opts.clientUrl ?? '*';
   const app = express();
   app.use(cors({ origin: clientUrl === '*' ? true : clientUrl }));
   app.use(express.json());
 
   const rooms = new Map<string, GameRoom>();
+  const repository: RoomRepository | null = opts.repository ?? makeRepository();
 
   app.get('/health', (_req, res) => {
     res.json({ ok: true, rooms: rooms.size });
@@ -29,6 +33,22 @@ export function createServer(opts: { clientUrl?: string } = {}): ServerHandle {
   const io = new Server(httpServer, {
     cors: { origin: clientUrl === '*' ? true : clientUrl },
   });
+
+  // Debounce repository saves: each broadcast may be triggered by quick
+  // sequences of mutations; we only want to persist once per ~500ms.
+  const saveTimers = new Map<string, NodeJS.Timeout>();
+  function schedulePersist(room: GameRoom) {
+    if (!repository) return;
+    const existing = saveTimers.get(room.code);
+    if (existing) clearTimeout(existing);
+    const t = setTimeout(() => {
+      saveTimers.delete(room.code);
+      // Fire-and-forget; errors are logged inside the repository impls.
+      void repository.save(room);
+    }, 500);
+    t.unref?.();
+    saveTimers.set(room.code, t);
+  }
 
   function broadcastRoom(code: string) {
     const room = rooms.get(code);
@@ -43,6 +63,22 @@ export function createServer(opts: { clientUrl?: string } = {}): ServerHandle {
         });
       }
     }
+    schedulePersist(room);
+  }
+
+  /** Look up a room — if not in memory, try restoring from the repository. */
+  async function findOrLoadRoom(code: string): Promise<GameRoom | null> {
+    const existing = rooms.get(code);
+    if (existing) return existing;
+    if (!repository) return null;
+    const snap = await repository.load(code);
+    if (!snap) return null;
+    const revived = new GameRoom(snap.config as any);
+    Object.assign(revived, { code: snap.code });
+    revived.hydrate(snap as any);
+    rooms.set(code, revived);
+    attachRoomBroadcast(revived);
+    return revived;
   }
 
   function attachRoomBroadcast(room: GameRoom) {
@@ -67,10 +103,10 @@ export function createServer(opts: { clientUrl?: string } = {}): ServerHandle {
       }
     });
 
-    socket.on('room:join', (payload: { roomCode: string; name: string; playerId?: string }, cb?: (r: any) => void) => {
+    socket.on('room:join', async (payload: { roomCode: string; name: string; playerId?: string }, cb?: (r: any) => void) => {
       try {
         const code = payload.roomCode.toUpperCase().trim();
-        const room = rooms.get(code);
+        const room = await findOrLoadRoom(code);
         if (!room) throw new Error('Room not found.');
         let player;
         if (payload.playerId) {
@@ -153,6 +189,18 @@ export function createServer(opts: { clientUrl?: string } = {}): ServerHandle {
     socket.on('game:stealItem', (p: { targetId: string }, cb) =>
       withRoom(cb, (r, pid) => r.stealItem(pid, p.targetId))
     );
+    socket.on('game:clericVsUndead', (p: { cardIds: string[] }, cb) =>
+      withRoom(cb, (r, pid) => r.clericVsUndead(pid, p.cardIds))
+    );
+    socket.on('game:wizardCharm', (p: { cardIds: string[] }, cb) =>
+      withRoom(cb, (r, pid) => r.wizardCharm(pid, p.cardIds))
+    );
+    socket.on('fist:deposit', (p: { cardId: string }, cb) =>
+      withRoom(cb, (r, pid) => r.depositFist(pid, p.cardId))
+    );
+    socket.on('game:swapCharacter', (p: { alternateIdx: number }, cb) =>
+      withRoom(cb, (r, pid) => r.swapCharacter(pid, p.alternateIdx))
+    );
 
     socket.on('disconnect', () => {
       if (!bound) return;
@@ -166,6 +214,7 @@ export function createServer(opts: { clientUrl?: string } = {}): ServerHandle {
     http: httpServer,
     io,
     rooms,
+    repository,
     close: async () => {
       await new Promise<void>((resolve) => io.close(() => resolve()));
       await new Promise<void>((resolve) => httpServer.close(() => resolve()));

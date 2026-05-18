@@ -154,6 +154,17 @@ describe('App', () => {
     Object.defineProperty(window, 'location', { configurable: true, value: orig });
   });
 
+  it('language picker switches the locale', () => {
+    render(<App />);
+    // The picker is a select with the current locale
+    const select = screen.getByLabelText('Language') as HTMLSelectElement;
+    expect(select.value).toBe('pt-BR');
+    fireEvent.change(select, { target: { value: 'en' } });
+    // The Home title changes to English
+    expect(screen.getByText(/Digital Multiplayer/)).toBeInTheDocument();
+    fireEvent.change(select, { target: { value: 'pt-BR' } });
+  });
+
   it('sound toggle button starts as 🔇 and flips to 🔊', () => {
     localStorage.setItem('munchkin:session', JSON.stringify({ roomCode: 'MNK-AAA', playerId: 'p1', name: 'Alice' }));
     localStorage.setItem('munchkin:onboarding', '1');

@@ -4,6 +4,13 @@ import { buildDoorDeck } from './cards/doors.js';
 import { buildTreasureDeck } from './cards/treasures.js';
 import { applyVariant, defaultConfig } from './rules/variants.js';
 import { rollFlee, totals } from './rules/combat.js';
+import {
+  monsterHasTag,
+  passiveCombatBonus,
+  sellGoldBonus,
+  sellMultiplier,
+  winsTies,
+} from './rules/abilities.js';
 import type {
   Card,
   CombatState,
@@ -17,6 +24,29 @@ import type {
 import { PLAYER_COLORS } from './types.js';
 
 type Listener = (state: GameState) => void;
+
+export interface RoomSnapshotInternal {
+  code: string;
+  config: RoomConfig;
+  phase: 'lobby' | 'playing' | 'ended';
+  turnPhase: TurnPhase;
+  turn: number;
+  activePlayerId: string | null;
+  players: Player[];
+  market: Card[];
+  threatTrack: number;
+  coopMonstersDefeated: number;
+  coopBossHpRemaining: number;
+  log: LogEntry[];
+  combatState: CombatState | null;
+  winnerId: string | null;
+  doorsCards: Card[];
+  doorsDiscard: Card[];
+  treasuresCards: Card[];
+  treasuresDiscard: Card[];
+  creatorId: string | null;
+  savedAt: number;
+}
 
 function generateRoomCode(): string {
   const alpha = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
@@ -97,6 +127,57 @@ export class GameRoom {
       turnTimerEndsAt: this.turnTimerEndsAt,
       globalTimerEndsAt: this.globalTimerEndsAt,
     };
+  }
+
+  /**
+   * Full serialisable snapshot for persistence — includes private hands,
+   * decks, discards, etc. Output is intentionally a plain object.
+   */
+  serialize(): RoomSnapshotInternal {
+    return {
+      code: this.code,
+      config: this.config,
+      phase: this.phase,
+      turnPhase: this.turnPhase,
+      turn: this.turn,
+      activePlayerId: this.activePlayerId,
+      players: this.players,
+      market: this.market,
+      threatTrack: this.threatTrack,
+      coopMonstersDefeated: this.coopMonstersDefeated,
+      coopBossHpRemaining: this.coopBossHpRemaining,
+      log: this.log,
+      combatState: this.combatState,
+      winnerId: this.winnerId,
+      doorsCards: this.doors.cards,
+      doorsDiscard: this.doors.discard,
+      treasuresCards: this.treasures.cards,
+      treasuresDiscard: this.treasures.discard,
+      creatorId: (this as any).creatorId ?? null,
+      savedAt: Date.now(),
+    };
+  }
+
+  /** Inverse of serialize — replace this room's state. */
+  hydrate(snap: ReturnType<GameRoom['serialize']>) {
+    this.config = snap.config;
+    this.phase = snap.phase;
+    this.turnPhase = snap.turnPhase;
+    this.turn = snap.turn;
+    this.activePlayerId = snap.activePlayerId;
+    this.players = snap.players;
+    this.market = snap.market;
+    this.threatTrack = snap.threatTrack;
+    this.coopMonstersDefeated = snap.coopMonstersDefeated;
+    this.coopBossHpRemaining = snap.coopBossHpRemaining;
+    this.log = snap.log;
+    this.combatState = snap.combatState;
+    this.winnerId = snap.winnerId;
+    this.doors.cards = snap.doorsCards;
+    this.doors.discard = snap.doorsDiscard;
+    this.treasures.cards = snap.treasuresCards;
+    this.treasures.discard = snap.treasuresDiscard;
+    (this as any).creatorId = snap.creatorId;
   }
 
   privateHandFor(playerId: string): Card[] {
@@ -226,6 +307,18 @@ export class GameRoom {
     for (const p of this.players) {
       p.hand.push(...this.doors.drawMany(this.config.startingHandDoors));
       p.hand.push(...this.treasures.drawMany(this.config.startingHandTreasures));
+      // Dual-character mode: each player gets one stored alternate at lv 1.
+      if (this.config.twoPlayerDualCharacter) {
+        p.characters = [{
+          level: 1,
+          hand: [],
+          equipped: [],
+          carried: [],
+          race: null,
+          class: null,
+          combatPower: 1,
+        }];
+      }
     }
     if (this.config.marketEnabled) {
       this.market = this.treasures.drawMany(this.config.marketSize);
@@ -285,7 +378,7 @@ export class GameRoom {
   private recomputePower(p: Player) {
     let bonus = 0;
     for (const c of p.equipped) bonus += c.bonus ?? 0;
-    p.combatPower = p.level + bonus;
+    p.combatPower = p.level + bonus + passiveCombatBonus(p);
   }
 
   private nextActivePlayerId(): string {
@@ -547,7 +640,8 @@ export class GameRoom {
     });
     this.combatState.playerPower = t.playerSide;
     this.combatState.monsterPower = t.monsterSide;
-    const wins = t.playerSide > t.monsterSide;
+    const tieWins = winsTies(attacker) || (ally !== null && winsTies(ally));
+    const wins = tieWins ? t.playerSide >= t.monsterSide : t.playerSide > t.monsterSide;
     if (wins) {
       const monster = this.combatState.monsters[0]!;
       const lvls = monster.levelsAwarded ?? 1;
@@ -695,14 +789,23 @@ export class GameRoom {
         removed.push(c);
       }
     }
-    if (total < 1000) throw new Error('Need at least 1000 gold to sell for a level.');
+    // Race/class bonuses applied AFTER counting the raw values.
+    const firstSale = !player.halflingSoldThisTurn;
+    const multiplied = total * sellMultiplier(player, firstSale);
+    const bonusGold = sellGoldBonus(player);
+    const finalTotal = multiplied + bonusGold;
+
+    if (finalTotal < 1000) throw new Error('Need at least 1000 gold to sell for a level.');
+    if (firstSale && player.race?.name === 'Halfling') {
+      player.halflingSoldThisTurn = true;
+    }
     const removedIds = new Set(removed.map((c) => c.id));
     player.equipped = remainEquipped;
     player.carried = remainCarried;
     player.hand = player.hand.filter((c) => !removedIds.has(c.id));
     for (const c of removed) this.treasures.discardCard(c);
-    const lvls = Math.floor(total / 1000);
-    this.gainLevel(player, lvls, `sold items for ${total} gold`);
+    const lvls = Math.floor(finalTotal / 1000);
+    this.gainLevel(player, lvls, `sold items for ${finalTotal} gold`);
     this.recomputePower(player);
     this.checkVictory();
     this.emit();
@@ -719,6 +822,8 @@ export class GameRoom {
         else this.treasures.discardCard(discarded);
       }
     }
+    // Reset per-turn flags (Halfling sale double, etc.).
+    if (player) player.halflingSoldThisTurn = false;
     this.combatState = null;
     this.turnPhase = 'turnStart';
     this.turn += 1;
@@ -745,6 +850,112 @@ export class GameRoom {
     player.hand.splice(handIdx, 1, marketCard);
     this.market.splice(marketIdx, 1, handCard);
     this.write(`${player.name} traded at the market.`);
+    this.emit();
+  }
+
+  /**
+   * Cleric ability: discard up to N cards from hand to add +3 per card to the
+   * current combat's player side, ONLY if any monster in the combat is undead.
+   */
+  clericVsUndead(playerId: string, cardIds: string[]) {
+    if (!this.combatState || this.combatState.resolved) throw new Error('No active combat.');
+    const player = this.playerById(playerId);
+    if (player.class?.name !== 'Cleric') throw new Error('Only Clerics can do this.');
+    const anyUndead = this.combatState.monsters.some((m) => monsterHasTag(m, 'undead'));
+    if (!anyUndead) throw new Error('Cleric bonus requires an undead monster.');
+    if (cardIds.length === 0) throw new Error('Choose at least one card to discard.');
+    const removed: Card[] = [];
+    for (const id of cardIds) {
+      const idx = player.hand.findIndex((c) => c.id === id);
+      if (idx < 0) throw new Error('Card not in hand.');
+      removed.push(player.hand.splice(idx, 1)[0]!);
+    }
+    for (const c of removed) {
+      if (c.deck === 'door') this.doors.discardCard(c);
+      else this.treasures.discardCard(c);
+      // Synthetic card-bonus entries on player side, one per discard.
+      this.combatState.cardsPlayedThisRound.push({
+        playerId,
+        card: { ...c, combatBonus: 3, name: `${player.name}: Cleric +3 vs Undead` },
+        side: 'player',
+      });
+    }
+    this.refreshCombatTotals();
+    this.write(`${player.name} channeled holy power: +${3 * removed.length} vs Undead.`, 'combat');
+    this.emit();
+  }
+
+  /**
+   * Wizard ability: discard 3 cards from hand to charm the active monster —
+   * the combat resolves as a flee with NO bad stuff (you simply walk away).
+   */
+  wizardCharm(playerId: string, cardIds: string[]) {
+    if (!this.combatState || this.combatState.resolved) throw new Error('No active combat.');
+    const player = this.playerById(playerId);
+    if (player.class?.name !== 'Wizard') throw new Error('Only Wizards can do this.');
+    if (cardIds.length < 3) throw new Error('Wizard charm costs 3 cards.');
+    const removed: Card[] = [];
+    for (const id of cardIds.slice(0, 3)) {
+      const idx = player.hand.findIndex((c) => c.id === id);
+      if (idx < 0) throw new Error('Card not in hand.');
+      removed.push(player.hand.splice(idx, 1)[0]!);
+    }
+    for (const c of removed) {
+      if (c.deck === 'door') this.doors.discardCard(c);
+      else this.treasures.discardCard(c);
+    }
+    this.combatState.resolved = true;
+    this.combatState.result = 'flee';
+    this.write(`${player.name} charmed the monster (Wizard).`, 'combat');
+    this.discardCombat();
+    this.turnPhase = 'lookForTroubleOrLoot';
+    this.emit();
+  }
+
+  /** Reserve a card from hand into the Fist (max 3, gated by config). */
+  depositFist(playerId: string, cardId: string) {
+    if (!this.config.fistMechanicEnabled) throw new Error('Fist mechanic disabled.');
+    const player = this.playerById(playerId);
+    if (player.fistCards.length >= 3) throw new Error('Fist is full (3 cards max).');
+    const idx = player.hand.findIndex((c) => c.id === cardId);
+    if (idx < 0) throw new Error('Card not in hand.');
+    if (player.hand[idx]!.deck !== 'door') throw new Error('Only door cards can go to the Fist.');
+    const card = player.hand.splice(idx, 1)[0]!;
+    player.fistCards.push(card);
+    this.write(`${player.name} reserved ${card.name} in the Fist.`);
+    this.emit();
+  }
+
+  /**
+   * Dual-character swap: exchange the current main character's state with one
+   * of the alternates in `player.characters`. The previously-active becomes
+   * stored, and the chosen alt becomes the active main.
+   */
+  swapCharacter(playerId: string, alternateIdx: number) {
+    if (!this.config.twoPlayerDualCharacter) throw new Error('Dual character disabled.');
+    const player = this.playerById(playerId);
+    const list = player.characters ?? [];
+    if (alternateIdx < 0 || alternateIdx >= list.length) throw new Error('Invalid alternate.');
+    const alt = list[alternateIdx]!;
+    const current: typeof alt = {
+      level: player.level,
+      hand: player.hand,
+      equipped: player.equipped,
+      carried: player.carried,
+      race: player.race,
+      class: player.class,
+      combatPower: player.combatPower,
+    };
+    player.level = alt.level;
+    player.hand = alt.hand;
+    player.equipped = alt.equipped;
+    player.carried = alt.carried;
+    player.race = alt.race;
+    player.class = alt.class;
+    player.combatPower = alt.combatPower;
+    list[alternateIdx] = current;
+    this.recomputePower(player);
+    this.write(`${player.name} swapped characters.`);
     this.emit();
   }
 

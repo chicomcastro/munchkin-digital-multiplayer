@@ -35,7 +35,15 @@ export function BoardView({ state, onPlayerMode }: { state: GameState; onPlayerM
   }, [state.globalTimerEndsAt]);
 
   return (
-    <div className="min-h-screen p-4 grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-4">
+    <div id="main-content" className="min-h-screen p-4 grid grid-cols-1 lg:grid-cols-[1fr_320px] xl:grid-cols-[280px_1fr_320px] gap-4">
+      {/* Wider screens get a dedicated left column for the player roster, mimicking a
+          game table where each "seat" sits at the edge. */}
+      <aside className="hidden xl:flex xl:flex-col xl:gap-3 xl:sticky xl:top-4 xl:self-start">
+        <div className="text-xs uppercase opacity-60">{t.players}</div>
+        {state.players.map((p) => (
+          <PlayerStatus key={p.id} player={p} active={state.activePlayerId === p.id} />
+        ))}
+      </aside>
       <div className="space-y-4">
         <div className="card-shell p-4">
           <div className="flex items-center justify-between">
@@ -113,7 +121,8 @@ export function BoardView({ state, onPlayerMode }: { state: GameState; onPlayerM
           </div>
         )}
 
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+        {/* On xl: the roster moved to the left column; keep grid for sm/lg. */}
+        <div className="grid grid-cols-2 md:grid-cols-3 xl:hidden gap-3">
           {state.players.map((p) => (
             <PlayerStatus key={p.id} player={p} active={state.activePlayerId === p.id} detailed />
           ))}

@@ -40,6 +40,8 @@ export interface Card {
   combatBonus?: number;
   // Effect identifier resolved server-side
   special?: string;
+  // Free-form tags ('undead', etc) — see cards/tags.ts
+  tags?: string[];
 }
 
 export type Variant = 'quick' | 'medium' | 'long' | 'cooperative';
@@ -75,21 +77,30 @@ export interface RoomConfig {
   noDeath: boolean;
 }
 
-export interface Player {
-  id: string;
-  name: string;
-  socketId: string | null;   // null while disconnected
+export interface Munchkin {
+  // Per-character state. A normal player IS their munchkin; the dual-character
+  // mode stores the inactive alt in `Player.characters`.
   level: number;
   hand: Card[];
   equipped: Card[];
-  carried: Card[];            // items in backpack (not equipped)
+  carried: Card[];
   race: Card | null;
   class: Card | null;
-  isAlive: boolean;
   combatPower: number;
+}
+
+export interface Player extends Munchkin {
+  id: string;
+  name: string;
+  socketId: string | null;   // null while disconnected
+  isAlive: boolean;
   fistCards: Card[];
   color: string;
   ready: boolean;
+  // For Halfling first-sale-of-turn double bonus.
+  halflingSoldThisTurn?: boolean;
+  // Dual-character mode: zero or more alternate Munchkins.
+  characters?: Munchkin[];
 }
 
 export type TurnPhase =

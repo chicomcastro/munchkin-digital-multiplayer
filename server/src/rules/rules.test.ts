@@ -2,6 +2,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { applyVariant, defaultConfig } from './variants.js';
 import { computeEquippedBonus, computeMonsterPower, computePlayerCombatStrength, rollFlee, totals } from './combat.js';
 import { nextPhase, PHASE_ORDER } from './phases.js';
+import { monsterHasTag, passiveCombatBonus, sellGoldBonus, sellMultiplier, winsTies } from './abilities.js';
 import type { Card, Player } from '../types.js';
 
 function mkPlayer(over: Partial<Player> = {}): Player {
@@ -202,5 +203,35 @@ describe('phases', () => {
 
   it('nextPhase from endTurn wraps to turnStart', () => {
     expect(nextPhase('endTurn', { listening: false })).toBe('turnStart');
+  });
+});
+
+describe('abilities', () => {
+  it('passiveCombatBonus is 0 for Human/Cleric without weapons', () => {
+    const p = mkPlayer({ race: mkCard({ name: 'Human', type: 'race' }) });
+    expect(passiveCombatBonus(p)).toBe(0);
+  });
+
+  it('winsTies is false for non-Warriors', () => {
+    expect(winsTies(mkPlayer())).toBe(false);
+    expect(winsTies(mkPlayer({ class: mkCard({ name: 'Warrior', type: 'class' }) }))).toBe(true);
+  });
+
+  it('sellGoldBonus only applies to Elves', () => {
+    expect(sellGoldBonus(mkPlayer())).toBe(0);
+    expect(sellGoldBonus(mkPlayer({ race: mkCard({ name: 'Elf', type: 'race' }) }))).toBe(100);
+  });
+
+  it('sellMultiplier is 2 only for first sale of a Halfling', () => {
+    const halfling = mkPlayer({ race: mkCard({ name: 'Halfling', type: 'race' }) });
+    expect(sellMultiplier(halfling as any, true)).toBe(2);
+    expect(sellMultiplier(halfling as any, false)).toBe(1);
+    expect(sellMultiplier(mkPlayer() as any, true)).toBe(1);
+  });
+
+  it('monsterHasTag respects empty/missing tags', () => {
+    expect(monsterHasTag(mkCard({ type: 'monster' }), 'undead')).toBe(false);
+    expect(monsterHasTag(mkCard({ type: 'monster', tags: ['undead'] }), 'undead')).toBe(true);
+    expect(monsterHasTag(mkCard({ type: 'monster', tags: ['undead'] }), 'other')).toBe(false);
   });
 });

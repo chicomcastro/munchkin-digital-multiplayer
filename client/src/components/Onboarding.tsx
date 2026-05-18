@@ -9,11 +9,14 @@ interface Step {
   body: string;
 }
 
-const STEPS: Step[] = [
-  { emoji: '🎲', title: t.onboardingTitle1, body: t.onboardingBody1 },
-  { emoji: '🔁', title: t.onboardingTitle2, body: t.onboardingBody2 },
-  { emoji: '⚔️', title: t.onboardingTitle3, body: t.onboardingBody3 },
-];
+function buildSteps(): Step[] {
+  // Computed each render so the modal honors the active locale.
+  return [
+    { emoji: '🎲', title: t.onboardingTitle1, body: t.onboardingBody1 },
+    { emoji: '🔁', title: t.onboardingTitle2, body: t.onboardingBody2 },
+    { emoji: '⚔️', title: t.onboardingTitle3, body: t.onboardingBody3 },
+  ];
+}
 
 function hasSeen(): boolean {
   try { return localStorage.getItem(STORAGE_KEY) === '1'; }
@@ -37,8 +40,9 @@ export function Onboarding({ open, onClose }: { open: boolean; onClose: () => vo
   }, [open]);
 
   if (!open) return null;
-  const current = STEPS[step]!;
-  const last = step === STEPS.length - 1;
+  const steps = buildSteps();
+  const current = steps[step]!;
+  const last = step === steps.length - 1;
 
   return (
     <div
@@ -60,7 +64,7 @@ export function Onboarding({ open, onClose }: { open: boolean; onClose: () => vo
         <div className="text-sm opacity-80 mt-3 leading-relaxed text-center">{current.body}</div>
 
         <div className="flex justify-center gap-1.5 mt-5" aria-hidden="true">
-          {STEPS.map((_, i) => (
+          {steps.map((_, i) => (
             <span
               key={i}
               className={[

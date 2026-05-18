@@ -1,9 +1,6 @@
-// Central PT-BR string table. Importing components reference fields here
-// instead of inlining literals so the translation is consistent and tests
-// can compare against the same source of truth.
+import type { Translations } from './types';
 
-export const t = {
-  // Common
+export const ptBR: Translations = {
   online: 'online',
   offline: 'offline',
   none: 'nada',
@@ -14,7 +11,6 @@ export const t = {
   cancel: 'Cancelar',
   confirm: 'Confirmar',
 
-  // Home
   homeSubtitle: 'Multiplayer digital',
   yourName: 'Seu nome',
   namePlaceholder: 'Aventureiro',
@@ -26,12 +22,10 @@ export const t = {
   errChooseName: 'Escolha um nome primeiro.',
   errEnterRoomCode: 'Digite o código da sala.',
 
-  // App
   connecting: 'Conectando…',
   reconnecting: 'Reconectando…',
   disconnectedBanner: 'Desconectado — reconectando…',
 
-  // Lobby
   room: 'Sala',
   boardMode: 'Modo tabuleiro',
   playerMode: 'Modo jogador',
@@ -64,11 +58,10 @@ export const t = {
   coopRounds: 'Rodadas',
   threatTrackEnabled: 'Medidor de ameaça',
   startGame: 'Iniciar jogo',
-  waitingForHost: (host: string) => `Aguardando ${host} iniciar…`,
+  waitingForHost: (host) => `Aguardando ${host} iniciar…`,
   configReadOnly: '(somente leitura)',
   disconnectedLabel: 'Desconectado',
 
-  // Tooltips on technical fields
   tipListening: 'Compra 1 carta de Porta antes de chutar a porta.',
   tipMarket: 'Mantém N tesouros virados pra cima; jogadores podem trocar cartas da mão por equivalente valor.',
   tipFist: '3 cartas de porta ficam reservadas; podem ser usadas pra ajudar ou atacar.',
@@ -77,7 +70,6 @@ export const t = {
   tipNoDeath: 'Em vez de morrer, perde só metade dos itens equipados.',
   tipThreatTrack: 'Cada derrota empurra a barra; cheia, todos perdem.',
 
-  // PlayerView
   hand: 'Sua mão',
   fistReserve: 'Punho (reserva)',
   empty: 'vazia',
@@ -104,14 +96,19 @@ export const t = {
   markForSale: 'Marcar pra vender',
   unmarkForSale: 'Desmarcar',
   sellForLevels: 'Vender por níveis',
-  selling: (n: number) => `Vendendo ${n} ${n === 1 ? 'item' : 'itens'}`,
+  selling: (n) => `Vendendo ${n} ${n === 1 ? 'item' : 'itens'}`,
   decksLabel: 'Pilhas',
   doors: 'Portas',
   treasures: 'Tesouros',
   discard: 'Descarte',
   opponents: 'Oponentes',
+  reserveInFist: 'Reservar no Punho',
+  swapCharacter: 'Trocar personagem',
+  steal: 'Roubar item',
+  stealFrom: 'Roubar de…',
+  cleric: 'Clérigo: +3 vs Undead',
+  wizard: 'Mago: encantar (–3 cartas)',
 
-  // BoardView
   active2: 'Vez de:',
   globalTimer: 'Total',
   coopStatus: 'Status cooperativo',
@@ -125,31 +122,21 @@ export const t = {
   gameOver: 'Fim de jogo',
   winner: 'Vencedor',
 
-  // Combat arena
   combat: 'Combate',
   playerSide: 'Lado dos jogadores',
   monsterSide: 'Lado dos monstros',
   result: 'Resultado',
-  playersWinning: (diff: number) => `Jogadores ganhando (+${diff})`,
-  monstersWinning: (diff: number) => `Monstros ganhando (+${diff})`,
+  playersWinning: (diff) => `Jogadores ganhando (+${diff})`,
+  monstersWinning: (diff) => `Monstros ganhando (+${diff})`,
   pending: 'em andamento',
   victory: 'VITÓRIA',
   badStuff: 'COISA RUIM',
-  resultLabel(result: string): string {
-    switch (result) {
-      case 'victory': return this.victory;
-      case 'flee': return 'FUGA';
-      case 'badStuff': return this.badStuff;
-      default: return this.pending;
-    }
-  },
+  fugaLabel: 'FUGA',
 
-  // PlayerStatus
   race: 'Raça',
   klass: 'Classe',
   equipped: 'Equipado',
 
-  // Foundation additions
   pasteCode: 'Colar',
   pasted: 'Colado!',
   brandTagline: 'Saqueia. Sobe de nível. Apunhala teus amigos.',
@@ -158,40 +145,34 @@ export const t = {
   toggleReady: 'Marcar como pronto',
   toggleNotReady: 'Marcar como não pronto',
 
-  // Toasts / event banners
-  youGotCard: (name: string) => `Você ganhou ${name}`,
-  youLeveledUp: (n: number) => `Subiu para o nível ${n}!`,
+  youGotCard: (name) => `Você ganhou ${name}`,
+  youLeveledUp: (n) => `Subiu para o nível ${n}!`,
   youDied: 'Você morreu — renasceu com uma nova mão.',
-  combatWon: (name: string) => `Derrotou ${name}!`,
-  combatLost: (name: string) => `${name} te derrotou.`,
-  gameWon: (name: string) => `${name} venceu o jogo!`,
+  combatWon: (name) => `Derrotou ${name}!`,
+  combatLost: (name) => `${name} te derrotou.`,
+  gameWon: (name) => `${name} venceu o jogo!`,
 
-  // Card preview
   expandCard: 'Toque pra ampliar',
   closePreview: 'Fechar',
 
-  // Death feedback
   deathBanner: 'Você morreu!',
   deathSub: 'Suas coisas viraram pó. Você renasce no nível 1 com uma nova mão.',
 
-  // Sounds
   soundOn: 'Som ligado',
   soundOff: 'Som mudo',
   toggleSound: 'Alternar som',
 
-  // Onboarding
   onboardingSkip: 'Pular',
   onboardingNext: 'Próximo',
   onboardingDone: 'Começar',
   onboardingTitle1: 'Bem-vindo ao Munchkin!',
   onboardingBody1: 'Um RPG cartesiano de baralho: você saqueia masmorras, sobe de nível, equipa itens absurdos e tenta chegar ao nível alvo antes dos outros (ou contra um chefão, no modo cooperativo).',
   onboardingTitle2: 'O turno tem fases',
-  onboardingBody2: '1. **Chutar a porta** — vira a carta do topo do baralho de Portas. Se for monstro, combate começa. 2. **Procurar encrenca ou Saquear** — joga um monstro da mão ou compra uma carta. 3. **Caridade** — descarta se a mão tiver mais de 5.',
+  onboardingBody2: '1. Chutar a porta — vira a carta do topo. Se for monstro, combate começa. 2. Procurar encrenca ou Saquear. 3. Caridade — descarta se a mão tiver mais de 5.',
   onboardingTitle3: 'Combate é matemática',
   onboardingBody3: 'Seu nível + bônus de itens vs. nível do monstro. Empate o monstro vence (salvo classes). Cartas de poção/ajudante mudam o total. Se perder, pode fugir num d6 (5+) ou levar a Coisa Ruim.',
   onboardingHelp: 'Ajuda',
 
-  // Empty-state flavor
   emptyEquipped: 'Pelado como um Halfling sem botas',
   emptyDiscardDoor: 'Porta nunca virada',
   emptyDiscardTreasure: 'Baú vazio',
@@ -199,7 +180,38 @@ export const t = {
   emptyHand: 'Sem cartas — chuta uma porta!',
   emptyOpponents: 'Sem inimigos à vista',
 
-  // Buttons icons (emoji wrappers for clarity)
+  cardTypeLabels: {
+    monster: 'monstro',
+    curse: 'maldição',
+    race: 'raça',
+    class: 'classe',
+    item: 'item',
+    oneShot: 'poção',
+    levelUp: 'nível',
+    helper: 'ajudante',
+  },
+  variantLabels: {
+    quick: 'Rápida',
+    medium: 'Média',
+    long: 'Longa',
+    cooperative: 'Cooperativa',
+  },
+
+  monsterStats: (lvl, t, l) => `Nível ${lvl} · ${t} tesouros · +${l} níveis`,
+  combatBonusSuffix: 'no combate',
+  bigItemLabel: 'GRANDE',
+  slotLabel: (slot) => `Slot: ${slot}`,
+  badStuffLabel: 'Coisa ruim',
+
+  resultLabel(result) {
+    switch (result) {
+      case 'victory': return this.victory;
+      case 'flee': return this.fugaLabel;
+      case 'badStuff': return this.badStuff;
+      default: return this.pending;
+    }
+  },
+
   iconKick: '🚪',
   iconLoot: '💰',
   iconListen: '👂',
@@ -208,24 +220,4 @@ export const t = {
   iconResolve: '⚔️',
   iconHelp: '🤝',
   iconShare: '📤',
-};
-
-export type CardTypeLabel = 'monster' | 'curse' | 'race' | 'class' | 'item' | 'oneShot' | 'levelUp' | 'helper';
-
-export const cardTypeLabels: Record<CardTypeLabel, string> = {
-  monster: 'monstro',
-  curse: 'maldição',
-  race: 'raça',
-  class: 'classe',
-  item: 'item',
-  oneShot: 'poção',
-  levelUp: 'nível',
-  helper: 'ajudante',
-};
-
-export const variantLabels = {
-  quick: 'Rápida',
-  medium: 'Média',
-  long: 'Longa',
-  cooperative: 'Cooperativa',
 };
