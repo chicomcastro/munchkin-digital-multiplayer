@@ -149,48 +149,57 @@ export function PlayerView({
   return (
     <div className="min-h-screen flex flex-col screen-root">
       {/* Hero header */}
-      <header className="surface-glass mx-3 mt-1 p-2 anim-fade" style={{ borderTop: `3px solid ${me.color}` }}>
+      <header className="surface-glass mx-3 mt-1 p-3 anim-fade" style={{ borderTop: `3px solid ${me.color}` }}>
         <div className="flex justify-between items-start gap-2">
           <div className="min-w-0">
-            <div className="text-[10px] opacity-50 truncate">{t.room} {state.roomCode} · {t.turn} {state.turn}</div>
-            <div className="flex items-baseline gap-1.5">
+            <div className="text-xs opacity-60 truncate">{t.room} {state.roomCode} · {t.turn} {state.turn}</div>
+            <div className="flex items-baseline gap-2 mt-0.5">
               <span className={['text-3xl font-black text-amber-400 inline-block leading-none', pulseLevel ? 'anim-pop' : ''].join(' ')}>{me.level}</span>
-              <span className="text-xs opacity-60">{t.level}</span>
+              <span className="text-sm opacity-60">{t.level}</span>
               <span className="text-slate-400 mx-0.5">·</span>
-              <span className="text-base font-bold">{me.combatPower}</span>
-              <span className="text-xs opacity-60">{t.power}</span>
+              <span className="text-lg font-bold">{me.combatPower}</span>
+              <span className="text-sm opacity-60">{t.power}</span>
             </div>
-            <div className="flex gap-1 mt-1 flex-wrap">
-              <span className="bg-emerald-900/60 border border-emerald-700/60 text-emerald-200 text-[10px] px-1.5 py-px rounded-full">
+            <div className="flex gap-1.5 mt-1.5 flex-wrap">
+              <span className="bg-emerald-900/60 border border-emerald-700/60 text-emerald-200 text-xs px-2 py-0.5 rounded-full">
                 {me.race?.name ?? t.noRace}
               </span>
-              <span className="bg-indigo-900/60 border border-indigo-700/60 text-indigo-200 text-[10px] px-1.5 py-px rounded-full">
+              <span className="bg-indigo-900/60 border border-indigo-700/60 text-indigo-200 text-xs px-2 py-0.5 rounded-full">
                 {me.class?.name ?? t.noClass}
               </span>
             </div>
           </div>
           <div className="text-right shrink-0">
-            <div className="text-[10px] uppercase opacity-50">{active ? t.yourTurn : t.active}</div>
-            {!active && <div className="font-bold text-xs" style={{ color: activePlayer?.color }}>{activePlayer?.name}</div>}
+            <div className="text-xs uppercase opacity-60">{active ? t.yourTurn : t.active}</div>
+            {!active && <div className="font-bold text-sm" style={{ color: activePlayer?.color }}>{activePlayer?.name}</div>}
             {active && <div className="font-bold text-amber-300 anim-pulse-active rounded px-1 inline-block text-sm">●</div>}
             {secondsLeft != null && (
-              <div className={['text-xs font-bold', secondsLeft < 10 ? 'text-red-400' : ''].join(' ')}>{secondsLeft}s</div>
+              <div className={['text-sm font-bold', secondsLeft < 10 ? 'text-red-400' : ''].join(' ')}>{secondsLeft}s</div>
             )}
           </div>
         </div>
         {me.equipped.length > 0 && (
-          <div className="flex gap-1 overflow-x-auto scroll-thin mt-1.5 pb-0.5">
+          <div className="flex gap-1 overflow-x-auto scroll-thin mt-2 pb-0.5">
             {me.equipped.map((c) => (
-              <div key={c.id} className="bg-amber-900/60 border border-amber-700 px-1.5 py-0.5 rounded text-[10px] whitespace-nowrap">
+              <div key={c.id} className="bg-amber-900/60 border border-amber-700 px-2 py-0.5 rounded text-xs whitespace-nowrap">
                 {c.name} <span className="opacity-70">+{c.bonus ?? 0}</span>
               </div>
             ))}
           </div>
         )}
+        {state.config.twoPlayerDualCharacter && (me.characters?.length ?? 0) > 0 && (
+          <button
+            type="button"
+            className="mt-2 text-xs opacity-70 hover:opacity-100 transition-opacity border border-slate-600 rounded px-3 py-1"
+            onClick={() => emit('game:swapCharacter', { alternateIdx: 0 }).catch((e) => alert(e.message))}
+          >
+            🔄 {t.swapCharacter} (nv {me.characters![0]!.level})
+          </button>
+        )}
       </header>
 
       {/* Phase banner */}
-      <div className={['mx-3 mt-1 px-2 py-1.5 rounded-lg border text-xs text-center font-medium anim-fade', phaseBanner.accent].join(' ')}>
+      <div className={['mx-3 mt-1.5 px-3 py-1.5 rounded-lg border text-sm text-center font-medium anim-fade', phaseBanner.accent].join(' ')}>
         {phaseBanner.text}
       </div>
 
@@ -201,7 +210,7 @@ export function PlayerView({
           <div>
             <div className="flex items-center gap-2 mb-2">
               <div className="h-px flex-1 bg-slate-700/60" />
-              <span className="text-[10px] uppercase tracking-widest opacity-50">{t.opponents}</span>
+              <span className="text-xs uppercase tracking-widest opacity-50">{t.opponents}</span>
               <div className="h-px flex-1 bg-slate-700/60" />
             </div>
             <div className="flex gap-2 overflow-x-auto scroll-thin pb-1 justify-center">
@@ -281,23 +290,13 @@ export function PlayerView({
               />
             )}
 
-            {state.config.twoPlayerDualCharacter && (me.characters?.length ?? 0) > 0 && (
-              <button
-                type="button"
-                className="btn text-sm max-w-xs mx-auto block"
-                onClick={() => emit('game:swapCharacter', { alternateIdx: 0 }).catch((e) => alert(e.message))}
-              >
-                🔄 {t.swapCharacter} (nv {me.characters![0]!.level})
-              </button>
-            )}
-
           </div>
 
           {/* Deck sidebar — stacks vertically on desktop, inline grid on mobile */}
           <aside className="space-y-2">
             <div className="flex items-center gap-2 mb-2">
               <div className="h-px flex-1 bg-slate-700/60" />
-              <span className="text-[10px] uppercase tracking-widest opacity-50">{t.decksLabel}</span>
+              <span className="text-xs uppercase tracking-widest opacity-50">{t.decksLabel}</span>
               <div className="h-px flex-1 bg-slate-700/60" />
             </div>
             <div className="grid grid-cols-2 lg:grid-cols-1 gap-2">
@@ -396,7 +395,7 @@ export function PlayerView({
         <div>
           <div className="flex items-center gap-2 mb-2">
             <div className="h-px flex-1 bg-slate-700/60" />
-            <span className="text-[10px] uppercase tracking-widest opacity-50">{t.hand} ({hand.length})</span>
+            <span className="text-xs uppercase tracking-widest opacity-50">{t.hand} ({hand.length})</span>
             <div className="h-px flex-1 bg-slate-700/60" />
           </div>
           <div className="flex gap-2 overflow-x-auto scroll-thin pb-2 justify-center flex-wrap">
