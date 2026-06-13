@@ -6,7 +6,7 @@ import { CardView } from '../components/Card';
 import { Confetti } from '../components/Confetti';
 import { t } from '../i18n';
 
-export function BoardView({ state, onPlayerMode }: { state: GameState; onPlayerMode: () => void }) {
+export function BoardView({ state }: { state: GameState }) {
   const combat = state.combatState;
   const activePlayer = state.players.find((p) => p.id === state.activePlayerId);
   const logEnd = useRef<HTMLDivElement>(null);
@@ -60,7 +60,6 @@ export function BoardView({ state, onPlayerMode }: { state: GameState; onPlayerM
                 </div>
               )}
               {globalLeft != null && <div className="text-sm opacity-70">{t.globalTimer} {globalLeft}</div>}
-              <button className="btn text-xs" onClick={onPlayerMode}>{t.playerMode.toLowerCase()}</button>
             </div>
           </div>
           {state.config.turnTimerSeconds && secondsLeft != null && (

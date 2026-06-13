@@ -2,11 +2,6 @@ import type { LocaleCode } from '../i18n';
 import { LOCALES } from '../i18n';
 import { t } from '../i18n';
 
-/**
- * Global app bar: locale picker, help, sound, leave. Fixed at the top of
- * the viewport, full-width. Replaces the previous floating icon stack that
- * overlapped screen headers.
- */
 export function AppBar({
   locale,
   onLocale,
@@ -14,6 +9,8 @@ export function AppBar({
   onToggleSound,
   onOpenHelp,
   onLeave,
+  onToggleView,
+  viewLabel,
 }: {
   locale: LocaleCode;
   onLocale: (l: LocaleCode) => void;
@@ -21,12 +18,22 @@ export function AppBar({
   onToggleSound: () => void;
   onOpenHelp: () => void;
   onLeave?: () => void;
+  onToggleView?: () => void;
+  viewLabel?: string;
 }) {
   return (
     <div
       role="banner"
-      className="fixed top-0 inset-x-0 z-40 h-10 bg-slate-950/95 backdrop-blur-sm border-b border-slate-800 flex items-center justify-end gap-3 px-3 text-xs shadow-[0_1px_6px_rgba(251,191,36,0.08)]"
+      className="fixed top-0 inset-x-0 z-40 h-10 bg-slate-950/95 backdrop-blur-sm border-b border-slate-800 flex items-center justify-end gap-2 px-3 text-xs shadow-[0_1px_6px_rgba(251,191,36,0.08)]"
     >
+      {onToggleView && viewLabel && (
+        <button
+          onClick={onToggleView}
+          className="opacity-60 hover:opacity-100 transition-opacity mr-auto"
+        >
+          {viewLabel}
+        </button>
+      )}
       <select
         aria-label="Language"
         value={locale}
@@ -56,7 +63,7 @@ export function AppBar({
         {soundEnabled ? '🔊' : '🔇'}
       </button>
       {onLeave && (
-        <button onClick={onLeave} className="opacity-60 hover:opacity-100 underline">
+        <button onClick={onLeave} className="opacity-60 hover:opacity-100 hover:text-red-300 transition-colors">
           {t.leave}
         </button>
       )}

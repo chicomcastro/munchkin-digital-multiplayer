@@ -92,6 +92,8 @@ export default function App() {
         onToggleSound={sound.toggle}
         onOpenHelp={() => setShowOnboarding(true)}
         onLeave={session ? leave : undefined}
+        onToggleView={session && state && state.phase !== 'lobby' ? () => setBoardMode(!boardMode) : undefined}
+        viewLabel={boardMode ? t.playerMode.toLowerCase() : t.boardMode.toLowerCase()}
       />
     </>
   );
@@ -124,9 +126,9 @@ export default function App() {
   if (state.phase === 'lobby') {
     screen = <Lobby state={state} myId={session.playerId} onBoardMode={() => setBoardMode(true)} />;
   } else if (boardMode) {
-    screen = <BoardView state={state} onPlayerMode={() => setBoardMode(false)} />;
+    screen = <BoardView state={state} />;
   } else {
-    screen = <PlayerView state={state} hand={hand} fist={fist} myId={session.playerId} onBoardMode={() => setBoardMode(true)} sound={sound} />;
+    screen = <PlayerView state={state} hand={hand} fist={fist} myId={session.playerId} sound={sound} />;
   }
 
   return (

@@ -19,14 +19,12 @@ export function PlayerView({
   hand,
   fist,
   myId,
-  onBoardMode,
   sound,
 }: {
   state: GameState;
   hand: Card[];
   fist: Card[];
   myId: string;
-  onBoardMode: () => void;
   sound?: SoundHandle;
 }) {
   const me = state.players.find((p) => p.id === myId)!;
@@ -151,18 +149,18 @@ export function PlayerView({
   return (
     <div className="min-h-screen flex flex-col screen-root">
       {/* Hero header */}
-      <header className="surface-glass mx-3 mt-3 p-3 anim-fade" style={{ borderTop: `4px solid ${me.color}` }}>
-        <div className="flex justify-between items-start gap-3">
+      <header className="surface-glass mx-3 mt-1 p-3 anim-fade" style={{ borderTop: `3px solid ${me.color}` }}>
+        <div className="flex justify-between items-start gap-2">
           <div className="min-w-0">
             <div className="text-xs opacity-60 truncate">{t.room} {state.roomCode} · {t.turn} {state.turn}</div>
-            <div className="flex items-baseline gap-2 mt-1">
-              <span className={['text-4xl font-black text-amber-400 inline-block leading-none', pulseLevel ? 'anim-pop' : ''].join(' ')}>{me.level}</span>
+            <div className="flex items-baseline gap-2 mt-0.5">
+              <span className={['text-3xl font-black text-amber-400 inline-block leading-none', pulseLevel ? 'anim-pop' : ''].join(' ')}>{me.level}</span>
               <span className="text-sm opacity-60">{t.level}</span>
-              <span className="text-slate-400 mx-1">·</span>
+              <span className="text-slate-400 mx-0.5">·</span>
               <span className="text-lg font-bold">{me.combatPower}</span>
               <span className="text-sm opacity-60">{t.power}</span>
             </div>
-            <div className="flex gap-1.5 mt-2 flex-wrap">
+            <div className="flex gap-1.5 mt-1.5 flex-wrap">
               <span className="bg-emerald-900/60 border border-emerald-700/60 text-emerald-200 text-xs px-2 py-0.5 rounded-full">
                 {me.race?.name ?? t.noRace}
               </span>
@@ -174,240 +172,246 @@ export function PlayerView({
           <div className="text-right shrink-0">
             <div className="text-xs uppercase opacity-60">{active ? t.yourTurn : t.active}</div>
             {!active && <div className="font-bold text-sm" style={{ color: activePlayer?.color }}>{activePlayer?.name}</div>}
-            {active && <div className="font-bold text-amber-300 anim-pulse-active rounded px-1.5 inline-block">●</div>}
+            {active && <div className="font-bold text-amber-300 anim-pulse-active rounded px-1 inline-block text-sm">●</div>}
             {secondsLeft != null && (
               <div className={['text-sm font-bold', secondsLeft < 10 ? 'text-red-400' : ''].join(' ')}>{secondsLeft}s</div>
             )}
-            <button onClick={onBoardMode} className="text-xs underline opacity-70 mt-1 block ml-auto">{t.boardMode.toLowerCase()}</button>
           </div>
         </div>
         {me.equipped.length > 0 && (
-          <div className="flex gap-1 overflow-x-auto scroll-thin mt-2 pb-1">
+          <div className="flex gap-1 overflow-x-auto scroll-thin mt-2 pb-0.5">
             {me.equipped.map((c) => (
-              <div key={c.id} className="bg-amber-900/60 border border-amber-700 px-2 py-1 rounded text-xs whitespace-nowrap">
+              <div key={c.id} className="bg-amber-900/60 border border-amber-700 px-2 py-0.5 rounded text-xs whitespace-nowrap">
                 {c.name} <span className="opacity-70">+{c.bonus ?? 0}</span>
               </div>
             ))}
           </div>
         )}
+        {state.config.twoPlayerDualCharacter && (me.characters?.length ?? 0) > 0 && (
+          <button
+            type="button"
+            className="mt-2 text-xs opacity-70 hover:opacity-100 transition-opacity border border-slate-600 rounded px-3 py-1"
+            onClick={() => emit('game:swapCharacter', { alternateIdx: 0 }).catch((e) => alert(e.message))}
+          >
+            🔄 {t.swapCharacter} (nv {me.characters![0]!.level})
+          </button>
+        )}
       </header>
 
       {/* Phase banner */}
-      <div className={['mx-3 mt-2 px-3 py-2 rounded-lg border text-sm text-center font-medium anim-fade', phaseBanner.accent].join(' ')}>
+      <div className={['mx-3 mt-1.5 px-3 py-1.5 rounded-lg border text-sm text-center font-medium anim-fade', phaseBanner.accent].join(' ')}>
         {phaseBanner.text}
       </div>
 
-      {/* Desktop: 2-col grid. Mobile: single column via block flow. */}
-      <div className="flex-1 lg:grid lg:grid-cols-[1fr_380px] lg:gap-0">
-        <main id="main-content" className="px-3 pb-6 space-y-3 mt-3">
-          {inCombat && combat && (
-            <div className="anim-slide-in">
-              <CombatArena combat={combat} players={state.players} />
-              <div className="grid grid-cols-2 gap-2 mt-2">
-                {amInCombat ? (
-                  <>
-                    {combat.attackerId === myId && (
-                      <button className="btn-primary" onClick={() => emit('game:resolveCombat').catch((e) => alert(e.message))}>
-                        {t.iconResolve} {t.resolveCombat}
-                      </button>
-                    )}
-                    <button className="btn-danger" onClick={() => { sound?.play('flee'); emit('game:flee').catch((e) => alert(e.message)); }}>
-                      {t.iconFlee} {t.flee}
-                    </button>
-                  </>
-                ) : (
-                  !combat.alliedPlayerId && (
-                    <button className="btn col-span-2" onClick={() => emit('game:helpInCombat').catch((e) => alert(e.message))}>
-                      {t.iconHelp} {t.helpInCombat}
-                    </button>
-                  )
-                )}
-              </div>
-            </div>
-          )}
-
-          {/* Hand + card actions */}
+      {/* Table perspective: opponents (far) → board (middle) → hand (near) */}
+      <main id="main-content" className="flex-1 flex flex-col px-3 mt-2 space-y-2">
+        {/* ── FAR: opponents as Zoom-call style cards ── */}
+        {opponents.length > 0 && (
           <div>
-            <div className="text-xs uppercase opacity-60 mb-1">{t.hand} ({hand.length})</div>
-            <div className="flex gap-2 overflow-x-auto scroll-thin pb-2 -mx-1 px-1">
-              {hand.length === 0 && <div className="opacity-50 text-sm italic">{t.emptyHand}</div>}
-              {hand.map((c) => (
-                <div key={c.id} className="anim-slide-in">
-                  <CardView
-                    card={c}
-                    selected={selectedCard === c.id}
-                    onClick={() => setSelectedCard(selectedCard === c.id ? null : c.id)}
-                  />
+            <div className="flex items-center gap-2 mb-2">
+              <div className="h-px flex-1 bg-slate-700/60" />
+              <span className="text-xs uppercase tracking-widest opacity-50">{t.opponents}</span>
+              <div className="h-px flex-1 bg-slate-700/60" />
+            </div>
+            <div className="flex gap-2 overflow-x-auto scroll-thin pb-1 justify-center">
+              {opponents.map((p) => (
+                <div
+                  key={p.id}
+                  className={[
+                    'shrink-0 surface-glass px-3 py-2 min-w-[120px] max-w-[160px] text-center',
+                    !p.isAlive ? 'opacity-40' : '',
+                    state.activePlayerId === p.id ? 'ring-2 ring-amber-400' : '',
+                  ].join(' ')}
+                >
+                  <div
+                    className="w-10 h-10 rounded-full mx-auto flex items-center justify-center text-lg font-black text-white"
+                    style={{ backgroundColor: p.color }}
+                  >
+                    {p.name.charAt(0).toUpperCase()}
+                  </div>
+                  <div className="font-bold truncate text-sm mt-1">{p.name}</div>
+                  {!p.socketId && <div className="text-[10px] opacity-50">{t.offline}</div>}
+                  <div className="text-xs mt-0.5 opacity-80">
+                    <span className="text-amber-300 font-bold">{p.level}</span>
+                    <span className="opacity-50 mx-1">·</span>
+                    <span className="font-bold">{p.combatPower}</span>
+                  </div>
+                  {(p.race || p.class) && (
+                    <div className="text-[10px] opacity-50 truncate">
+                      {p.race?.name ?? '—'} / {p.class?.name ?? '—'}
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
           </div>
+        )}
 
-          {selectedCardObj && (
-            <div className="surface-glass p-3 anim-slide-in">
-              <div className="flex items-start justify-between gap-2">
-                <div>
-                  <div className="font-bold">{selectedCardObj.name}</div>
-                  <div className="text-sm opacity-80">{selectedCardObj.description}</div>
-                </div>
-                <button
-                  type="button"
-                  className="text-xs underline opacity-70 shrink-0"
-                  onClick={() => setPreviewCard(selectedCardObj)}
-                >
-                  🔍
-                </button>
-              </div>
-              <div className="grid grid-cols-2 gap-2 mt-3">
-                {(selectedCardObj.type === 'item' || selectedCardObj.type === 'race' || selectedCardObj.type === 'class' || selectedCardObj.type === 'levelUp') && (
-                  <button className="btn-primary col-span-2" onClick={() => playCard(selectedCardObj)}>
-                    {selectedCardObj.type === 'item' ? t.equip : selectedCardObj.type === 'levelUp' ? t.use : t.become}
-                  </button>
-                )}
-                {(selectedCardObj.type === 'oneShot' || selectedCardObj.type === 'helper') && (
-                  <button className="btn-primary col-span-2" disabled={!inCombat} onClick={() => playCard(selectedCardObj)}>
-                    {t.playIntoCombat}
-                  </button>
-                )}
-                {selectedCardObj.type === 'curse' && (
-                  <>
-                    {!targetMode ? (
-                      <button className="btn-danger col-span-2" onClick={() => setTargetMode(true)}>
-                        {t.castOn}
+        {/* ── MIDDLE: board center (combat, abilities) + deck sidebar ── */}
+        <div className="flex-1 lg:grid lg:grid-cols-[1fr_280px] lg:gap-4 space-y-2 lg:space-y-0">
+          <div className="space-y-2">
+            {inCombat && combat && (
+              <div className="anim-slide-in">
+                <CombatArena combat={combat} players={state.players} />
+                <div className="grid grid-cols-2 gap-2 mt-2">
+                  {amInCombat ? (
+                    <>
+                      {combat.attackerId === myId && (
+                        <button className="btn-primary" onClick={() => emit('game:resolveCombat').catch((e) => alert(e.message))}>
+                          {t.iconResolve} {t.resolveCombat}
+                        </button>
+                      )}
+                      <button className="btn-danger" onClick={() => { sound?.play('flee'); emit('game:flee').catch((e) => alert(e.message)); }}>
+                        {t.iconFlee} {t.flee}
                       </button>
-                    ) : (
-                      <div className="col-span-2 grid grid-cols-2 gap-1">
-                        {state.players.filter((p) => p.isAlive).map((p) => (
-                          <button key={p.id} className="btn text-sm" style={{ borderLeft: `4px solid ${p.color}` }} onClick={() => playCard(selectedCardObj, p.id)}>
-                            {p.name}
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                  </>
-                )}
-                {selectedCardObj.type === 'monster' && active && state.turnPhase === 'lookForTroubleOrLoot' && (
-                  <button className="btn-danger col-span-2" onClick={() => playCard(selectedCardObj)}>
-                    {t.lookForTrouble}
-                  </button>
-                )}
-                {selectedCardObj.value != null && selectedCardObj.value > 0 && (
-                  <button className="btn col-span-2" onClick={() => toggleSell(selectedCardObj.id)}>
-                    {sellPicker.has(selectedCardObj.id) ? t.unmarkForSale : t.markForSale} ({selectedCardObj.value}gp)
-                  </button>
-                )}
-                {state.config.fistMechanicEnabled && selectedCardObj.deck === 'door' && me.fistCards.length < 3 && (
-                  <button
-                    className="btn col-span-2"
-                    onClick={() => emit('fist:deposit', { cardId: selectedCardObj.id })
-                      .then(() => setSelectedCard(null))
-                      .catch((e) => alert(e.message))}
-                  >
-                    ✊ {t.reserveInFist}
-                  </button>
-                )}
+                    </>
+                  ) : (
+                    !combat.alliedPlayerId && (
+                      <button className="btn col-span-2" onClick={() => emit('game:helpInCombat').catch((e) => alert(e.message))}>
+                        {t.iconHelp} {t.helpInCombat}
+                      </button>
+                    )
+                  )}
+                </div>
               </div>
-            </div>
-          )}
+            )}
 
-          {sellPicker.size > 0 && (
-            <div className="surface-glass p-3 anim-slide-in">
-              <div className="text-sm">{t.selling(sellPicker.size)} · total {sellTotal}gp ({Math.floor(sellTotal / 1000)} níveis)</div>
-              <button className="btn-primary w-full mt-2" disabled={sellTotal < 1000} onClick={confirmSell}>{t.sellForLevels}</button>
-            </div>
-          )}
-
-          {fist.length > 0 && (
-            <div>
-              <div className="text-xs uppercase opacity-60 mb-1">{t.fistReserve}</div>
-              <div className="flex gap-2 overflow-x-auto scroll-thin">
-                {fist.map((c) => (
-                  <CardView key={c.id} card={c} compact onClick={() => emit('fist:playCard', { cardId: c.id, targetCombat: inCombat }).catch((e) => alert(e.message))} />
-                ))}
-              </div>
-            </div>
-          )}
-
-          {me.class && (
-            <AbilitiesPanel
-              klass={me.class.name}
-              inCombat={inCombat}
-              combatHasUndead={!!combat?.monsters.some((m) => (m.tags ?? []).includes('undead'))}
-              opponents={opponents}
-              hand={hand}
-              onSteal={(targetId) => emit('game:stealItem', { targetId }).catch((e) => alert(e.message))}
-              onClericCharge={(ids) => emit('game:clericVsUndead', { cardIds: ids }).catch((e) => alert(e.message))}
-              onWizardCharm={(ids) => emit('game:wizardCharm', { cardIds: ids }).catch((e) => alert(e.message))}
-              stealingEnabled={!state.config.noStealing}
-            />
-          )}
-
-          {state.config.twoPlayerDualCharacter && (me.characters?.length ?? 0) > 0 && (
-            <button
-              type="button"
-              className="btn w-full text-sm"
-              onClick={() => emit('game:swapCharacter', { alternateIdx: 0 }).catch((e) => alert(e.message))}
-            >
-              🔄 {t.swapCharacter} (nv {me.characters![0]!.level})
-            </button>
-          )}
-
-          {/* Compact opponents row */}
-          {opponents.length > 0 && (
-            <div>
-              <div className="text-xs uppercase opacity-60 mb-1">{t.opponents}</div>
-              <div className="flex gap-2 overflow-x-auto scroll-thin pb-1">
-                {opponents.map((p) => (
-                  <div
-                    key={p.id}
-                    className={[
-                      'shrink-0 rounded-xl bg-slate-900/60 border border-slate-700 px-3 py-2 min-w-[140px]',
-                      !p.isAlive ? 'opacity-40' : '',
-                      state.activePlayerId === p.id ? 'ring-2 ring-amber-400' : '',
-                    ].join(' ')}
-                    style={{ borderLeft: `4px solid ${p.color}` }}
-                  >
-                    <div className="flex items-center justify-between gap-2">
-                      <div className="font-bold truncate text-sm">{p.name}</div>
-                      {!p.socketId && <span className="text-[10px] opacity-50">{t.offline}</span>}
-                    </div>
-                    <div className="flex items-baseline gap-3 text-xs mt-0.5">
-                      <span><span className="opacity-50">{t.level}</span> <span className="text-amber-300 font-bold">{p.level}</span></span>
-                      <span><span className="opacity-50">{t.power}</span> <span className="font-bold">{p.combatPower}</span></span>
-                    </div>
-                    {(p.race || p.class) && (
-                      <div className="text-[10px] opacity-60 truncate">
-                        {p.race?.name ?? '—'} / {p.class?.name ?? '—'}
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Deck / discard summary */}
-          <div>
-            <div className="text-xs uppercase opacity-60 mb-1">{t.decksLabel}</div>
-            <div className="grid grid-cols-2 gap-2">
-              <DeckBox
-                label={t.doors}
-                size={state.doorDeckSize}
-                discard={state.doorDiscardTop}
-                accent="text-red-300"
-                emptyMsg={t.emptyDiscardDoor}
+            {me.class && (
+              <AbilitiesPanel
+                klass={me.class.name}
+                inCombat={inCombat}
+                combatHasUndead={!!combat?.monsters.some((m) => (m.tags ?? []).includes('undead'))}
+                opponents={opponents}
+                hand={hand}
+                onSteal={(targetId) => emit('game:stealItem', { targetId }).catch((e) => alert(e.message))}
+                onClericCharge={(ids) => emit('game:clericVsUndead', { cardIds: ids }).catch((e) => alert(e.message))}
+                onWizardCharm={(ids) => emit('game:wizardCharm', { cardIds: ids }).catch((e) => alert(e.message))}
+                stealingEnabled={!state.config.noStealing}
               />
-              <DeckBox
-                label={t.treasures}
-                size={state.treasureDeckSize}
-                discard={state.treasureDiscardTop}
-                accent="text-amber-300"
-                emptyMsg={t.emptyDiscardTreasure}
-              />
+            )}
+
+          </div>
+
+          {/* Deck sidebar — stacks vertically on desktop, inline grid on mobile */}
+          <aside className="space-y-2">
+            <div className="flex items-center gap-2 mb-2">
+              <div className="h-px flex-1 bg-slate-700/60" />
+              <span className="text-xs uppercase tracking-widest opacity-50">{t.decksLabel}</span>
+              <div className="h-px flex-1 bg-slate-700/60" />
+            </div>
+            <div className="grid grid-cols-2 lg:grid-cols-1 gap-2">
+              <DeckBox label={t.doors} size={state.doorDeckSize} discard={state.doorDiscardTop} accent="text-red-300" emptyMsg={t.emptyDiscardDoor} />
+              <DeckBox label={t.treasures} size={state.treasureDeckSize} discard={state.treasureDiscardTop} accent="text-amber-300" emptyMsg={t.emptyDiscardTreasure} />
+            </div>
+          </aside>
+        </div>
+
+        {/* ── NEAR: your hand (cards you're holding) ── */}
+        {selectedCardObj && (
+          <div className="surface-glass p-3 anim-slide-in max-w-lg mx-auto w-full">
+            <div className="flex items-start justify-between gap-2">
+              <div>
+                <div className="font-bold">{selectedCardObj.name}</div>
+                <div className="text-sm opacity-80">{selectedCardObj.description}</div>
+              </div>
+              <button
+                type="button"
+                className="text-xs underline opacity-70 shrink-0"
+                onClick={() => setPreviewCard(selectedCardObj)}
+              >
+                🔍
+              </button>
+            </div>
+            <div className="grid grid-cols-2 gap-2 mt-3">
+              {(selectedCardObj.type === 'item' || selectedCardObj.type === 'race' || selectedCardObj.type === 'class' || selectedCardObj.type === 'levelUp') && (
+                <button className="btn-primary col-span-2" onClick={() => playCard(selectedCardObj)}>
+                  {selectedCardObj.type === 'item' ? t.equip : selectedCardObj.type === 'levelUp' ? t.use : t.become}
+                </button>
+              )}
+              {(selectedCardObj.type === 'oneShot' || selectedCardObj.type === 'helper') && (
+                <button className="btn-primary col-span-2" disabled={!inCombat} onClick={() => playCard(selectedCardObj)}>
+                  {t.playIntoCombat}
+                </button>
+              )}
+              {selectedCardObj.type === 'curse' && (
+                <>
+                  {!targetMode ? (
+                    <button className="btn-danger col-span-2" onClick={() => setTargetMode(true)}>
+                      {t.castOn}
+                    </button>
+                  ) : (
+                    <div className="col-span-2 grid grid-cols-2 gap-1">
+                      {state.players.filter((p) => p.isAlive).map((p) => (
+                        <button key={p.id} className="btn text-sm" style={{ borderLeft: `4px solid ${p.color}` }} onClick={() => playCard(selectedCardObj, p.id)}>
+                          {p.name}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </>
+              )}
+              {selectedCardObj.type === 'monster' && active && state.turnPhase === 'lookForTroubleOrLoot' && (
+                <button className="btn-danger col-span-2" onClick={() => playCard(selectedCardObj)}>
+                  {t.lookForTrouble}
+                </button>
+              )}
+              {selectedCardObj.value != null && selectedCardObj.value > 0 && (
+                <button className="btn col-span-2" onClick={() => toggleSell(selectedCardObj.id)}>
+                  {sellPicker.has(selectedCardObj.id) ? t.unmarkForSale : t.markForSale} ({selectedCardObj.value}gp)
+                </button>
+              )}
+              {state.config.fistMechanicEnabled && selectedCardObj.deck === 'door' && me.fistCards.length < 3 && (
+                <button
+                  className="btn col-span-2"
+                  onClick={() => emit('fist:deposit', { cardId: selectedCardObj.id })
+                    .then(() => setSelectedCard(null))
+                    .catch((e) => alert(e.message))}
+                >
+                  ✊ {t.reserveInFist}
+                </button>
+              )}
             </div>
           </div>
-        </main>
-      </div>
+        )}
+
+        {sellPicker.size > 0 && (
+          <div className="surface-glass p-3 anim-slide-in max-w-lg mx-auto w-full">
+            <div className="text-sm">{t.selling(sellPicker.size)} · total {sellTotal}gp ({Math.floor(sellTotal / 1000)} níveis)</div>
+            <button className="btn-primary w-full mt-2" disabled={sellTotal < 1000} onClick={confirmSell}>{t.sellForLevels}</button>
+          </div>
+        )}
+
+        {fist.length > 0 && (
+          <div>
+            <div className="text-xs uppercase opacity-60 mb-1">{t.fistReserve}</div>
+            <div className="flex gap-2 overflow-x-auto scroll-thin justify-center">
+              {fist.map((c) => (
+                <CardView key={c.id} card={c} compact onClick={() => emit('fist:playCard', { cardId: c.id, targetCombat: inCombat }).catch((e) => alert(e.message))} />
+              ))}
+            </div>
+          </div>
+        )}
+
+        <div>
+          <div className="flex items-center gap-2 mb-2">
+            <div className="h-px flex-1 bg-slate-700/60" />
+            <span className="text-xs uppercase tracking-widest opacity-50">{t.hand} ({hand.length})</span>
+            <div className="h-px flex-1 bg-slate-700/60" />
+          </div>
+          <div className="flex gap-2 overflow-x-auto scroll-thin pb-2 justify-center flex-wrap">
+            {hand.length === 0 && <div className="opacity-50 text-sm italic">{t.emptyHand}</div>}
+            {hand.map((c) => (
+              <div key={c.id} className="anim-slide-in">
+                <CardView
+                  card={c}
+                  selected={selectedCard === c.id}
+                  onClick={() => setSelectedCard(selectedCard === c.id ? null : c.id)}
+                />
+              </div>
+            ))}
+          </div>
+        </div>
+      </main>
 
       <ToastStack toasts={toasts} onDismiss={dismiss} />
       <CardPreview card={previewCard} onClose={() => setPreviewCard(null)} />
