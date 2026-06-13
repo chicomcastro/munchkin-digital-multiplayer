@@ -208,30 +208,28 @@ export function PlayerView({
             )}
           </div>
         </div>
-        {me.equipped.length > 0 && (
-          <div className="mt-2">
-            <div className="grid grid-cols-3 gap-1 text-[10px] max-w-[280px]">
-              <div />
-              <SlotBox label="head" card={slotMap.slots.head} />
-              <div />
-              <SlotBox label="hand" card={slotMap.slots.handL} />
-              <SlotBox label="body" card={slotMap.slots.body} />
-              <SlotBox label="hand" card={slotMap.slots.handR} twoHands={slotMap.slots.handL === slotMap.slots.handR && !!slotMap.slots.handL} />
-              <div />
-              <SlotBox label="feet" card={slotMap.slots.feet} />
-              <div />
-            </div>
-            {slotMap.others.length > 0 && (
-              <div className="flex gap-1 mt-1 flex-wrap">
-                {slotMap.others.map((c) => (
-                  <span key={c.id} className="bg-amber-900/40 border border-amber-800/40 px-1.5 py-0.5 rounded text-[10px]">
-                    {c.name} +{c.bonus ?? 0}
-                  </span>
-                ))}
-              </div>
-            )}
+        <div className="mt-2">
+          <div className="grid grid-cols-3 gap-1 text-[10px] max-w-[280px]">
+            <div />
+            <SlotBox label="head" card={slotMap.slots.head} />
+            <div />
+            <SlotBox label="hand" card={slotMap.slots.handL} />
+            <SlotBox label="body" card={slotMap.slots.body} />
+            <SlotBox label="hand" card={slotMap.slots.handR} twoHands={slotMap.slots.handL === slotMap.slots.handR && !!slotMap.slots.handL} />
+            <div />
+            <SlotBox label="feet" card={slotMap.slots.feet} />
+            <div />
           </div>
-        )}
+          {slotMap.others.length > 0 && (
+            <div className="flex gap-1 mt-1 flex-wrap">
+              {slotMap.others.map((c) => (
+                <span key={c.id} className="bg-amber-900/40 border border-amber-800/40 px-1.5 py-0.5 rounded text-[10px]">
+                  {c.name} +{c.bonus ?? 0}
+                </span>
+              ))}
+            </div>
+          )}
+        </div>
         {state.config.twoPlayerDualCharacter && (me.characters?.length ?? 0) > 0 && (
           <button
             type="button"
@@ -624,10 +622,10 @@ function AbilitiesPanel({
 function SlotBox({ label, card, twoHands }: { label: string; card: Card | null; twoHands?: boolean }) {
   return (
     <div className={[
-      'rounded border px-1 py-0.5 text-center min-h-[2rem] flex flex-col justify-center',
+      'rounded border px-1 py-1 text-center min-h-[2.25rem] flex flex-col justify-center',
       card
         ? 'bg-amber-900/40 border-amber-700/50 text-amber-200'
-        : 'bg-amber-950/30 border-dashed border-amber-700/30 text-amber-700/50 italic',
+        : 'bg-amber-950/50 border-dashed border-amber-600/50 text-amber-500/60 italic',
     ].join(' ')}>
       <div className="uppercase text-[7px] tracking-wider opacity-60">{twoHands ? '2H' : label}</div>
       {card ? (
