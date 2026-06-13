@@ -60,9 +60,32 @@ body {
   z-index: 30;
   background: linear-gradient(180deg, rgba(11, 17, 32, 0.85), rgba(11, 17, 32, 0.98));
   backdrop-filter: blur(10px);
-  border-top: 1px solid rgba(148, 163, 184, 0.18);
-  box-shadow: 0 -16px 32px -16px rgba(0, 0, 0, 0.7);
+  border-top: 1px solid rgba(251, 191, 36, 0.25);
+  box-shadow: 0 -16px 32px -16px rgba(0, 0, 0, 0.7), 0 -1px 8px rgba(251, 191, 36, 0.08);
   padding: 0.75rem;
+}
+
+/* Glass morphism surfaces */
+.surface-glass {
+  background: rgba(28, 36, 51, 0.6);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(148, 163, 184, 0.15);
+  border-radius: 1rem;
+}
+
+.surface-glass-elevated {
+  background: rgba(28, 36, 51, 0.75);
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  border-radius: 1rem;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+/* Desktop hand sidebar */
+.hand-sidebar {
+  border-left: 1px solid rgba(148, 163, 184, 0.12);
+  background: rgba(11, 17, 32, 0.4);
+  backdrop-filter: blur(8px);
 }
 
 /* Custom scrollbar */
@@ -142,6 +165,14 @@ body {
     transform: translateY(0) rotate(0) scale(1);
     opacity: 1;
   }
+}
+
+@keyframes cardGlow {
+  0%, 100% { opacity: 0.7; }
+  50% { opacity: 1; }
+}
+.anim-card-glow {
+  animation: cardGlow 2.5s ease-in-out infinite;
 }
 
 :focus-visible {

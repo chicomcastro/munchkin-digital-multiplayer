@@ -212,6 +212,13 @@ export const es: Translations = {
     }
   },
 
+  phaseBannerKick: '¡Tu turno — patea la puerta!',
+  phaseBannerCombat: '¡Combate en curso!',
+  phaseBannerLoot: 'Busca pelea o saquea la sala',
+  phaseBannerCharity: 'Caridad — descarta cartas sobrantes',
+  phaseBannerEndTurn: 'Termina tu turno',
+  phaseBannerWaiting: (name) => `Esperando el turno de ${name}`,
+
   iconKick: '🚪',
   iconLoot: '💰',
   iconListen: '👂',

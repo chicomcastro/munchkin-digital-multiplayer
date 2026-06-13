@@ -212,6 +212,13 @@ export const en: Translations = {
     }
   },
 
+  phaseBannerKick: 'Your turn — kick the door!',
+  phaseBannerCombat: 'Combat in progress!',
+  phaseBannerLoot: 'Look for trouble or loot the room',
+  phaseBannerCharity: 'Charity — discard excess cards',
+  phaseBannerEndTurn: 'End your turn',
+  phaseBannerWaiting: (name) => `Waiting for ${name}'s turn`,
+
   iconKick: '🚪',
   iconLoot: '💰',
   iconListen: '👂',

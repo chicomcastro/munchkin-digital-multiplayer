@@ -212,6 +212,13 @@ export const ptBR: Translations = {
     }
   },
 
+  phaseBannerKick: 'Sua vez — chute a porta!',
+  phaseBannerCombat: 'Combate em andamento!',
+  phaseBannerLoot: 'Procure encrenca ou saqueie a sala',
+  phaseBannerCharity: 'Caridade — descarte cartas excedentes',
+  phaseBannerEndTurn: 'Encerre seu turno',
+  phaseBannerWaiting: (name) => `Aguardando turno de ${name}`,
+
   iconKick: '🚪',
   iconLoot: '💰',
   iconListen: '👂',

@@ -25,7 +25,7 @@ export function AppBar({
   return (
     <div
       role="banner"
-      className="fixed top-0 inset-x-0 z-40 h-10 bg-slate-950/95 backdrop-blur-sm border-b border-slate-800 flex items-center justify-end gap-3 px-3 text-xs"
+      className="fixed top-0 inset-x-0 z-40 h-10 bg-slate-950/95 backdrop-blur-sm border-b border-slate-800 flex items-center justify-end gap-3 px-3 text-xs shadow-[0_1px_6px_rgba(251,191,36,0.08)]"
     >
       <select
         aria-label="Language"
