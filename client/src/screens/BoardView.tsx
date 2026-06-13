@@ -49,7 +49,7 @@ export function BoardView({ state }: { state: GameState }) {
           <div className="flex items-center justify-between">
             <div>
               <div className="text-xs uppercase opacity-60">{t.room} {state.roomCode} · {t.turn} {state.turn} · {state.turnPhase}</div>
-              <div className="text-3xl font-bold">
+              <div className="text-3xl font-bold font-display">
                 {t.active2} <span style={{ color: activePlayer?.color }}>{activePlayer?.name ?? '—'}</span>
               </div>
             </div>

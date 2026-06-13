@@ -94,7 +94,7 @@ export function Home({
       <div className="card-shell p-6 w-full max-w-sm anim-fade relative">
         <div className="text-center mb-6">
           <div className="text-5xl mb-1" aria-hidden="true">🎲⚔️🛡️</div>
-          <h1 className="text-4xl font-bold text-amber-400 tracking-tight">Munchkin</h1>
+          <h1 className="text-4xl font-bold text-amber-400 tracking-tight font-display">Munchkin</h1>
           <p className="text-sm opacity-70">{t.homeSubtitle}</p>
           <p className="text-xs opacity-50 mt-1 italic">{t.brandTagline}</p>
         </div>
@@ -102,8 +102,8 @@ export function Home({
         <label className="block text-xs uppercase opacity-60 mb-1">{t.yourName}</label>
         <input
           className={[
-            'w-full px-3 py-3 rounded-xl bg-slate-900 border mb-1',
-            errorField === 'name' ? 'border-red-500' : 'border-slate-700',
+            'w-full px-3 py-3 rounded-xl bg-[rgba(26,18,8,0.8)] border mb-1',
+            errorField === 'name' ? 'border-red-500' : 'border-[rgba(139,90,43,0.4)]',
           ].join(' ')}
           value={name}
           maxLength={24}
@@ -127,8 +127,8 @@ export function Home({
           <input
             id="munchkin-code-input"
             className={[
-              'flex-1 px-3 py-3 rounded-xl bg-slate-900 border uppercase tracking-widest font-mono',
-              errorField === 'code' ? 'border-red-500' : 'border-slate-700',
+              'flex-1 px-3 py-3 rounded-xl bg-[rgba(26,18,8,0.8)] border uppercase tracking-widest font-mono',
+              errorField === 'code' ? 'border-red-500' : 'border-[rgba(139,90,43,0.4)]',
             ].join(' ')}
             value={roomCode}
             placeholder={t.roomCodePlaceholder}

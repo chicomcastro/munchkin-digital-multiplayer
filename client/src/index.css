@@ -1,12 +1,13 @@
 @import 'tailwindcss';
 
 @theme {
-  --color-munchkin-bg: #0b1120;
-  --color-munchkin-surface: #1c2433;
-  --color-munchkin-surface-2: #232f44;
-  --color-munchkin-border: #334155;
+  --color-munchkin-bg: #1a1208;
+  --color-munchkin-surface: #2a1f14;
+  --color-munchkin-surface-2: #3d2e1e;
+  --color-munchkin-border: #5c4a35;
   --color-munchkin-gold: #fbbf24;
   --color-munchkin-blood: #b91c1c;
+  --font-display: 'MedievalSharp', cursive;
 }
 
 html, body, #root {
@@ -18,24 +19,47 @@ html, body, #root {
   -webkit-tap-highlight-color: transparent;
 }
 
-/* Page canvas: deep navy with a faint warm glow up top — gives the dark
-   theme a bit of soul without the colors feeling random. */
 body {
   background:
-    radial-gradient(60% 40% at 50% -10%, rgba(251, 191, 36, 0.10), transparent 70%),
-    radial-gradient(50% 35% at 100% 110%, rgba(124, 58, 237, 0.08), transparent 70%),
-    #0b1120;
-  color: #e2e8f0;
+    radial-gradient(ellipse at center, transparent 40%, rgba(0,0,0,0.45) 100%),
+    repeating-linear-gradient(
+      45deg,
+      transparent,
+      transparent 2px,
+      rgba(139,90,43,0.03) 2px,
+      rgba(139,90,43,0.03) 4px
+    ),
+    repeating-linear-gradient(
+      -30deg,
+      transparent,
+      transparent 3px,
+      rgba(80,50,20,0.04) 3px,
+      rgba(80,50,20,0.04) 5px
+    ),
+    radial-gradient(60% 40% at 50% -10%, rgba(251, 191, 36, 0.08), transparent 70%),
+    linear-gradient(170deg, #2a1f14 0%, #1a1208 50%, #0f0c06 100%);
+  color: #e8dcc8;
   min-height: 100vh;
 }
 
-/* Screen wrapper — leaves room for the 40px fixed AppBar on top. */
 .screen-root {
   padding-top: 2.5rem;
 }
 
+.font-display {
+  font-family: var(--font-display);
+}
+
 .btn {
-  @apply px-4 py-3 rounded-xl bg-slate-700 hover:bg-slate-600 active:bg-slate-800 text-white font-medium disabled:opacity-40 disabled:cursor-not-allowed transition-colors;
+  @apply px-4 py-3 rounded-xl text-amber-100 font-medium disabled:opacity-40 disabled:cursor-not-allowed transition-colors;
+  background: rgba(120, 70, 20, 0.5);
+  border: 1px solid rgba(180, 120, 50, 0.35);
+}
+.btn:hover:not(:disabled) {
+  background: rgba(140, 85, 25, 0.6);
+}
+.btn:active:not(:disabled) {
+  background: rgba(90, 55, 15, 0.6);
 }
 
 .btn-primary {
@@ -43,51 +67,50 @@ body {
 }
 
 .btn-danger {
-  @apply px-4 py-3 rounded-xl bg-red-600 hover:bg-red-500 text-white font-medium disabled:opacity-40 disabled:cursor-not-allowed transition-colors;
+  @apply px-4 py-3 rounded-xl bg-red-700 hover:bg-red-600 text-white font-medium disabled:opacity-40 disabled:cursor-not-allowed transition-colors;
+  border: 1px solid rgba(220, 50, 50, 0.3);
 }
 
-/* Card shell — slightly lifted, soft border, mild glow on hover via parent. */
 .card-shell {
-  @apply rounded-2xl bg-slate-800/70 border border-slate-700/60 shadow-lg shadow-black/20;
+  @apply rounded-xl border-2 shadow-lg shadow-black/30;
+  background: rgba(42, 31, 20, 0.7);
+  border-color: rgba(139, 90, 43, 0.4);
 }
 
-/* Sticky footer — dark glass + upward shadow so it visibly hovers above content. */
 .sticky-footer {
   position: sticky;
   bottom: 0;
   left: 0;
   right: 0;
   z-index: 30;
-  background: linear-gradient(180deg, rgba(11, 17, 32, 0.85), rgba(11, 17, 32, 0.98));
+  background: linear-gradient(180deg, rgba(26, 18, 8, 0.85), rgba(26, 18, 8, 0.98));
   backdrop-filter: blur(10px);
   border-top: 1px solid rgba(251, 191, 36, 0.25);
   box-shadow: 0 -16px 32px -16px rgba(0, 0, 0, 0.7), 0 -1px 8px rgba(251, 191, 36, 0.08);
   padding: 0.75rem;
 }
 
-/* Glass morphism surfaces */
 .surface-glass {
-  background: rgba(28, 36, 51, 0.6);
+  background: rgba(42, 31, 20, 0.65);
   backdrop-filter: blur(12px);
-  border: 1px solid rgba(148, 163, 184, 0.15);
+  border: 1px solid rgba(139, 90, 43, 0.25);
   border-radius: 1rem;
 }
 
 .surface-glass-elevated {
-  background: rgba(28, 36, 51, 0.75);
+  background: rgba(42, 31, 20, 0.8);
   backdrop-filter: blur(16px);
-  border: 1px solid rgba(148, 163, 184, 0.2);
+  border: 1px solid rgba(139, 90, 43, 0.3);
   border-radius: 1rem;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
 }
 
-
 /* Custom scrollbar */
 .scroll-thin::-webkit-scrollbar { height: 6px; width: 6px; }
 .scroll-thin::-webkit-scrollbar-track { background: transparent; }
-.scroll-thin::-webkit-scrollbar-thumb { background: rgba(148, 163, 184, 0.3); border-radius: 9999px; }
-.scroll-thin::-webkit-scrollbar-thumb:hover { background: rgba(148, 163, 184, 0.5); }
-.scroll-thin { scrollbar-width: thin; scrollbar-color: rgba(148, 163, 184, 0.3) transparent; }
+.scroll-thin::-webkit-scrollbar-thumb { background: rgba(139, 90, 43, 0.3); border-radius: 9999px; }
+.scroll-thin::-webkit-scrollbar-thumb:hover { background: rgba(139, 90, 43, 0.5); }
+.scroll-thin { scrollbar-width: thin; scrollbar-color: rgba(139, 90, 43, 0.3) transparent; }
 
 /* Animations */
 .shake {

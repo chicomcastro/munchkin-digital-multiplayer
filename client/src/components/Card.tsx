@@ -43,9 +43,9 @@ export function CardView({
       type="button"
       onClick={onClick}
       disabled={disabled}
-      style={{ boxShadow: disabled ? undefined : style.glow }}
+      style={{ boxShadow: disabled ? 'inset 0 0 0 2px rgba(0,0,0,0.2)' : `${style.glow}, inset 0 0 0 2px rgba(255,255,255,0.06)` }}
       className={[
-        'text-left rounded-2xl border-2 p-3 shadow-md transition-all flex flex-col overflow-hidden relative',
+        'text-left rounded-xl border-[3px] p-3 shadow-md transition-all flex flex-col overflow-hidden relative',
         style.bg,
         style.ring,
         selected ? 'ring-4 ring-amber-400 -translate-y-2 scale-[1.02]' : '',
@@ -53,7 +53,7 @@ export function CardView({
         compact ? 'min-w-[8rem] max-w-[10rem] min-h-[6.5rem]' : 'min-w-[9rem] max-w-[12rem] min-h-[12rem]',
       ].join(' ')}
     >
-      <div className={['absolute top-0 left-0 right-0 h-1 rounded-t-2xl', style.bar].join(' ')} />
+      <div className={['absolute top-0 left-0 right-0 h-1 rounded-t-xl', style.bar].join(' ')} />
       <div className="flex items-center justify-between gap-1 mt-0.5">
         <div className={['text-[10px] uppercase tracking-wide font-semibold flex items-center gap-1', style.accent].join(' ')}>
           <span aria-hidden="true">{icon}</span>
@@ -66,7 +66,7 @@ export function CardView({
           <div className="text-amber-300 font-bold text-xs">+{card.bonus}</div>
         )}
       </div>
-      <div className="font-bold text-sm leading-tight mt-1 line-clamp-2">{card.name}</div>
+      <div className="font-bold text-sm leading-tight mt-1 line-clamp-2 font-display">{card.name}</div>
       {!compact && (
         <div className="text-xs opacity-80 mt-1 line-clamp-3 flex-1">{card.description}</div>
       )}
