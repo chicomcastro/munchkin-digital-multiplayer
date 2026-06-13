@@ -39,4 +39,4 @@ jobs:
             --memory=256Mi \
             --cpu=1 \
             --timeout=3600 \
-            --set-env-vars="PORT=8080,PERSISTENCE=firestore,FIRESTORE_PROJECT_ID=chico-sa"
+            --set-env-vars="PERSISTENCE=firestore,FIRESTORE_PROJECT_ID=chico-sa"
