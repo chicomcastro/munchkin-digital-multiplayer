@@ -159,12 +159,12 @@ export function PlayerView({
         : state.turnPhase === 'charity'
           ? { text: t.phaseBannerCharity, accent: 'bg-violet-500/20 border-violet-500/40 text-violet-200' }
           : state.turnPhase === 'endTurn'
-            ? { text: t.phaseBannerEndTurn, accent: 'bg-slate-500/20 border-slate-500/40 text-slate-200' }
+            ? { text: t.phaseBannerEndTurn, accent: 'bg-amber-800/20 border-amber-700/40 text-amber-200' }
             : { text: t.phaseBannerKick, accent: 'bg-amber-500/20 border-amber-500/40 text-amber-200' }
-    : { text: t.phaseBannerWaiting(activePlayer?.name ?? '...'), accent: 'bg-slate-500/10 border-slate-600/40 text-slate-400' };
+    : { text: t.phaseBannerWaiting(activePlayer?.name ?? '...'), accent: 'bg-amber-900/20 border-amber-800/40 text-amber-300/70' };
 
   return (
-    <div className="min-h-screen flex flex-col screen-root">
+    <div className="min-h-screen flex flex-col screen-root pt-12">
       {/* Hero header */}
       <header className="surface-glass mx-3 mt-1 p-3 anim-fade" style={{ borderTop: `3px solid ${me.color}` }}>
         <div className="flex justify-between items-start gap-2">
@@ -568,7 +568,7 @@ function AbilitiesPanel({
               onClick={() => toggleCharge(c.id)}
               className={[
                 'text-xs px-2 py-1 rounded whitespace-nowrap',
-                chargePicker.has(c.id) ? 'bg-amber-500 text-slate-950 font-bold' : 'bg-slate-700 text-white',
+                chargePicker.has(c.id) ? 'bg-amber-500 text-amber-950 font-bold' : 'bg-amber-900/60 text-amber-100',
               ].join(' ')}
             >
               {c.name}
@@ -600,7 +600,7 @@ function AbilitiesPanel({
               onClick={() => toggleCharge(c.id)}
               className={[
                 'text-xs px-2 py-1 rounded whitespace-nowrap',
-                chargePicker.has(c.id) ? 'bg-amber-500 text-slate-950 font-bold' : 'bg-slate-700 text-white',
+                chargePicker.has(c.id) ? 'bg-amber-500 text-amber-950 font-bold' : 'bg-amber-900/60 text-amber-100',
               ].join(' ')}
             >
               {c.name}

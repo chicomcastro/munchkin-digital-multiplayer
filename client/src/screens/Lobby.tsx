@@ -108,7 +108,7 @@ export function Lobby({
             className={[
               'mt-3 w-full text-sm py-2 rounded-xl font-bold transition-colors',
               me.ready
-                ? 'bg-slate-700 hover:bg-slate-600 text-white'
+                ? 'bg-amber-900/60 hover:bg-amber-800/60 text-amber-100'
                 : 'bg-emerald-600 hover:bg-emerald-500 text-white',
             ].join(' ')}
           >
