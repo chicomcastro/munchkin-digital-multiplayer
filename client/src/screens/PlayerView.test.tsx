@@ -12,7 +12,7 @@ beforeEach(() => {
 describe('PlayerView', () => {
   function renderView(state = makeState(), hand = [makeCard()], fist: any[] = []) {
     return render(
-      <PlayerView state={state} hand={hand} fist={fist} myId="p1" onBoardMode={vi.fn()} />,
+      <PlayerView state={state} hand={hand} fist={fist} myId="p1" />,
     );
   }
 
@@ -134,12 +134,6 @@ describe('PlayerView', () => {
     expect(screen.getByText(/\d+s/)).toBeInTheDocument();
   });
 
-  it('clicking board mode triggers callback', () => {
-    const cb = vi.fn();
-    render(<PlayerView state={makeState()} hand={[]} fist={[]} myId="p1" onBoardMode={cb} />);
-    fireEvent.click(screen.getByRole('button', { name: new RegExp(t.boardMode, 'i') }));
-    expect(cb).toHaveBeenCalled();
-  });
 
   it('renders fist reserve cards when present', () => {
     const fistCard = makeCard({ name: 'Fist Card' });

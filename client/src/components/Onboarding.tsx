@@ -54,7 +54,7 @@ export function Onboarding({ open, onClose }: { open: boolean; onClose: () => vo
       <div className="card-shell p-6 w-full max-w-sm relative">
         <button
           type="button"
-          onClick={onClose}
+          onClick={() => { markSeen(); onClose(); }}
           className="absolute top-3 right-3 text-xs opacity-60 hover:opacity-100"
         >
           {t.onboardingSkip}
