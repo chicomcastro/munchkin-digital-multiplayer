@@ -210,6 +210,14 @@ export interface Translations {
   // Helpers
   resultLabel: (result: string) => string;
 
+  // Turn phase banner
+  phaseBannerKick: string;
+  phaseBannerCombat: string;
+  phaseBannerLoot: string;
+  phaseBannerCharity: string;
+  phaseBannerEndTurn: string;
+  phaseBannerWaiting: (name: string) => string;
+
   // Icons (same across locales; kept here for typing)
   iconKick: string;
   iconLoot: string;
