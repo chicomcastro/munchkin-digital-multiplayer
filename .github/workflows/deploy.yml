@@ -1,0 +1,42 @@
+name: Deploy Server
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'server/**'
+      - '.github/workflows/deploy.yml'
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  deploy-cloud-run:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - id: auth
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: projects/337821355443/locations/global/workloadIdentityPools/github-pool/providers/github-provider
+          service_account: github-deploy@chico-sa.iam.gserviceaccount.com
+
+      - uses: google-github-actions/setup-gcloud@v2
+
+      - name: Deploy to Cloud Run
+        run: |
+          gcloud run deploy munchkin-server \
+            --project=chico-sa \
+            --region=southamerica-east1 \
+            --source=./server \
+            --allow-unauthenticated \
+            --port=8080 \
+            --session-affinity \
+            --min-instances=0 \
+            --max-instances=1 \
+            --memory=256Mi \
+            --cpu=1 \
+            --timeout=3600 \
+            --set-env-vars="PORT=8080,PERSISTENCE=firestore,FIRESTORE_PROJECT_ID=chico-sa"

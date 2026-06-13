@@ -12,5 +12,6 @@ ENV NODE_ENV=production
 COPY package.json package-lock.json* ./
 RUN npm install --omit=dev --no-audit --no-fund
 COPY --from=build /app/dist ./dist
-EXPOSE 3001
+EXPOSE 8080
+ENV PORT=8080
 CMD ["node", "dist/index.js"]
