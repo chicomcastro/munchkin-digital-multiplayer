@@ -3,11 +3,13 @@
 // cache fallback when offline. Socket.IO and API requests are NEVER cached.
 
 const CACHE_NAME = 'munchkin-v2';
-const SHELL = ['/', '/index.html', '/manifest.webmanifest', '/icon-192.svg', '/icon-512.svg'];
+const SHELL_PATHS = ['', 'index.html', 'manifest.webmanifest', 'icon-192.svg', 'icon-512.svg'];
 
 self.addEventListener('install', (event) => {
+  const base = self.registration.scope;
+  const shell = SHELL_PATHS.map((p) => base + p);
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(SHELL)).catch(() => undefined),
+    caches.open(CACHE_NAME).then((cache) => cache.addAll(shell)).catch(() => undefined),
   );
   self.skipWaiting();
 });
@@ -37,7 +39,7 @@ self.addEventListener('fetch', (event) => {
           caches.open(CACHE_NAME).then((c) => c.put(event.request, copy)).catch(() => {});
           return res;
         })
-        .catch(() => caches.match(event.request).then((cached) => cached ?? caches.match('/')!)),
+        .catch(() => caches.match(event.request).then((cached) => cached ?? caches.match(self.registration.scope))),
     );
     return;
   }
