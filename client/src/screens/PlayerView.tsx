@@ -179,7 +179,7 @@ export function PlayerView({
                     'w-5 h-5 rounded-full border-2 flex items-center justify-center text-[9px] font-bold transition-all',
                     n <= me.level
                       ? 'bg-amber-500 border-amber-400 text-amber-950'
-                      : 'bg-transparent border-amber-900/30 text-amber-900/40',
+                      : 'bg-amber-950/40 border-amber-700/40 text-amber-600/60',
                     n === me.level && pulseLevel ? 'anim-pop' : '',
                   ].join(' ')}
                 >
@@ -208,28 +208,30 @@ export function PlayerView({
             )}
           </div>
         </div>
-        <div className="mt-2">
-          <div className="grid grid-cols-3 gap-1 text-[10px] max-w-[280px]">
-            <div />
-            <SlotBox label="head" card={slotMap.slots.head} />
-            <div />
-            <SlotBox label="hand" card={slotMap.slots.handL} />
-            <SlotBox label="body" card={slotMap.slots.body} />
-            <SlotBox label="hand" card={slotMap.slots.handR} twoHands={slotMap.slots.handL === slotMap.slots.handR && !!slotMap.slots.handL} />
-            <div />
-            <SlotBox label="feet" card={slotMap.slots.feet} />
-            <div />
-          </div>
-          {slotMap.others.length > 0 && (
-            <div className="flex gap-1 mt-1 flex-wrap">
-              {slotMap.others.map((c) => (
-                <span key={c.id} className="bg-amber-900/40 border border-amber-800/40 px-1.5 py-0.5 rounded text-[10px]">
-                  {c.name} +{c.bonus ?? 0}
-                </span>
-              ))}
+        {me.equipped.length > 0 && (
+          <div className="mt-2">
+            <div className="grid grid-cols-3 gap-1 text-[10px] max-w-[280px]">
+              <div />
+              <SlotBox label="head" card={slotMap.slots.head} />
+              <div />
+              <SlotBox label="hand" card={slotMap.slots.handL} />
+              <SlotBox label="body" card={slotMap.slots.body} />
+              <SlotBox label="hand" card={slotMap.slots.handR} twoHands={slotMap.slots.handL === slotMap.slots.handR && !!slotMap.slots.handL} />
+              <div />
+              <SlotBox label="feet" card={slotMap.slots.feet} />
+              <div />
             </div>
-          )}
-        </div>
+            {slotMap.others.length > 0 && (
+              <div className="flex gap-1 mt-1 flex-wrap">
+                {slotMap.others.map((c) => (
+                  <span key={c.id} className="bg-amber-900/40 border border-amber-800/40 px-1.5 py-0.5 rounded text-[10px]">
+                    {c.name} +{c.bonus ?? 0}
+                  </span>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
         {state.config.twoPlayerDualCharacter && (me.characters?.length ?? 0) > 0 && (
           <button
             type="button"
@@ -247,7 +249,7 @@ export function PlayerView({
       </div>
 
       {/* Table perspective: opponents (far) → board (middle) → hand (near) */}
-      <main id="main-content" className="flex-1 flex flex-col px-3 mt-2 space-y-2">
+      <main id="main-content" className="flex flex-col px-3 mt-2 space-y-2 pb-4">
         {/* ── FAR: opponents as Zoom-call style cards ── */}
         {opponents.length > 0 && (
           <div>
@@ -272,7 +274,7 @@ export function PlayerView({
                   >
                     {p.name.charAt(0).toUpperCase()}
                   </div>
-                  <div className="font-bold truncate text-sm mt-1">{p.name}</div>
+                  <div className="font-bold truncate text-sm mt-1 font-display">{p.name}</div>
                   {!p.socketId && <div className="text-[10px] opacity-50">{t.offline}</div>}
                   <div className="text-xs mt-0.5 opacity-80">
                     <span className="text-amber-300 font-bold">{p.level}</span>
@@ -291,7 +293,7 @@ export function PlayerView({
         )}
 
         {/* ── MIDDLE: board center (combat, abilities) + deck sidebar ── */}
-        <div className="flex-1 lg:grid lg:grid-cols-[1fr_280px] lg:gap-4 space-y-2 lg:space-y-0">
+        <div className="lg:grid lg:grid-cols-[1fr_280px] lg:gap-4 space-y-2 lg:space-y-0">
           <div className="space-y-2">
             {inCombat && combat && (
               <div className="anim-slide-in">
@@ -625,7 +627,7 @@ function SlotBox({ label, card, twoHands }: { label: string; card: Card | null; 
       'rounded border px-1 py-0.5 text-center min-h-[2rem] flex flex-col justify-center',
       card
         ? 'bg-amber-900/40 border-amber-700/50 text-amber-200'
-        : 'bg-black/10 border-dashed border-amber-900/25 text-amber-900/40 italic',
+        : 'bg-amber-950/30 border-dashed border-amber-700/30 text-amber-700/50 italic',
     ].join(' ')}>
       <div className="uppercase text-[7px] tracking-wider opacity-60">{twoHands ? '2H' : label}</div>
       {card ? (
@@ -651,10 +653,10 @@ function DeckBox({
   emptyMsg: string;
 }) {
   return (
-    <div className="rounded-xl bg-slate-900/60 border border-slate-700 p-2">
-      <div className="text-[10px] uppercase opacity-50">{label}</div>
+    <div className="rounded-xl bg-amber-950/40 border border-amber-800/30 p-2">
+      <div className="text-[10px] uppercase opacity-50 font-display">{label}</div>
       <div className="flex items-center gap-2 mt-1">
-        <div className="w-10 h-14 rounded-md bg-slate-800 border-2 border-slate-600 flex items-center justify-center text-xs font-bold">
+        <div className="w-10 h-14 rounded-md bg-amber-950/60 border-2 border-amber-700/40 flex items-center justify-center text-xs font-bold text-amber-300">
           {size}
         </div>
         <div className="text-xs flex-1 min-w-0">

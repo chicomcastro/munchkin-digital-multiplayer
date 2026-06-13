@@ -63,7 +63,7 @@ export function BoardView({ state }: { state: GameState }) {
             </div>
           </div>
           {state.config.turnTimerSeconds && secondsLeft != null && (
-            <div className="mt-2 h-1.5 bg-slate-800 rounded-full overflow-hidden">
+            <div className="mt-2 h-1.5 bg-amber-950/50 rounded-full overflow-hidden">
               <div
                 className={[
                   'h-full transition-all duration-500',
@@ -81,7 +81,7 @@ export function BoardView({ state }: { state: GameState }) {
             {state.config.coopObjective === 'bossFight' && (
               <div>
                 <div className="text-sm mb-1">{t.bossHp}: {state.coopBossHpRemaining} / {state.config.coopBossLevel}</div>
-                <div className="h-3 bg-slate-800 rounded overflow-hidden">
+                <div className="h-3 bg-amber-950/50 rounded overflow-hidden">
                   <div className="h-full bg-red-600 transition-all duration-500" style={{ width: `${100 * state.coopBossHpRemaining / state.config.coopBossLevel}%` }} />
                 </div>
               </div>
@@ -95,7 +95,7 @@ export function BoardView({ state }: { state: GameState }) {
             {state.config.threatTrackEnabled && (
               <div className="mt-3">
                 <div className="text-xs mb-1">{t.threat}: {state.threatTrack} / 10</div>
-                <div className="h-2 bg-slate-800 rounded overflow-hidden">
+                <div className="h-2 bg-amber-950/50 rounded overflow-hidden">
                   <div className="h-full bg-purple-500 transition-all duration-500" style={{ width: `${state.threatTrack * 10}%` }} />
                 </div>
               </div>
@@ -162,7 +162,7 @@ export function BoardView({ state }: { state: GameState }) {
           ))}
           <div ref={logEnd} />
         </div>
-        <div className="text-xs opacity-60 mt-2 border-t border-slate-700 pt-2">
+        <div className="text-xs opacity-60 mt-2 border-t border-amber-800/30 pt-2">
           {t.doors.toLowerCase()} {state.doorDeckSize} · {t.treasures.toLowerCase()} {state.treasureDeckSize}
         </div>
       </aside>
