@@ -1,7 +1,8 @@
 # ADR-001: Thematic Visual Overhaul
 
-**Status:** Proposed  
-**Date:** 2026-06-13
+**Status:** Accepted  
+**Date:** 2026-06-13  
+**Merged:** 2026-06-13 (PR #29)
 
 ## Context
 
