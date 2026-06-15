@@ -118,6 +118,8 @@ export const ptBR: Translations = {
   threat: 'Ameaça',
   noActiveCombat: 'Sem combate ativo',
   market: 'Mercado',
+  dungeonMap: 'Mapa da Masmorra',
+  dungeonGoal: 'Vitória!',
   log: 'Histórico',
   gameOver: 'Fim de jogo',
   winner: 'Vencedor',

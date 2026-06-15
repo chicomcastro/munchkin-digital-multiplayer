@@ -125,6 +125,8 @@ export interface Translations {
   threat: string;
   noActiveCombat: string;
   market: string;
+  dungeonMap: string;
+  dungeonGoal: string;
   log: string;
   gameOver: string;
   winner: string;

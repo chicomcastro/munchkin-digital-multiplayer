@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import type { GameState } from '../types';
 import { PlayerStatus } from '../components/PlayerStatus';
 import { CombatArena } from '../components/CombatArena';
@@ -44,12 +44,12 @@ export function BoardView({ state }: { state: GameState }) {
           <PlayerStatus key={p.id} player={p} active={state.activePlayerId === p.id} />
         ))}
       </aside>
-      <div className="space-y-4">
+      <div className="flex flex-col gap-4">
         <div className="card-shell p-4">
           <div className="flex items-center justify-between">
             <div>
               <div className="text-xs uppercase opacity-60">{t.room} {state.roomCode} · {t.turn} {state.turn} · {state.turnPhase}</div>
-              <div className="text-3xl font-bold">
+              <div className="text-3xl font-bold font-display">
                 {t.active2} <span style={{ color: activePlayer?.color }}>{activePlayer?.name ?? '—'}</span>
               </div>
             </div>
@@ -63,7 +63,7 @@ export function BoardView({ state }: { state: GameState }) {
             </div>
           </div>
           {state.config.turnTimerSeconds && secondsLeft != null && (
-            <div className="mt-2 h-1.5 bg-slate-800 rounded-full overflow-hidden">
+            <div className="mt-2 h-1.5 bg-amber-950/50 rounded-full overflow-hidden">
               <div
                 className={[
                   'h-full transition-all duration-500',
@@ -75,13 +75,15 @@ export function BoardView({ state }: { state: GameState }) {
           )}
         </div>
 
+        <DungeonMap players={state.players} winLevel={state.config.winLevel} activePlayerId={state.activePlayerId ?? ''} />
+
         {state.config.variant === 'cooperative' && (
           <div className="card-shell p-4">
             <div className="text-xs uppercase opacity-60 mb-2">{t.coopStatus}</div>
             {state.config.coopObjective === 'bossFight' && (
               <div>
                 <div className="text-sm mb-1">{t.bossHp}: {state.coopBossHpRemaining} / {state.config.coopBossLevel}</div>
-                <div className="h-3 bg-slate-800 rounded overflow-hidden">
+                <div className="h-3 bg-amber-950/50 rounded overflow-hidden">
                   <div className="h-full bg-red-600 transition-all duration-500" style={{ width: `${100 * state.coopBossHpRemaining / state.config.coopBossLevel}%` }} />
                 </div>
               </div>
@@ -95,7 +97,7 @@ export function BoardView({ state }: { state: GameState }) {
             {state.config.threatTrackEnabled && (
               <div className="mt-3">
                 <div className="text-xs mb-1">{t.threat}: {state.threatTrack} / 10</div>
-                <div className="h-2 bg-slate-800 rounded overflow-hidden">
+                <div className="h-2 bg-amber-950/50 rounded overflow-hidden">
                   <div className="h-full bg-purple-500 transition-all duration-500" style={{ width: `${state.threatTrack * 10}%` }} />
                 </div>
               </div>
@@ -162,10 +164,179 @@ export function BoardView({ state }: { state: GameState }) {
           ))}
           <div ref={logEnd} />
         </div>
-        <div className="text-xs opacity-60 mt-2 border-t border-slate-700 pt-2">
+        <div className="text-xs opacity-60 mt-2 border-t border-amber-800/30 pt-2">
           {t.doors.toLowerCase()} {state.doorDeckSize} · {t.treasures.toLowerCase()} {state.treasureDeckSize}
         </div>
       </aside>
+    </div>
+  );
+}
+
+const ROOM_OFFSETS: [number, number][] = [
+  [0, 0], [3, -6], [-4, 4], [6, -3], [-2, 7],
+  [5, 2], [-6, -4], [2, 6], [-5, -2], [4, 5],
+  [-3, -7], [7, 3], [1, -5], [-7, 6], [3, -4],
+  [6, 1], [-4, 5], [2, -7], [-6, 3], [5, -1],
+];
+
+function DungeonMap({
+  players,
+  winLevel,
+  activePlayerId,
+}: {
+  players: GameState['players'];
+  winLevel: number;
+  activePlayerId: string;
+}) {
+  const COLS = 4;
+  const CELL = 80;
+  const R = 26;
+  const PAD = 40;
+
+  const rooms = useMemo(() => {
+    const result: { level: number; cx: number; cy: number }[] = [];
+    for (let i = 0; i < winLevel; i++) {
+      const rowIdx = Math.floor(i / COLS);
+      const colInRow = i % COLS;
+      const col = rowIdx % 2 === 0 ? colInRow : COLS - 1 - colInRow;
+      const [xOff, yOff] = ROOM_OFFSETS[i % ROOM_OFFSETS.length]!;
+      result.push({
+        level: i + 1,
+        cx: col * CELL + PAD + xOff,
+        cy: rowIdx * CELL + PAD + yOff,
+      });
+    }
+    const maxY = Math.max(...result.map((r) => r.cy));
+    return result.map((r) => ({ ...r, cy: maxY - r.cy + PAD }));
+  }, [winLevel]);
+
+  const totalRows = Math.ceil(winLevel / COLS);
+  const svgW = (COLS - 1) * CELL + PAD * 2;
+  const svgH = (totalRows - 1) * CELL + PAD * 2;
+
+  return (
+    <div className="card-shell p-4 overflow-hidden">
+      <div className="text-xs uppercase opacity-60 mb-2 font-display">{t.dungeonMap}</div>
+      <svg
+        viewBox={`0 0 ${svgW} ${svgH}`}
+        className="w-full mx-auto block"
+        style={{ maxHeight: '50vh', minHeight: '12rem' }}
+        preserveAspectRatio="xMidYMid meet"
+        aria-label={t.dungeonMap}
+      >
+        <defs>
+          <pattern id="dng-floor" width="14" height="14" patternUnits="userSpaceOnUse">
+            <rect width="14" height="14" fill="#2a1f14" />
+            <rect x="0" y="0" width="6" height="6" rx="0.5" fill="#332717" opacity="0.6" />
+            <rect x="7" y="7" width="6" height="6" rx="0.5" fill="#302416" opacity="0.5" />
+            <rect x="7" y="0" width="6" height="6" rx="0.5" fill="#2e2215" opacity="0.4" />
+            <rect x="0" y="7" width="6" height="6" rx="0.5" fill="#352918" opacity="0.5" />
+          </pattern>
+          <pattern id="dng-wall" width="10" height="10" patternUnits="userSpaceOnUse">
+            <rect width="10" height="10" fill="#110d05" />
+            <rect x="0" y="0" width="4" height="4" rx="0.5" fill="#1a1208" opacity="0.4" />
+            <rect x="5" y="5" width="4" height="4" rx="0.5" fill="#1a1208" opacity="0.3" />
+          </pattern>
+          <radialGradient id="dng-torch" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stopColor="#f59e0b" stopOpacity="0.35" />
+            <stop offset="60%" stopColor="#d97706" stopOpacity="0.12" />
+            <stop offset="100%" stopColor="#92400e" stopOpacity="0" />
+          </radialGradient>
+          <radialGradient id="dng-torch-goal" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stopColor="#fbbf24" stopOpacity="0.5" />
+            <stop offset="50%" stopColor="#f59e0b" stopOpacity="0.2" />
+            <stop offset="100%" stopColor="#92400e" stopOpacity="0" />
+          </radialGradient>
+        </defs>
+
+        <rect width={svgW} height={svgH} fill="url(#dng-wall)" rx="8" />
+
+        {rooms.slice(1).map((room, i) => {
+          const prev = rooms[i]!;
+          return (
+            <line key={`cb${i}`}
+              x1={prev.cx} y1={prev.cy} x2={room.cx} y2={room.cy}
+              stroke="#3d2e1e" strokeWidth={R * 2 + 8} strokeLinecap="round"
+            />
+          );
+        })}
+        {rooms.slice(1).map((room, i) => {
+          const prev = rooms[i]!;
+          return (
+            <line key={`cf${i}`}
+              x1={prev.cx} y1={prev.cy} x2={room.cx} y2={room.cy}
+              stroke="url(#dng-floor)" strokeWidth={R * 2} strokeLinecap="round"
+            />
+          );
+        })}
+
+        {rooms.map((room) => {
+          const here = players.filter((p) => p.level === room.level);
+          const isGoal = room.level === winLevel;
+          const isOccupied = here.length > 0;
+          const isActive = here.some((p) => p.id === activePlayerId);
+          return (
+            <g key={room.level}>
+              {(isOccupied || isGoal) && (
+                <circle cx={room.cx} cy={room.cy} r={R * 2.5}
+                  fill={isGoal ? 'url(#dng-torch-goal)' : 'url(#dng-torch)'}
+                />
+              )}
+              <circle cx={room.cx} cy={room.cy} r={R + 3}
+                fill="none" stroke="#3d2e1e" strokeWidth="3" />
+              <circle cx={room.cx} cy={room.cy} r={R}
+                fill="url(#dng-floor)"
+                stroke={isGoal ? '#d97706' : isActive ? '#b45309' : '#5c4a35'}
+                strokeWidth={isGoal || isActive ? 3 : 1.5}
+              />
+              {isGoal && (
+                <circle cx={room.cx} cy={room.cy} r={R + 7}
+                  fill="none" stroke="#d97706" strokeWidth="1.5" opacity="0.5"
+                  strokeDasharray="4 3" />
+              )}
+              {isActive && !isGoal && (
+                <circle cx={room.cx} cy={room.cy} r={R + 5}
+                  fill="none" stroke="#f59e0b" strokeWidth="1" opacity="0.4" />
+              )}
+              <text
+                x={room.cx}
+                y={isOccupied ? room.cy - 2 : room.cy + 5}
+                textAnchor="middle"
+                fill={isGoal ? '#fbbf24' : isOccupied ? '#e8c36a' : '#6b5330'}
+                fontSize={isGoal ? '13' : '17'}
+                fontWeight="bold"
+                fontFamily="'MedievalSharp', cursive"
+              >
+                {isGoal ? '🏆' : room.level}
+              </text>
+              {isGoal && (
+                <text x={room.cx} y={room.cy + 16} textAnchor="middle"
+                  fill="#d97706" fontSize="8" fontWeight="bold" letterSpacing="1"
+                >
+                  {t.dungeonGoal.toUpperCase()}
+                </text>
+              )}
+              {here.map((p, pi) => {
+                const angle = (pi / Math.max(here.length, 1)) * Math.PI * 2 - Math.PI / 2;
+                const spread = here.length > 1 ? 13 : 0;
+                const tx = room.cx + Math.cos(angle) * spread;
+                const ty = room.cy + (here.length > 1 ? Math.sin(angle) * spread + 6 : 13);
+                return (
+                  <g key={p.id}>
+                    <circle cx={tx} cy={ty} r="9"
+                      fill={p.color} stroke="rgba(255,255,255,0.5)" strokeWidth="1.5" />
+                    <text x={tx} y={ty + 3.5} textAnchor="middle"
+                      fill="white" fontSize="9" fontWeight="bold"
+                    >
+                      {p.name.charAt(0).toUpperCase()}
+                    </text>
+                  </g>
+                );
+              })}
+            </g>
+          );
+        })}
+      </svg>
     </div>
   );
 }

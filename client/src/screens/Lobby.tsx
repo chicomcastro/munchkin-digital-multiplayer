@@ -53,7 +53,7 @@ export function Lobby({
       <div className="card-shell p-4 flex items-center justify-between gap-3 anim-fade">
         <div className="min-w-0">
           <div className="text-xs uppercase opacity-60">{t.room}</div>
-          <div className="text-3xl font-bold text-amber-400 tracking-widest font-mono">{state.roomCode}</div>
+          <div className="text-3xl font-bold text-amber-400 tracking-widest font-mono font-display">{state.roomCode}</div>
         </div>
         <div className="flex flex-col gap-2 shrink-0">
           <button className="btn text-sm py-2" onClick={shareCode} aria-label={t.share}>
@@ -72,7 +72,7 @@ export function Lobby({
                 key={p.id}
                 type="button"
                 onClick={() => applyPreset(p)}
-                className="text-left rounded-xl bg-slate-700 hover:bg-slate-600 active:bg-slate-800 px-3 py-2 transition-colors"
+                className="text-left rounded-xl bg-amber-900/50 hover:bg-amber-800/50 active:bg-amber-950/60 px-3 py-2 transition-colors"
               >
                 <div className="font-bold text-sm text-amber-300">{p.label}</div>
                 <div className="text-xs opacity-70 mt-0.5 leading-snug">{p.description}</div>
@@ -89,7 +89,7 @@ export function Lobby({
         </div>
         <div className="space-y-2">
           {state.players.map((p) => (
-            <div key={p.id} className="flex items-center gap-3 bg-slate-900/60 rounded-lg px-3 py-2">
+            <div key={p.id} className="flex items-center gap-3 bg-amber-950/40 rounded-lg px-3 py-2">
               <div className="w-3 h-3 rounded-full shrink-0" style={{ background: p.color }} />
               <div className="flex-1 truncate">{p.name}{p.id === myId && ' (você)'}</div>
               {p.ready ? (
@@ -108,7 +108,7 @@ export function Lobby({
             className={[
               'mt-3 w-full text-sm py-2 rounded-xl font-bold transition-colors',
               me.ready
-                ? 'bg-slate-700 hover:bg-slate-600 text-white'
+                ? 'bg-amber-900/60 hover:bg-amber-800/60 text-amber-100'
                 : 'bg-emerald-600 hover:bg-emerald-500 text-white',
             ].join(' ')}
           >
@@ -120,7 +120,7 @@ export function Lobby({
       <button
         type="button"
         onClick={() => setShowConfig((v) => !v)}
-        className="w-full text-left text-sm bg-slate-800/60 hover:bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 flex items-center justify-between"
+        className="w-full text-left text-sm bg-amber-950/40 hover:bg-amber-950/60 border border-amber-800/30 rounded-xl px-4 py-3 flex items-center justify-between"
       >
         <span className="opacity-80">{showConfig ? t.hideConfig : t.showConfig}</span>
         <span className="opacity-60 text-xs">{showConfig ? '▲' : '▼'}</span>
@@ -136,7 +136,7 @@ export function Lobby({
               disabled={!isCreator}
               value={cfg.variant}
               onChange={(e) => update('variant', e.target.value as Variant)}
-              className="bg-slate-900 border border-slate-700 rounded-lg px-2 py-1"
+              className="bg-[rgba(26,18,8,0.8)] border border-[rgba(139,90,43,0.35)] rounded-lg px-2 py-1"
             >
               <option value="quick">{variantLabels.quick}</option>
               <option value="medium">{variantLabels.medium}</option>
@@ -149,7 +149,7 @@ export function Lobby({
               disabled={!isCreator}
               value={cfg.winLevel}
               onChange={(e) => update('winLevel', parseInt(e.target.value))}
-              className="bg-slate-900 border border-slate-700 rounded-lg px-2 py-1"
+              className="bg-[rgba(26,18,8,0.8)] border border-[rgba(139,90,43,0.35)] rounded-lg px-2 py-1"
             >
               {[6, 7, 8, 10].map((n) => <option key={n} value={n}>{n}</option>)}
             </select>
@@ -159,7 +159,7 @@ export function Lobby({
               disabled={!isCreator}
               value={cfg.playerCount}
               onChange={(e) => update('playerCount', parseInt(e.target.value))}
-              className="bg-slate-900 border border-slate-700 rounded-lg px-2 py-1"
+              className="bg-[rgba(26,18,8,0.8)] border border-[rgba(139,90,43,0.35)] rounded-lg px-2 py-1"
             >
               {[2, 3, 4, 5, 6].map((n) => <option key={n} value={n}>{n}</option>)}
             </select>
@@ -170,7 +170,7 @@ export function Lobby({
               disabled={!isCreator}
               value={cfg.startingHandDoors}
               onChange={(e) => update('startingHandDoors', parseInt(e.target.value))}
-              className="bg-slate-900 border border-slate-700 rounded-lg px-2 py-1 w-20"
+              className="bg-[rgba(26,18,8,0.8)] border border-[rgba(139,90,43,0.35)] rounded-lg px-2 py-1 w-20"
             />
           </Field>
           <Field label={t.startingHandTreasures}>
@@ -179,7 +179,7 @@ export function Lobby({
               disabled={!isCreator}
               value={cfg.startingHandTreasures}
               onChange={(e) => update('startingHandTreasures', parseInt(e.target.value))}
-              className="bg-slate-900 border border-slate-700 rounded-lg px-2 py-1 w-20"
+              className="bg-[rgba(26,18,8,0.8)] border border-[rgba(139,90,43,0.35)] rounded-lg px-2 py-1 w-20"
             />
           </Field>
           <Toggle label={t.listeningAtTheDoor} tip={t.tipListening} checked={cfg.listeningAtTheDoor} disabled={!isCreator} onChange={(v) => update('listeningAtTheDoor', v)} />
@@ -190,7 +190,7 @@ export function Lobby({
                 disabled={!isCreator}
                 value={cfg.marketSize}
                 onChange={(e) => update('marketSize', parseInt(e.target.value))}
-                className="bg-slate-900 border border-slate-700 rounded-lg px-2 py-1"
+                className="bg-[rgba(26,18,8,0.8)] border border-[rgba(139,90,43,0.35)] rounded-lg px-2 py-1"
               >
                 <option value={3}>3</option>
                 <option value={5}>5</option>
@@ -210,7 +210,7 @@ export function Lobby({
                 const v = parseInt(e.target.value);
                 update('turnTimerSeconds', v > 0 ? v : null);
               }}
-              className="bg-slate-900 border border-slate-700 rounded-lg px-2 py-1 w-20"
+              className="bg-[rgba(26,18,8,0.8)] border border-[rgba(139,90,43,0.35)] rounded-lg px-2 py-1 w-20"
             />
           </Field>
           <Field label={t.globalTimerMinutes}>
@@ -222,7 +222,7 @@ export function Lobby({
                 const v = parseInt(e.target.value);
                 update('globalTimerMinutes', v > 0 ? v : null);
               }}
-              className="bg-slate-900 border border-slate-700 rounded-lg px-2 py-1 w-20"
+              className="bg-[rgba(26,18,8,0.8)] border border-[rgba(139,90,43,0.35)] rounded-lg px-2 py-1 w-20"
             />
           </Field>
           {cfg.variant === 'cooperative' && (
@@ -232,7 +232,7 @@ export function Lobby({
                   disabled={!isCreator}
                   value={cfg.coopObjective}
                   onChange={(e) => update('coopObjective', e.target.value as CoopObjective)}
-                  className="bg-slate-900 border border-slate-700 rounded-lg px-2 py-1"
+                  className="bg-[rgba(26,18,8,0.8)] border border-[rgba(139,90,43,0.35)] rounded-lg px-2 py-1"
                 >
                   <option value="bossFight">{t.coopObjectiveBoss}</option>
                   <option value="dungeonTrail">{t.coopObjectiveTrail}</option>
@@ -245,7 +245,7 @@ export function Lobby({
                   disabled={!isCreator}
                   value={cfg.coopBossLevel}
                   onChange={(e) => update('coopBossLevel', parseInt(e.target.value))}
-                  className="bg-slate-900 border border-slate-700 rounded-lg px-2 py-1 w-20"
+                  className="bg-[rgba(26,18,8,0.8)] border border-[rgba(139,90,43,0.35)] rounded-lg px-2 py-1 w-20"
                 />
               </Field>
               <Field label={t.coopTrailSize}>
@@ -254,7 +254,7 @@ export function Lobby({
                   disabled={!isCreator}
                   value={cfg.coopTrailSize}
                   onChange={(e) => update('coopTrailSize', parseInt(e.target.value))}
-                  className="bg-slate-900 border border-slate-700 rounded-lg px-2 py-1 w-20"
+                  className="bg-[rgba(26,18,8,0.8)] border border-[rgba(139,90,43,0.35)] rounded-lg px-2 py-1 w-20"
                 />
               </Field>
               <Field label={t.coopRounds}>
@@ -263,7 +263,7 @@ export function Lobby({
                   disabled={!isCreator}
                   value={cfg.coopRounds}
                   onChange={(e) => update('coopRounds', parseInt(e.target.value))}
-                  className="bg-slate-900 border border-slate-700 rounded-lg px-2 py-1 w-20"
+                  className="bg-[rgba(26,18,8,0.8)] border border-[rgba(139,90,43,0.35)] rounded-lg px-2 py-1 w-20"
                 />
               </Field>
               <Toggle label={t.threatTrackEnabled} tip={t.tipThreatTrack} checked={cfg.threatTrackEnabled} disabled={!isCreator} onChange={(v) => update('threatTrackEnabled', v)} />
@@ -275,7 +275,7 @@ export function Lobby({
       {me && !me.socketId && <div className="text-red-400 text-center">{t.disconnectedLabel}</div>}
 
       {/* Sticky footer — primary action stays in reach without scrolling */}
-      <div className="fixed bottom-0 inset-x-0 z-30 bg-gradient-to-t from-slate-950 via-slate-950/95 to-transparent p-4 pt-8 backdrop-blur-sm border-t border-slate-800/50 shadow-[0_-16px_32px_-16px_rgba(0,0,0,0.7)]">
+      <div className="fixed bottom-0 inset-x-0 z-30 bg-gradient-to-t from-[#0f0c06] via-[rgba(15,12,6,0.95)] to-transparent p-4 pt-8 backdrop-blur-sm border-t border-amber-800/30 shadow-[0_-16px_32px_-16px_rgba(0,0,0,0.7)]">
         <div className="max-w-2xl mx-auto">
           {isCreator ? (
             <button
@@ -286,7 +286,7 @@ export function Lobby({
               {t.startGame} ({state.players.length}/{cfg.playerCount})
             </button>
           ) : (
-            <div className="text-center opacity-70 text-sm bg-slate-800/80 rounded-xl py-3">
+            <div className="text-center opacity-70 text-sm bg-amber-950/60 rounded-xl py-3">
               {t.waitingForHost(state.players[0]?.name ?? 'host')}
             </div>
           )}
@@ -326,7 +326,7 @@ function Toggle({
           <span
             title={tip}
             aria-label={tip}
-            className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-slate-700 text-[10px] opacity-70 cursor-help"
+            className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-amber-900/50 text-[10px] opacity-70 cursor-help"
           >
             ?
           </span>

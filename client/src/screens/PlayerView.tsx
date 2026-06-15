@@ -108,6 +108,23 @@ export function PlayerView({
 
   const selectedCardObj = useMemo(() => hand.find((c) => c.id === selectedCard) ?? null, [hand, selectedCard]);
 
+  const slotMap = useMemo(() => {
+    const map: Record<string, Card | null> = { head: null, body: null, feet: null, handL: null, handR: null };
+    const others: Card[] = [];
+    for (const c of me.equipped) {
+      const s = c.slot ?? 'none';
+      if (s === 'twoHands') { map.handL = c; map.handR = c; }
+      else if (s === 'hand') {
+        if (!map.handL) map.handL = c;
+        else if (!map.handR) map.handR = c;
+        else others.push(c);
+      } else if (s in map && !map[s]) { map[s] = c; }
+      else if (s === 'none') others.push(c);
+      else others.push(c);
+    }
+    return { slots: map, others };
+  }, [me.equipped]);
+
   function playCard(c: Card, targetId?: string) {
     emit('game:playCard', { cardId: c.id, targetId }).catch((e) => alert(e.message));
     setSelectedCard(null);
@@ -142,23 +159,36 @@ export function PlayerView({
         : state.turnPhase === 'charity'
           ? { text: t.phaseBannerCharity, accent: 'bg-violet-500/20 border-violet-500/40 text-violet-200' }
           : state.turnPhase === 'endTurn'
-            ? { text: t.phaseBannerEndTurn, accent: 'bg-slate-500/20 border-slate-500/40 text-slate-200' }
+            ? { text: t.phaseBannerEndTurn, accent: 'bg-amber-800/20 border-amber-700/40 text-amber-200' }
             : { text: t.phaseBannerKick, accent: 'bg-amber-500/20 border-amber-500/40 text-amber-200' }
-    : { text: t.phaseBannerWaiting(activePlayer?.name ?? '...'), accent: 'bg-slate-500/10 border-slate-600/40 text-slate-400' };
+    : { text: t.phaseBannerWaiting(activePlayer?.name ?? '...'), accent: 'bg-amber-900/20 border-amber-800/40 text-amber-300/70' };
 
   return (
-    <div className="min-h-screen flex flex-col screen-root">
+    <div className="min-h-screen flex flex-col screen-root pt-12">
       {/* Hero header */}
       <header className="surface-glass mx-3 mt-1 p-3 anim-fade" style={{ borderTop: `3px solid ${me.color}` }}>
         <div className="flex justify-between items-start gap-2">
           <div className="min-w-0">
             <div className="text-xs opacity-60 truncate">{t.room} {state.roomCode} · {t.turn} {state.turn}</div>
-            <div className="flex items-baseline gap-2 mt-0.5">
-              <span className={['text-3xl font-black text-amber-400 inline-block leading-none', pulseLevel ? 'anim-pop' : ''].join(' ')}>{me.level}</span>
-              <span className="text-sm opacity-60">{t.level}</span>
-              <span className="text-slate-400 mx-0.5">·</span>
-              <span className="text-lg font-bold">{me.combatPower}</span>
-              <span className="text-sm opacity-60">{t.power}</span>
+            <div className="flex items-center gap-0.5 mt-1">
+              <span className="text-xs opacity-60 mr-1.5 font-display">{t.level}</span>
+              {Array.from({ length: 10 }, (_, i) => i + 1).map((n) => (
+                <div
+                  key={n}
+                  className={[
+                    'w-5 h-5 rounded-full border-2 flex items-center justify-center text-[9px] font-bold transition-all',
+                    n <= me.level
+                      ? 'bg-amber-500 border-amber-400 text-amber-950'
+                      : 'bg-amber-950/40 border-amber-700/40 text-amber-600/60',
+                    n === me.level && pulseLevel ? 'anim-pop' : '',
+                  ].join(' ')}
+                >
+                  {n}
+                </div>
+              ))}
+              <span className="text-amber-800/60 mx-1.5">|</span>
+              <span className="text-lg font-bold font-display">{me.combatPower}</span>
+              <span className="text-xs opacity-60 ml-0.5">{t.power}</span>
             </div>
             <div className="flex gap-1.5 mt-1.5 flex-wrap">
               <span className="bg-emerald-900/60 border border-emerald-700/60 text-emerald-200 text-xs px-2 py-0.5 rounded-full">
@@ -178,19 +208,32 @@ export function PlayerView({
             )}
           </div>
         </div>
-        {me.equipped.length > 0 && (
-          <div className="flex gap-1 overflow-x-auto scroll-thin mt-2 pb-0.5">
-            {me.equipped.map((c) => (
-              <div key={c.id} className="bg-amber-900/60 border border-amber-700 px-2 py-0.5 rounded text-xs whitespace-nowrap">
-                {c.name} <span className="opacity-70">+{c.bonus ?? 0}</span>
-              </div>
-            ))}
+        <div className="mt-2">
+          <div className="grid grid-cols-3 gap-1 text-[10px] max-w-[280px]">
+            <div />
+            <SlotBox label="head" card={slotMap.slots.head} />
+            <div />
+            <SlotBox label="hand" card={slotMap.slots.handL} />
+            <SlotBox label="body" card={slotMap.slots.body} />
+            <SlotBox label="hand" card={slotMap.slots.handR} twoHands={slotMap.slots.handL === slotMap.slots.handR && !!slotMap.slots.handL} />
+            <div />
+            <SlotBox label="feet" card={slotMap.slots.feet} />
+            <div />
           </div>
-        )}
+          {slotMap.others.length > 0 && (
+            <div className="flex gap-1 mt-1 flex-wrap">
+              {slotMap.others.map((c) => (
+                <span key={c.id} className="bg-amber-900/40 border border-amber-800/40 px-1.5 py-0.5 rounded text-[10px]">
+                  {c.name} +{c.bonus ?? 0}
+                </span>
+              ))}
+            </div>
+          )}
+        </div>
         {state.config.twoPlayerDualCharacter && (me.characters?.length ?? 0) > 0 && (
           <button
             type="button"
-            className="mt-2 text-xs opacity-70 hover:opacity-100 transition-opacity border border-slate-600 rounded px-3 py-1"
+            className="mt-2 text-xs opacity-70 hover:opacity-100 transition-opacity border border-amber-800/40 rounded px-3 py-1"
             onClick={() => emit('game:swapCharacter', { alternateIdx: 0 }).catch((e) => alert(e.message))}
           >
             🔄 {t.swapCharacter} (nv {me.characters![0]!.level})
@@ -199,19 +242,19 @@ export function PlayerView({
       </header>
 
       {/* Phase banner */}
-      <div className={['mx-3 mt-1.5 px-3 py-1.5 rounded-lg border text-sm text-center font-medium anim-fade', phaseBanner.accent].join(' ')}>
+      <div className={['mx-3 mt-1.5 px-3 py-1.5 rounded-lg border text-sm text-center font-medium anim-fade font-display', phaseBanner.accent].join(' ')}>
         {phaseBanner.text}
       </div>
 
       {/* Table perspective: opponents (far) → board (middle) → hand (near) */}
-      <main id="main-content" className="flex-1 flex flex-col px-3 mt-2 space-y-2">
+      <main id="main-content" className="flex flex-col px-3 mt-2 space-y-2 pb-4">
         {/* ── FAR: opponents as Zoom-call style cards ── */}
         {opponents.length > 0 && (
           <div>
             <div className="flex items-center gap-2 mb-2">
-              <div className="h-px flex-1 bg-slate-700/60" />
-              <span className="text-xs uppercase tracking-widest opacity-50">{t.opponents}</span>
-              <div className="h-px flex-1 bg-slate-700/60" />
+              <div className="h-px flex-1 bg-amber-800/30" />
+              <span className="text-xs uppercase tracking-widest opacity-50 font-display">{t.opponents}</span>
+              <div className="h-px flex-1 bg-amber-800/30" />
             </div>
             <div className="flex gap-2 overflow-x-auto scroll-thin pb-1 justify-center">
               {opponents.map((p) => (
@@ -229,7 +272,7 @@ export function PlayerView({
                   >
                     {p.name.charAt(0).toUpperCase()}
                   </div>
-                  <div className="font-bold truncate text-sm mt-1">{p.name}</div>
+                  <div className="font-bold truncate text-sm mt-1 font-display">{p.name}</div>
                   {!p.socketId && <div className="text-[10px] opacity-50">{t.offline}</div>}
                   <div className="text-xs mt-0.5 opacity-80">
                     <span className="text-amber-300 font-bold">{p.level}</span>
@@ -248,7 +291,7 @@ export function PlayerView({
         )}
 
         {/* ── MIDDLE: board center (combat, abilities) + deck sidebar ── */}
-        <div className="flex-1 lg:grid lg:grid-cols-[1fr_280px] lg:gap-4 space-y-2 lg:space-y-0">
+        <div className="lg:grid lg:grid-cols-[1fr_280px] lg:gap-4 space-y-2 lg:space-y-0">
           <div className="space-y-2">
             {inCombat && combat && (
               <div className="anim-slide-in">
@@ -295,9 +338,9 @@ export function PlayerView({
           {/* Deck sidebar — stacks vertically on desktop, inline grid on mobile */}
           <aside className="space-y-2">
             <div className="flex items-center gap-2 mb-2">
-              <div className="h-px flex-1 bg-slate-700/60" />
-              <span className="text-xs uppercase tracking-widest opacity-50">{t.decksLabel}</span>
-              <div className="h-px flex-1 bg-slate-700/60" />
+              <div className="h-px flex-1 bg-amber-800/30" />
+              <span className="text-xs uppercase tracking-widest opacity-50 font-display">{t.decksLabel}</span>
+              <div className="h-px flex-1 bg-amber-800/30" />
             </div>
             <div className="grid grid-cols-2 lg:grid-cols-1 gap-2">
               <DeckBox label={t.doors} size={state.doorDeckSize} discard={state.doorDiscardTop} accent="text-red-300" emptyMsg={t.emptyDiscardDoor} />
@@ -394,9 +437,9 @@ export function PlayerView({
 
         <div>
           <div className="flex items-center gap-2 mb-2">
-            <div className="h-px flex-1 bg-slate-700/60" />
-            <span className="text-xs uppercase tracking-widest opacity-50">{t.hand} ({hand.length})</span>
-            <div className="h-px flex-1 bg-slate-700/60" />
+            <div className="h-px flex-1 bg-amber-800/30" />
+            <span className="text-xs uppercase tracking-widest opacity-50 font-display">{t.hand} ({hand.length})</span>
+            <div className="h-px flex-1 bg-amber-800/30" />
           </div>
           <div className="flex gap-2 overflow-x-auto scroll-thin pb-2 justify-center flex-wrap">
             {hand.length === 0 && <div className="opacity-50 text-sm italic">{t.emptyHand}</div>}
@@ -523,7 +566,7 @@ function AbilitiesPanel({
               onClick={() => toggleCharge(c.id)}
               className={[
                 'text-xs px-2 py-1 rounded whitespace-nowrap',
-                chargePicker.has(c.id) ? 'bg-amber-500 text-slate-950 font-bold' : 'bg-slate-700 text-white',
+                chargePicker.has(c.id) ? 'bg-amber-500 text-amber-950 font-bold' : 'bg-amber-900/60 text-amber-100',
               ].join(' ')}
             >
               {c.name}
@@ -555,7 +598,7 @@ function AbilitiesPanel({
               onClick={() => toggleCharge(c.id)}
               className={[
                 'text-xs px-2 py-1 rounded whitespace-nowrap',
-                chargePicker.has(c.id) ? 'bg-amber-500 text-slate-950 font-bold' : 'bg-slate-700 text-white',
+                chargePicker.has(c.id) ? 'bg-amber-500 text-amber-950 font-bold' : 'bg-amber-900/60 text-amber-100',
               ].join(' ')}
             >
               {c.name}
@@ -576,6 +619,24 @@ function AbilitiesPanel({
   return null;
 }
 
+function SlotBox({ label, card, twoHands }: { label: string; card: Card | null; twoHands?: boolean }) {
+  return (
+    <div className={[
+      'rounded border px-1 py-1 text-center min-h-[2.25rem] flex flex-col justify-center',
+      card
+        ? 'bg-amber-900/40 border-amber-700/50 text-amber-200'
+        : 'bg-amber-950/50 border-dashed border-amber-600/50 text-amber-500/60 italic',
+    ].join(' ')}>
+      <div className="uppercase text-[7px] tracking-wider opacity-60">{twoHands ? '2H' : label}</div>
+      {card ? (
+        <div className="text-[9px] truncate font-bold">{card.name}</div>
+      ) : (
+        <div className="text-[8px]">--</div>
+      )}
+    </div>
+  );
+}
+
 function DeckBox({
   label,
   size,
@@ -590,10 +651,10 @@ function DeckBox({
   emptyMsg: string;
 }) {
   return (
-    <div className="rounded-xl bg-slate-900/60 border border-slate-700 p-2">
-      <div className="text-[10px] uppercase opacity-50">{label}</div>
+    <div className="rounded-xl bg-amber-950/40 border border-amber-800/30 p-2">
+      <div className="text-[10px] uppercase opacity-50 font-display">{label}</div>
       <div className="flex items-center gap-2 mt-1">
-        <div className="w-10 h-14 rounded-md bg-slate-800 border-2 border-slate-600 flex items-center justify-center text-xs font-bold">
+        <div className="w-10 h-14 rounded-md bg-amber-950/60 border-2 border-amber-700/40 flex items-center justify-center text-xs font-bold text-amber-300">
           {size}
         </div>
         <div className="text-xs flex-1 min-w-0">

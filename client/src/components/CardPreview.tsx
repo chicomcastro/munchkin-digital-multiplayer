@@ -83,7 +83,7 @@ export function CardPreview({
             ×
           </button>
         </div>
-        <div className="font-bold text-2xl mt-3 leading-tight">{card.name}</div>
+        <div className="font-bold text-2xl mt-3 leading-tight font-display">{card.name}</div>
         {card.type === 'monster' && (
           <div className="text-amber-300 text-lg font-bold mt-2">{t.monsterStats(card.level ?? 1, card.treasures ?? 1, card.levelsAwarded ?? 1)}</div>
         )}
