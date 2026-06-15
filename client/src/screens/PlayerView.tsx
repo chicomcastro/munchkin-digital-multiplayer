@@ -231,13 +231,34 @@ export function PlayerView({
           )}
         </div>
         {state.config.twoPlayerDualCharacter && (me.characters?.length ?? 0) > 0 && (
-          <button
-            type="button"
-            className="mt-2 text-xs opacity-70 hover:opacity-100 transition-opacity border border-amber-800/40 rounded px-3 py-1"
-            onClick={() => emit('game:swapCharacter', { alternateIdx: 0 }).catch((e) => alert(e.message))}
-          >
-            🔄 {t.swapCharacter} (nv {me.characters![0]!.level})
-          </button>
+          <div className="mt-2.5 border-t border-amber-800/30 pt-2" data-testid="characters-panel">
+            <div className="text-[10px] uppercase tracking-widest opacity-60 font-display mb-1.5">
+              {t.charactersLabel}
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <CharacterRow
+                tag={t.activeCharacterTag}
+                tagAccent="bg-amber-500/30 border-amber-400/60 text-amber-100"
+                race={me.race?.name ?? t.noRace}
+                klass={me.class?.name ?? t.noClass}
+                level={me.level}
+                power={me.combatPower}
+                isActive
+              />
+              {me.characters!.map((alt, i) => (
+                <CharacterRow
+                  key={i}
+                  tag={t.alternateCharacterTag}
+                  tagAccent="bg-amber-900/60 border-amber-700/60 text-amber-300"
+                  race={alt.race?.name ?? t.noRace}
+                  klass={alt.class?.name ?? t.noClass}
+                  level={alt.level}
+                  power={alt.combatPower}
+                  onSwap={() => emit('game:swapCharacter', { alternateIdx: i }).catch((e) => alert(e.message))}
+                />
+              ))}
+            </div>
+          </div>
         )}
       </header>
 
@@ -617,6 +638,62 @@ function AbilitiesPanel({
   }
 
   return null;
+}
+
+function CharacterRow({
+  tag,
+  tagAccent,
+  race,
+  klass,
+  level,
+  power,
+  isActive,
+  onSwap,
+}: {
+  tag: string;
+  tagAccent: string;
+  race: string;
+  klass: string;
+  level: number;
+  power: number;
+  isActive?: boolean;
+  onSwap?: () => void;
+}) {
+  return (
+    <div
+      className={[
+        'flex items-center gap-2 rounded-md border px-2 py-1.5',
+        isActive ? 'bg-amber-900/30 border-amber-700/50' : 'bg-amber-950/40 border-amber-800/30',
+      ].join(' ')}
+      data-testid={isActive ? 'character-row-active' : 'character-row-alt'}
+    >
+      <span className={['text-[9px] uppercase tracking-wider px-1.5 py-0.5 rounded border font-bold shrink-0', tagAccent].join(' ')}>
+        {tag}
+      </span>
+      <div className="flex-1 min-w-0 flex items-center gap-1.5 flex-wrap">
+        <span className="bg-emerald-900/60 border border-emerald-700/60 text-emerald-200 text-[10px] px-1.5 py-0.5 rounded-full truncate max-w-[40%]">
+          {race}
+        </span>
+        <span className="bg-indigo-900/60 border border-indigo-700/60 text-indigo-200 text-[10px] px-1.5 py-0.5 rounded-full truncate max-w-[40%]">
+          {klass}
+        </span>
+      </div>
+      <div className="text-[10px] opacity-80 shrink-0 flex items-center gap-1.5">
+        <span><span className="opacity-60">{t.level[0]}</span><span className="font-bold text-amber-300 ml-0.5">{level}</span></span>
+        <span><span className="opacity-60">{t.power[0]}</span><span className="font-bold ml-0.5">{power}</span></span>
+      </div>
+      {onSwap && (
+        <button
+          type="button"
+          onClick={onSwap}
+          className="text-[10px] border border-amber-700/60 bg-amber-900/40 hover:bg-amber-800/60 transition-colors rounded px-2 py-1 font-bold shrink-0"
+          aria-label={t.swapCharacter}
+        >
+          🔄 {t.swap}
+        </button>
+      )}
+    </div>
+  );
 }
 
 function SlotBox({ label, card, twoHands }: { label: string; card: Card | null; twoHands?: boolean }) {

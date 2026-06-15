@@ -289,4 +289,83 @@ describe('PlayerView', () => {
       expect(last?.payload.alternateIdx).toBe(0);
     });
   });
+
+  it('Dual-character: characters panel shows both active and alternate with race/class/level/power', () => {
+    const base = makeState();
+    const me = {
+      ...base.players[0]!,
+      level: 5,
+      combatPower: 9,
+      race: makeCard({ type: 'race', deck: 'door', name: 'Elf' }),
+      class: makeCard({ type: 'class', deck: 'door', name: 'Wizard' }),
+      characters: [{
+        level: 3,
+        hand: [],
+        equipped: [],
+        carried: [],
+        race: makeCard({ type: 'race', deck: 'door', name: 'Dwarf', id: 'r2' }),
+        class: makeCard({ type: 'class', deck: 'door', name: 'Cleric', id: 'c2' }),
+        combatPower: 6,
+      }],
+    };
+    const state = makeState({
+      players: [me, base.players[1]!],
+      config: { ...base.config, twoPlayerDualCharacter: true },
+    });
+    renderView(state, []);
+    const panel = screen.getByTestId('characters-panel');
+    expect(panel).toBeInTheDocument();
+    // Active row reveals the main character
+    const activeRow = screen.getByTestId('character-row-active');
+    expect(activeRow).toHaveTextContent('Elf');
+    expect(activeRow).toHaveTextContent('Wizard');
+    expect(activeRow).toHaveTextContent('5');
+    expect(activeRow).toHaveTextContent('9');
+    // Alternate row reveals the second character
+    const altRow = screen.getByTestId('character-row-alt');
+    expect(altRow).toHaveTextContent('Dwarf');
+    expect(altRow).toHaveTextContent('Cleric');
+    expect(altRow).toHaveTextContent('3');
+    expect(altRow).toHaveTextContent('6');
+  });
+
+  it('Dual-character: characters panel is hidden when feature disabled', () => {
+    const base = makeState();
+    const me = {
+      ...base.players[0]!,
+      characters: [{
+        level: 3, hand: [], equipped: [], carried: [], race: null, class: null, combatPower: 3,
+      }],
+    };
+    const state = makeState({
+      players: [me, base.players[1]!],
+      config: { ...base.config, twoPlayerDualCharacter: false },
+    });
+    renderView(state, []);
+    expect(screen.queryByTestId('characters-panel')).not.toBeInTheDocument();
+  });
+
+  it('Dual-character: per-alternate swap button passes correct index', async () => {
+    mockSocket.queueAck('game:swapCharacter', { ok: true });
+    const base = makeState();
+    const me = {
+      ...base.players[0]!,
+      characters: [
+        { level: 2, hand: [], equipped: [], carried: [], race: null, class: null, combatPower: 2 },
+        { level: 4, hand: [], equipped: [], carried: [], race: null, class: null, combatPower: 4 },
+      ],
+    };
+    const state = makeState({
+      players: [me, base.players[1]!],
+      config: { ...base.config, twoPlayerDualCharacter: true },
+    });
+    renderView(state, []);
+    const swapButtons = screen.getAllByRole('button', { name: new RegExp(t.swapCharacter) });
+    expect(swapButtons).toHaveLength(2);
+    fireEvent.click(swapButtons[1]!);
+    await waitFor(() => {
+      const last = mockSocket.lastEmit('game:swapCharacter');
+      expect(last?.payload.alternateIdx).toBe(1);
+    });
+  });
 });
