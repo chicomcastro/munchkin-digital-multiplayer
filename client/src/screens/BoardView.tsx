@@ -215,11 +215,12 @@ function DungeonMap({
   const svgH = (totalRows - 1) * CELL + PAD * 2;
 
   return (
-    <div className="card-shell p-4 flex-1 flex flex-col overflow-hidden" style={{ minHeight: '16rem' }}>
+    <div className="card-shell p-4 overflow-hidden">
       <div className="text-xs uppercase opacity-60 mb-2 font-display">{t.dungeonMap}</div>
       <svg
         viewBox={`0 0 ${svgW} ${svgH}`}
-        className="w-full flex-1 mx-auto block"
+        className="w-full mx-auto block"
+        style={{ maxHeight: '50vh', minHeight: '12rem' }}
         preserveAspectRatio="xMidYMid meet"
         aria-label={t.dungeonMap}
       >
