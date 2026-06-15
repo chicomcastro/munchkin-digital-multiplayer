@@ -937,9 +937,11 @@ export class GameRoom {
     const list = player.characters ?? [];
     if (alternateIdx < 0 || alternateIdx >= list.length) throw new Error('Invalid alternate.');
     const alt = list[alternateIdx]!;
+    // Hand stays with the player across swaps — only character-bound state
+    // (level, equipped, carried, race, class, combatPower) is exchanged.
     const current: typeof alt = {
       level: player.level,
-      hand: player.hand,
+      hand: [],
       equipped: player.equipped,
       carried: player.carried,
       race: player.race,
@@ -947,7 +949,6 @@ export class GameRoom {
       combatPower: player.combatPower,
     };
     player.level = alt.level;
-    player.hand = alt.hand;
     player.equipped = alt.equipped;
     player.carried = alt.carried;
     player.race = alt.race;

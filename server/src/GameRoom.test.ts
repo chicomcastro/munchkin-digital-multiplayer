@@ -1499,6 +1499,21 @@ describe('GameRoom — Dual character', () => {
     expect(players[0]!.characters![0]!.level).toBe(5);
   });
 
+  it('preserves the player hand across a swap', () => {
+    const { room, players } = dualRoom();
+    // Seed a non-empty hand so we can assert it isn't lost in the swap.
+    const seeded = [item({ name: 'Sword' }), item({ name: 'Shield' })];
+    players[0]!.hand.push(...seeded);
+    const handBefore = [...players[0]!.hand];
+    room.swapCharacter(players[0]!.id, 0);
+    expect(players[0]!.hand).toEqual(handBefore);
+    // Stored alt should not be hoarding the player's cards either.
+    expect(players[0]!.characters![0]!.hand).toEqual([]);
+    // Swapping back still leaves the hand intact.
+    room.swapCharacter(players[0]!.id, 0);
+    expect(players[0]!.hand).toEqual(handBefore);
+  });
+
   it('rejects swap when mechanic disabled', () => {
     // Use 3 players so the Long variant's auto-dual doesn't kick in.
     const { room, players } = buildTestRoom({
