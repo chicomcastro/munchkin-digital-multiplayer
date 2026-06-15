@@ -118,6 +118,8 @@ export const es: Translations = {
   threat: 'Amenaza',
   noActiveCombat: 'Sin combate activo',
   market: 'Mercado',
+  dungeonMap: 'Mapa de la Mazmorra',
+  dungeonGoal: '¡Victoria!',
   log: 'Registro',
   gameOver: 'Juego terminado',
   winner: 'Ganador',

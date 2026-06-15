@@ -120,6 +120,8 @@ export function BoardView({ state }: { state: GameState }) {
           </div>
         )}
 
+        <DungeonMap players={state.players} winLevel={state.config.winLevel} activePlayerId={state.activePlayerId ?? ''} />
+
         {/* On xl: the roster moved to the left column; keep grid for sm/lg. */}
         <div className="grid grid-cols-2 md:grid-cols-3 xl:hidden gap-3">
           {state.players.map((p) => (
@@ -166,6 +168,92 @@ export function BoardView({ state }: { state: GameState }) {
           {t.doors.toLowerCase()} {state.doorDeckSize} · {t.treasures.toLowerCase()} {state.treasureDeckSize}
         </div>
       </aside>
+    </div>
+  );
+}
+
+function DungeonMap({
+  players,
+  winLevel,
+  activePlayerId,
+}: {
+  players: GameState['players'];
+  winLevel: number;
+  activePlayerId: string;
+}) {
+  const cols = 5;
+  const rows = Math.ceil(winLevel / cols);
+
+  const rooms = Array.from({ length: winLevel }, (_, i) => {
+    const level = i + 1;
+    const rowIdx = Math.floor(i / cols);
+    const colInRow = i % cols;
+    const col = rowIdx % 2 === 0 ? colInRow : cols - 1 - colInRow;
+    const gridRow = rows - 1 - rowIdx;
+    return { level, gridRow, gridCol: col };
+  });
+
+  return (
+    <div className="card-shell p-4">
+      <div className="text-xs uppercase opacity-60 mb-3 font-display">{t.dungeonMap}</div>
+      <div
+        className="grid gap-1.5 mx-auto"
+        style={{
+          gridTemplateColumns: `repeat(${cols}, 1fr)`,
+          gridTemplateRows: `repeat(${rows}, 1fr)`,
+          maxWidth: `${cols * 5}rem`,
+        }}
+      >
+        {rooms.map(({ level, gridRow, gridCol }) => {
+          const here = players.filter((p) => p.level === level);
+          const isGoal = level === winLevel;
+          const hasActive = here.some((p) => p.id === activePlayerId);
+          return (
+            <div
+              key={level}
+              style={{ gridRow: gridRow + 1, gridColumn: gridCol + 1 }}
+              className={[
+                'relative rounded-lg border-2 p-1 min-h-[3.5rem] flex flex-col items-center justify-center gap-0.5 transition-all',
+                isGoal
+                  ? 'bg-amber-700/30 border-amber-500/60'
+                  : here.length > 0
+                    ? 'bg-amber-900/40 border-amber-600/50'
+                    : 'bg-amber-950/50 border-amber-800/30',
+                hasActive ? 'ring-2 ring-amber-400/60' : '',
+              ].join(' ')}
+            >
+              <span
+                className={[
+                  'text-sm font-bold font-display leading-none',
+                  here.length > 0 ? 'text-amber-300' : 'text-amber-700/60',
+                  isGoal ? 'text-amber-400' : '',
+                ].join(' ')}
+              >
+                {isGoal ? '🏆' : level}
+              </span>
+              {isGoal && (
+                <span className="text-[8px] uppercase tracking-wider text-amber-400/80 font-bold">
+                  {t.dungeonGoal}
+                </span>
+              )}
+              {here.length > 0 && (
+                <div className="flex gap-0.5 flex-wrap justify-center">
+                  {here.map((p) => (
+                    <div
+                      key={p.id}
+                      className="w-5 h-5 rounded-full border-2 border-white/30 text-[8px] font-bold flex items-center justify-center text-white shadow-md"
+                      style={{ backgroundColor: p.color }}
+                      title={p.name}
+                    >
+                      {p.name.charAt(0).toUpperCase()}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }

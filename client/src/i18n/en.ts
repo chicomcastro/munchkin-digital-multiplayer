@@ -118,6 +118,8 @@ export const en: Translations = {
   threat: 'Threat',
   noActiveCombat: 'No active combat',
   market: 'Market',
+  dungeonMap: 'Dungeon Map',
+  dungeonGoal: 'Victory!',
   log: 'Log',
   gameOver: 'Game over',
   winner: 'Winner',
