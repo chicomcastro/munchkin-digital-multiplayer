@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import type { Card } from '../types';
 import { cardTypeLabels } from '../i18n';
 import { t } from '../i18n';
+import { CardTypeIcon } from './CardTypeIcon';
 
 const typeColors: Record<string, string> = {
   monster: 'bg-red-900 border-red-700',
@@ -25,17 +26,6 @@ const typeGlow: Record<string, string> = {
   helper: '0 0 24px rgba(20,184,166,0.4)',
 };
 
-const typeIcons: Record<string, string> = {
-  monster: '👹',
-  curse: '💀',
-  race: '🧝',
-  class: '⚔️',
-  item: '🛡️',
-  oneShot: '🧪',
-  levelUp: '⬆️',
-  helper: '🤝',
-};
-
 export function CardPreview({
   card,
   onClose,
@@ -55,7 +45,6 @@ export function CardPreview({
   if (!card) return null;
   const color = typeColors[card.type] ?? 'bg-slate-900 border-slate-700';
   const glow = typeGlow[card.type] ?? 'none';
-  const icon = typeIcons[card.type] ?? '🎴';
 
   return (
     <div
@@ -71,7 +60,7 @@ export function CardPreview({
       >
         <div className="flex justify-between items-start gap-2">
           <div className="text-xs uppercase opacity-80 flex items-center gap-1.5">
-            <span className="text-2xl" aria-hidden="true">{icon}</span>
+            <CardTypeIcon type={card.type} size={24} className="text-current" />
             <span>{cardTypeLabels[card.type] ?? card.type}</span>
           </div>
           <button
