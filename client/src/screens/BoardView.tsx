@@ -4,6 +4,7 @@ import { PlayerStatus } from '../components/PlayerStatus';
 import { CombatArena } from '../components/CombatArena';
 import { CardView } from '../components/Card';
 import { Confetti } from '../components/Confetti';
+import { TrophyIcon } from '../components/TrophyIcon';
 import { t } from '../i18n';
 
 export function BoardView({ state }: { state: GameState }) {
@@ -132,7 +133,9 @@ export function BoardView({ state }: { state: GameState }) {
         {state.phase === 'ended' && (
           <>
             <div className="card-shell p-6 text-center anim-fade">
-              <div className="text-6xl mb-2" aria-hidden="true">🏆</div>
+              <div className="text-amber-300 mb-2 flex justify-center" aria-hidden="true">
+                <TrophyIcon size={72} />
+              </div>
               <div className="text-3xl font-bold text-amber-400 mb-2">{t.gameOver}</div>
               {state.winnerId ? (
                 <div className="text-xl">{t.winner}: <span className="font-bold">{state.players.find((p) => p.id === state.winnerId)?.name}</span></div>
@@ -298,29 +301,70 @@ function DungeonMap({
                 <circle cx={room.cx} cy={room.cy} r={R + 5}
                   fill="none" stroke="#f59e0b" strokeWidth="1" opacity="0.4" />
               )}
-              <text
-                x={room.cx}
-                y={isOccupied ? room.cy - 2 : room.cy + 5}
-                textAnchor="middle"
-                fill={isGoal ? '#fbbf24' : isOccupied ? '#e8c36a' : '#6b5330'}
-                fontSize={isGoal ? '13' : '17'}
-                fontWeight="bold"
-                fontFamily="'MedievalSharp', cursive"
-              >
-                {isGoal ? '🏆' : room.level}
-              </text>
-              {isGoal && (
-                <text x={room.cx} y={room.cy + 16} textAnchor="middle"
-                  fill="#d97706" fontSize="8" fontWeight="bold" letterSpacing="1"
+              {isGoal ? (
+                <>
+                  <g aria-hidden="true" style={{ color: '#fbbf24' }}>
+                    <TrophyIcon
+                      asSvgChild
+                      size={R * 1.05}
+                      x={room.cx}
+                      y={isOccupied ? room.cy - 8 : room.cy - 2}
+                    />
+                  </g>
+                  {!isOccupied && (
+                    <>
+                      <rect
+                        x={room.cx - 22}
+                        y={room.cy + R - 14}
+                        width="44"
+                        height="12"
+                        rx="3"
+                        fill="#1a120a"
+                        opacity="0.85"
+                      />
+                      <text x={room.cx} y={room.cy + R - 5} textAnchor="middle"
+                        fill="#fbbf24" fontSize="8" fontWeight="bold" letterSpacing="1.5"
+                        fontFamily="'MedievalSharp', cursive"
+                      >
+                        {t.dungeonGoal.toUpperCase()}
+                      </text>
+                    </>
+                  )}
+                </>
+              ) : (
+                <text
+                  x={room.cx}
+                  y={isOccupied ? room.cy - 2 : room.cy + 5}
+                  textAnchor="middle"
+                  fill={isOccupied ? '#e8c36a' : '#6b5330'}
+                  fontSize="17"
+                  fontWeight="bold"
+                  fontFamily="'MedievalSharp', cursive"
                 >
-                  {t.dungeonGoal.toUpperCase()}
+                  {room.level}
                 </text>
               )}
               {here.map((p, pi) => {
-                const angle = (pi / Math.max(here.length, 1)) * Math.PI * 2 - Math.PI / 2;
-                const spread = here.length > 1 ? 13 : 0;
-                const tx = room.cx + Math.cos(angle) * spread;
-                const ty = room.cy + (here.length > 1 ? Math.sin(angle) * spread + 6 : 13);
+                const n = here.length;
+                const tokenR = 9;
+                const baseY = isGoal ? room.cy + R - 13 : room.cy + R - 14;
+                let tx: number;
+                let ty: number;
+                if (n === 1) {
+                  tx = room.cx;
+                  ty = baseY;
+                } else if (n === 2) {
+                  const gap = tokenR + 2;
+                  tx = room.cx + (pi === 0 ? -gap : gap);
+                  ty = baseY;
+                } else {
+                  const arcSpan = Math.PI * 0.9;
+                  const start = Math.PI / 2 - arcSpan / 2;
+                  const angle = start + (pi / (n - 1)) * arcSpan;
+                  const radius = R - tokenR - 2;
+                  tx = room.cx + Math.cos(angle) * radius;
+                  ty = room.cy + Math.sin(angle) * radius;
+                }
                 return (
                   <g key={p.id}>
                     <circle cx={tx} cy={ty} r="9"

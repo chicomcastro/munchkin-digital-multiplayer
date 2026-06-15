@@ -146,6 +146,69 @@ describe('BoardView', () => {
     expect(bar).toBeTruthy();
   });
 
+  it('renders an SVG trophy in the goal room (no emoji glyph)', () => {
+    const { container } = render(<BoardView state={makeState()} />);
+    const trophies = container.querySelectorAll('[data-testid="trophy-icon"]');
+    expect(trophies.length).toBeGreaterThan(0);
+    const svgs = container.querySelectorAll('svg');
+    for (const svg of svgs) {
+      expect(svg.textContent ?? '').not.toMatch(/[\uD800-\uDBFF]/);
+    }
+  });
+
+  it('renders SVG trophy in the game-over banner (no emoji glyph in the banner)', () => {
+    const { container } = render(<BoardView state={makeState({ phase: 'ended', winnerId: 'p1' })} />);
+    const trophies = container.querySelectorAll('[data-testid="trophy-icon"]');
+    expect(trophies.length).toBeGreaterThanOrEqual(2);
+    const banner = Array.from(container.querySelectorAll('div')).find((el) =>
+      (el.textContent ?? '').includes(t.gameOver),
+    );
+    expect(banner).toBeTruthy();
+    const bannerHeader = banner!.querySelector('[aria-hidden="true"]');
+    expect(bannerHeader?.querySelector('[data-testid="trophy-icon"]')).not.toBeNull();
+    expect(bannerHeader?.textContent ?? '').not.toMatch(/[\uD800-\uDBFF]/);
+  });
+
+  it('keeps player tokens inside the room circle even with multiple players at the same level', () => {
+    const state = makeState({
+      players: [
+        makePlayer({ id: 'p1', name: 'Alice', level: 1 }),
+        makePlayer({ id: 'p2', name: 'Bob', level: 1 }),
+        makePlayer({ id: 'p3', name: 'Carol', level: 1 }),
+      ],
+    });
+    const { container } = render(<BoardView state={state} />);
+    const svg = container.querySelector('svg[aria-label]');
+    expect(svg).not.toBeNull();
+    const roomCircles = svg!.querySelectorAll('circle[fill="url(#dng-floor)"]');
+    expect(roomCircles.length).toBeGreaterThan(0);
+    const room1 = roomCircles[0]!;
+    const cx = parseFloat(room1.getAttribute('cx')!);
+    const cy = parseFloat(room1.getAttribute('cy')!);
+    const r = parseFloat(room1.getAttribute('r')!);
+    const tokens = svg!.querySelectorAll('circle[r="9"]');
+    expect(tokens.length).toBe(3);
+    for (const tk of tokens) {
+      const tx = parseFloat(tk.getAttribute('cx')!);
+      const ty = parseFloat(tk.getAttribute('cy')!);
+      const dist = Math.sqrt((tx - cx) ** 2 + (ty - cy) ** 2);
+      expect(dist + 9).toBeLessThanOrEqual(r + 0.5);
+    }
+  });
+
+  it('hides the inline VITÓRIA label when the goal room is occupied', () => {
+    const state = makeState({
+      phase: 'ended',
+      winnerId: 'p1',
+      players: [makePlayer({ id: 'p1', name: 'Alice', level: 10 })],
+      config: makeConfig({ winLevel: 10 }),
+    });
+    const { container } = render(<BoardView state={state} />);
+    const svg = container.querySelector('svg[aria-label]');
+    const labels = svg ? Array.from(svg.querySelectorAll('text')).map((n) => n.textContent ?? '') : [];
+    expect(labels).not.toContain(t.dungeonGoal.toUpperCase());
+  });
+
   it('global timer ticks and renders M:SS', () => {
     vi.useFakeTimers();
     const state = makeState({ globalTimerEndsAt: Date.now() + 125_000 });
