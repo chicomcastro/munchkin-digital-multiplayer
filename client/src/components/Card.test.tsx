@@ -72,4 +72,10 @@ describe('CardView', () => {
       expect(screen.getAllByText(cardTypeLabels[t]).length).toBeGreaterThan(0);
     }
   });
+
+  it('renders an SVG type icon (no emoji glyphs)', () => {
+    const { container } = render(<CardView card={makeCard({ type: 'monster' })} />);
+    expect(container.querySelector('[data-testid="card-type-icon-monster"]')).not.toBeNull();
+    expect(container.textContent ?? '').not.toMatch(/[\uD800-\uDBFF]/);
+  });
 });

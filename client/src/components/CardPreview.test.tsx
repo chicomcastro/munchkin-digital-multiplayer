@@ -75,4 +75,10 @@ describe('CardPreview', () => {
     render(<CardPreview card={item} onClose={vi.fn()} />);
     expect(screen.getByText(/Slot: head/)).toBeInTheDocument();
   });
+
+  it('renders an SVG type icon (no emoji glyphs)', () => {
+    const { container } = render(<CardPreview card={makeCard({ type: 'item' })} onClose={vi.fn()} />);
+    expect(container.querySelector('[data-testid="card-type-icon-item"]')).not.toBeNull();
+    expect(container.textContent ?? '').not.toMatch(/[\uD800-\uDBFF]/);
+  });
 });
