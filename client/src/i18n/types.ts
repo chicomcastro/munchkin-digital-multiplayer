@@ -110,6 +110,10 @@ export interface Translations {
   opponents: string;
   reserveInFist: string;
   swapCharacter: string;
+  charactersLabel: string;
+  activeCharacterTag: string;
+  alternateCharacterTag: string;
+  swap: string;
   steal: string;
   stealFrom: string;
   cleric: string;
