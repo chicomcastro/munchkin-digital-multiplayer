@@ -43,11 +43,11 @@ export function PlayerStatus({
       onClick={() => setExpanded((v) => !v)}
     >
       <div className="flex items-baseline justify-between">
-        <div className="font-bold text-lg truncate">{player.name}</div>
-        <div className="flex items-center gap-2">
-          <span className="text-sm opacity-70">{player.socketId ? t.online : t.offline}</span>
+        <div className="flex items-center gap-1.5">
           <span className="text-xs opacity-40">{expanded ? '▲' : '▼'}</span>
+          <span className="font-bold text-lg truncate">{player.name}</span>
         </div>
+        <span className="text-sm opacity-70">{player.socketId ? t.online : t.offline}</span>
       </div>
       <div className="flex gap-4 mt-1 text-sm">
         <div>
