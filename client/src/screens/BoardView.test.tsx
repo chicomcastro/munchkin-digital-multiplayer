@@ -196,14 +196,8 @@ describe('BoardView', () => {
     }
   });
 
-  it('hides the inline VITÓRIA label when the goal room is occupied', () => {
-    const state = makeState({
-      phase: 'ended',
-      winnerId: 'p1',
-      players: [makePlayer({ id: 'p1', name: 'Alice', level: 10 })],
-      config: makeConfig({ winLevel: 10 }),
-    });
-    const { container } = render(<BoardView state={state} />);
+  it('does not render the VITÓRIA label inside the dungeon map (icon-only goal)', () => {
+    const { container } = render(<BoardView state={makeState()} />);
     const svg = container.querySelector('svg[aria-label]');
     const labels = svg ? Array.from(svg.querySelectorAll('text')).map((n) => n.textContent ?? '') : [];
     expect(labels).not.toContain(t.dungeonGoal.toUpperCase());

@@ -302,35 +302,14 @@ function DungeonMap({
                   fill="none" stroke="#f59e0b" strokeWidth="1" opacity="0.4" />
               )}
               {isGoal ? (
-                <>
-                  <g aria-hidden="true" style={{ color: '#fbbf24' }}>
-                    <TrophyIcon
-                      asSvgChild
-                      size={R * 1.05}
-                      x={room.cx}
-                      y={isOccupied ? room.cy - 8 : room.cy - 2}
-                    />
-                  </g>
-                  {!isOccupied && (
-                    <>
-                      <rect
-                        x={room.cx - 22}
-                        y={room.cy + R - 14}
-                        width="44"
-                        height="12"
-                        rx="3"
-                        fill="#1a120a"
-                        opacity="0.85"
-                      />
-                      <text x={room.cx} y={room.cy + R - 5} textAnchor="middle"
-                        fill="#fbbf24" fontSize="8" fontWeight="bold" letterSpacing="1.5"
-                        fontFamily="'MedievalSharp', cursive"
-                      >
-                        {t.dungeonGoal.toUpperCase()}
-                      </text>
-                    </>
-                  )}
-                </>
+                <g aria-hidden="true" style={{ color: '#fbbf24' }}>
+                  <TrophyIcon
+                    asSvgChild
+                    size={R * 1.15}
+                    x={room.cx}
+                    y={isOccupied ? room.cy - 8 : room.cy}
+                  />
+                </g>
               ) : (
                 <text
                   x={room.cx}
