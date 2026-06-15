@@ -44,7 +44,7 @@ export function BoardView({ state }: { state: GameState }) {
           <PlayerStatus key={p.id} player={p} active={state.activePlayerId === p.id} />
         ))}
       </aside>
-      <div className="space-y-4">
+      <div className="flex flex-col gap-4">
         <div className="card-shell p-4">
           <div className="flex items-center justify-between">
             <div>
@@ -74,6 +74,8 @@ export function BoardView({ state }: { state: GameState }) {
             </div>
           )}
         </div>
+
+        <DungeonMap players={state.players} winLevel={state.config.winLevel} activePlayerId={state.activePlayerId ?? ''} />
 
         {state.config.variant === 'cooperative' && (
           <div className="card-shell p-4">
@@ -119,8 +121,6 @@ export function BoardView({ state }: { state: GameState }) {
             </div>
           </div>
         )}
-
-        <DungeonMap players={state.players} winLevel={state.config.winLevel} activePlayerId={state.activePlayerId ?? ''} />
 
         {/* On xl: the roster moved to the left column; keep grid for sm/lg. */}
         <div className="grid grid-cols-2 md:grid-cols-3 xl:hidden gap-3">
@@ -172,6 +172,13 @@ export function BoardView({ state }: { state: GameState }) {
   );
 }
 
+const ROOM_OFFSETS: [number, number][] = [
+  [0, 0], [3, -6], [-4, 4], [6, -3], [-2, 7],
+  [5, 2], [-6, -4], [2, 6], [-5, -2], [4, 5],
+  [-3, -7], [7, 3], [1, -5], [-7, 6], [3, -4],
+  [6, 1], [-4, 5], [2, -7], [-6, 3], [5, -1],
+];
+
 function DungeonMap({
   players,
   winLevel,
@@ -182,9 +189,9 @@ function DungeonMap({
   activePlayerId: string;
 }) {
   const COLS = 4;
-  const CELL = 64;
-  const R = 22;
-  const PAD = 32;
+  const CELL = 80;
+  const R = 26;
+  const PAD = 40;
 
   const rooms = useMemo(() => {
     const result: { level: number; cx: number; cy: number }[] = [];
@@ -192,9 +199,7 @@ function DungeonMap({
       const rowIdx = Math.floor(i / COLS);
       const colInRow = i % COLS;
       const col = rowIdx % 2 === 0 ? colInRow : COLS - 1 - colInRow;
-      const seed = ((i + 1) * 7 + 3) % 11;
-      const xOff = (seed % 3 - 1) * 5;
-      const yOff = ((seed * 3) % 5 - 2) * 4;
+      const [xOff, yOff] = ROOM_OFFSETS[i % ROOM_OFFSETS.length]!;
       result.push({
         level: i + 1,
         cx: col * CELL + PAD + xOff,
@@ -210,12 +215,12 @@ function DungeonMap({
   const svgH = (totalRows - 1) * CELL + PAD * 2;
 
   return (
-    <div className="card-shell p-4 overflow-hidden">
+    <div className="card-shell p-4 flex-1 flex flex-col overflow-hidden" style={{ minHeight: '16rem' }}>
       <div className="text-xs uppercase opacity-60 mb-2 font-display">{t.dungeonMap}</div>
       <svg
         viewBox={`0 0 ${svgW} ${svgH}`}
-        className="w-full mx-auto block"
-        style={{ maxWidth: '26rem' }}
+        className="w-full flex-1 mx-auto block"
+        preserveAspectRatio="xMidYMid meet"
         aria-label={t.dungeonMap}
       >
         <defs>
@@ -231,10 +236,16 @@ function DungeonMap({
             <rect x="0" y="0" width="4" height="4" rx="0.5" fill="#1a1208" opacity="0.4" />
             <rect x="5" y="5" width="4" height="4" rx="0.5" fill="#1a1208" opacity="0.3" />
           </pattern>
-          <filter id="dng-glow">
-            <feGaussianBlur stdDeviation="3" result="blur" />
-            <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
-          </filter>
+          <radialGradient id="dng-torch" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stopColor="#f59e0b" stopOpacity="0.35" />
+            <stop offset="60%" stopColor="#d97706" stopOpacity="0.12" />
+            <stop offset="100%" stopColor="#92400e" stopOpacity="0" />
+          </radialGradient>
+          <radialGradient id="dng-torch-goal" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stopColor="#fbbf24" stopOpacity="0.5" />
+            <stop offset="50%" stopColor="#f59e0b" stopOpacity="0.2" />
+            <stop offset="100%" stopColor="#92400e" stopOpacity="0" />
+          </radialGradient>
         </defs>
 
         <rect width={svgW} height={svgH} fill="url(#dng-wall)" rx="8" />
@@ -244,7 +255,7 @@ function DungeonMap({
           return (
             <line key={`cb${i}`}
               x1={prev.cx} y1={prev.cy} x2={room.cx} y2={room.cy}
-              stroke="#3d2e1e" strokeWidth={R * 2 + 6} strokeLinecap="round"
+              stroke="#3d2e1e" strokeWidth={R * 2 + 8} strokeLinecap="round"
             />
           );
         })}
@@ -261,47 +272,60 @@ function DungeonMap({
         {rooms.map((room) => {
           const here = players.filter((p) => p.level === room.level);
           const isGoal = room.level === winLevel;
+          const isOccupied = here.length > 0;
           const isActive = here.some((p) => p.id === activePlayerId);
           return (
             <g key={room.level}>
+              {(isOccupied || isGoal) && (
+                <circle cx={room.cx} cy={room.cy} r={R * 2.5}
+                  fill={isGoal ? 'url(#dng-torch-goal)' : 'url(#dng-torch)'}
+                />
+              )}
               <circle cx={room.cx} cy={room.cy} r={R + 3}
                 fill="none" stroke="#3d2e1e" strokeWidth="3" />
               <circle cx={room.cx} cy={room.cy} r={R}
                 fill="url(#dng-floor)"
                 stroke={isGoal ? '#d97706' : isActive ? '#b45309' : '#5c4a35'}
-                strokeWidth={isGoal || isActive ? 2.5 : 1.5}
+                strokeWidth={isGoal || isActive ? 3 : 1.5}
               />
               {isGoal && (
-                <circle cx={room.cx} cy={room.cy} r={R + 6}
-                  fill="none" stroke="#d97706" strokeWidth="1" opacity="0.4"
-                  strokeDasharray="3 3" />
+                <circle cx={room.cx} cy={room.cy} r={R + 7}
+                  fill="none" stroke="#d97706" strokeWidth="1.5" opacity="0.5"
+                  strokeDasharray="4 3" />
               )}
               {isActive && !isGoal && (
-                <circle cx={room.cx} cy={room.cy} r={R + 4}
-                  fill="none" stroke="#f59e0b" strokeWidth="1" opacity="0.3" />
+                <circle cx={room.cx} cy={room.cy} r={R + 5}
+                  fill="none" stroke="#f59e0b" strokeWidth="1" opacity="0.4" />
               )}
               <text
                 x={room.cx}
-                y={here.length > 0 ? room.cy - 1 : room.cy + 5}
+                y={isOccupied ? room.cy - 2 : room.cy + 5}
                 textAnchor="middle"
-                fill={isGoal ? '#fbbf24' : here.length > 0 ? '#d4a054' : '#6b5330'}
-                fontSize={isGoal ? '11' : '15'}
+                fill={isGoal ? '#fbbf24' : isOccupied ? '#e8c36a' : '#6b5330'}
+                fontSize={isGoal ? '13' : '17'}
                 fontWeight="bold"
                 fontFamily="'MedievalSharp', cursive"
               >
                 {isGoal ? '🏆' : room.level}
               </text>
+              {isGoal && (
+                <text x={room.cx} y={room.cy + 16} textAnchor="middle"
+                  fill="#d97706" fontSize="8" fontWeight="bold" letterSpacing="1"
+                >
+                  {t.dungeonGoal.toUpperCase()}
+                </text>
+              )}
               {here.map((p, pi) => {
                 const angle = (pi / Math.max(here.length, 1)) * Math.PI * 2 - Math.PI / 2;
-                const spread = here.length > 1 ? 11 : 0;
+                const spread = here.length > 1 ? 13 : 0;
                 const tx = room.cx + Math.cos(angle) * spread;
-                const ty = room.cy + (here.length > 1 ? Math.sin(angle) * spread + 5 : 11);
+                const ty = room.cy + (here.length > 1 ? Math.sin(angle) * spread + 6 : 13);
                 return (
                   <g key={p.id}>
-                    <circle cx={tx} cy={ty} r="8"
+                    <circle cx={tx} cy={ty} r="9"
                       fill={p.color} stroke="rgba(255,255,255,0.5)" strokeWidth="1.5" />
                     <text x={tx} y={ty + 3.5} textAnchor="middle"
-                      fill="white" fontSize="8" fontWeight="bold"
+                      fill="white" fontSize="9" fontWeight="bold"
                     >
                       {p.name.charAt(0).toUpperCase()}
                     </text>
