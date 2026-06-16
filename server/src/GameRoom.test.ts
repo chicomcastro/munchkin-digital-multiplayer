@@ -1530,3 +1530,58 @@ describe('GameRoom — Dual character', () => {
     expect(() => room.swapCharacter(players[0]!.id, 5)).toThrow(/invalid alternate/i);
   });
 });
+
+describe('GameRoom — bot seats', () => {
+  it('adds a bot with the requested difficulty', () => {
+    const room = new GameRoom({ variant: 'long', playerCount: 4, turnTimerSeconds: 0, globalTimerMinutes: 0 });
+    room.addPlayer('Host', 'sh');
+    const bot = room.addBot('normal');
+    expect(bot.isBot).toBe(true);
+    expect(bot.botDifficulty).toBe('normal');
+    expect(bot.socketId).toBeNull();
+    expect(bot.name).toBe('Bot 1');
+  });
+
+  it('refuses to add bots once the game has started', () => {
+    const room = new GameRoom({ variant: 'long', playerCount: 2, turnTimerSeconds: 0, globalTimerMinutes: 0 });
+    room.addPlayer('Host', 'sh');
+    room.addBot('easy');
+    room.start();
+    expect(() => room.addBot('easy')).toThrow(/already started/i);
+  });
+
+  it('refuses to add bots beyond the room cap', () => {
+    const room = new GameRoom({ variant: 'long', playerCount: 2, turnTimerSeconds: 0, globalTimerMinutes: 0 });
+    room.addBot('easy');
+    room.addBot('easy');
+    expect(() => room.addBot('easy')).toThrow(/room is full/i);
+  });
+
+  it('removes a bot by id', () => {
+    const room = new GameRoom({ variant: 'long', playerCount: 3, turnTimerSeconds: 0, globalTimerMinutes: 0 });
+    room.addPlayer('Host', 'sh');
+    const bot = room.addBot('easy');
+    room.removeBot(bot.id);
+    expect(room.players.find((p) => p.id === bot.id)).toBeUndefined();
+  });
+
+  it('rejects removing a human player', () => {
+    const room = new GameRoom({ variant: 'long', playerCount: 2, turnTimerSeconds: 0, globalTimerMinutes: 0 });
+    const human = room.addPlayer('Host', 'sh');
+    expect(() => room.removeBot(human.id)).toThrow(/cannot remove human/i);
+  });
+
+  it('rejects removing once the game has started', () => {
+    const room = new GameRoom({ variant: 'long', playerCount: 2, turnTimerSeconds: 0, globalTimerMinutes: 0 });
+    room.addPlayer('Host', 'sh');
+    const bot = room.addBot('easy');
+    room.start();
+    expect(() => room.removeBot(bot.id)).toThrow(/game has started/i);
+  });
+
+  it('marks the first added bot as the creator when no human exists', () => {
+    const room = new GameRoom({ variant: 'long', playerCount: 2, turnTimerSeconds: 0, globalTimerMinutes: 0 });
+    const bot = room.addBot('easy');
+    expect(room.isCreator(bot.id)).toBe(true);
+  });
+});

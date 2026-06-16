@@ -229,6 +229,53 @@ export class GameRoom {
     return this.creatorId === playerId;
   }
 
+  addBot(difficulty: 'easy' | 'normal' | 'hard', name?: string): Player {
+    if (this.phase !== 'lobby') {
+      throw new Error('Game already started.');
+    }
+    if (this.players.length >= this.config.playerCount) {
+      throw new Error('Room is full.');
+    }
+    const botNumber = this.players.filter((p) => p.isBot).length + 1;
+    const color = PLAYER_COLORS[this.players.length] ?? '#888';
+    const player: Player = {
+      id: nanoid(8),
+      name: (name ?? `Bot ${botNumber}`).slice(0, 24),
+      socketId: null,
+      level: 1,
+      hand: [],
+      equipped: [],
+      carried: [],
+      race: null,
+      class: null,
+      isAlive: true,
+      combatPower: 1,
+      fistCards: [],
+      color,
+      ready: true,
+      isBot: true,
+      botDifficulty: difficulty,
+    };
+    this.players.push(player);
+    if (!this.creatorId) this.creatorId = player.id;
+    this.write(`${player.name} (bot ${difficulty}) joined.`);
+    this.emit();
+    return player;
+  }
+
+  removeBot(playerId: string) {
+    if (this.phase !== 'lobby') {
+      throw new Error('Cannot remove bots once the game has started.');
+    }
+    const idx = this.players.findIndex((p) => p.id === playerId);
+    if (idx < 0) throw new Error('Player not found.');
+    const p = this.players[idx]!;
+    if (!p.isBot) throw new Error('Cannot remove human players.');
+    this.players.splice(idx, 1);
+    this.write(`${p.name} (bot) left.`);
+    this.emit();
+  }
+
   reconnect(playerId: string, socketId: string): Player | null {
     const p = this.players.find((p) => p.id === playerId);
     if (!p) return null;

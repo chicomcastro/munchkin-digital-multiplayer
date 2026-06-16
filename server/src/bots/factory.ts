@@ -1,4 +1,5 @@
 import { EasyPolicy } from './easy.js';
+import { NormalPolicy } from './normal.js';
 import type { BotDifficulty, BotPolicy } from './policy.js';
 
 export function getPolicy(difficulty: BotDifficulty): BotPolicy {
@@ -6,8 +7,9 @@ export function getPolicy(difficulty: BotDifficulty): BotPolicy {
     case 'easy':
       return new EasyPolicy();
     case 'normal':
+      return new NormalPolicy();
     case 'hard':
-      // Higher tiers introduced in follow-up PRs — fall back to easy until then.
-      return new EasyPolicy();
+      // Hard tier arrives in the next PR; fall back to normal for now.
+      return new NormalPolicy();
   }
 }

@@ -161,6 +161,15 @@ export interface Translations {
   toggleReady: string;
   toggleNotReady: string;
 
+  // Bot seats
+  bot: string;
+  addBot: string;
+  removeBot: string;
+  botDifficulty: string;
+  botDifficultyEasy: string;
+  botDifficultyNormal: string;
+  botDifficultyHard: string;
+
   // Toasts
   youGotCard: (name: string) => string;
   youLeveledUp: (n: number) => string;

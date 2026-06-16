@@ -101,6 +101,10 @@ export interface Player extends Munchkin {
   halflingSoldThisTurn?: boolean;
   // Dual-character mode: zero or more alternate Munchkins.
   characters?: Munchkin[];
+  // Bot seats are real players (same authoritative state) with no socket
+  // attached. The server-side BotDriver picks actions on their behalf.
+  isBot?: boolean;
+  botDifficulty?: 'easy' | 'normal' | 'hard';
 }
 
 export type TurnPhase =

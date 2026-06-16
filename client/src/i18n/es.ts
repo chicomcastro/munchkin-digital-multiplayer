@@ -151,6 +151,14 @@ export const es: Translations = {
   toggleReady: 'Marcar como listo',
   toggleNotReady: 'Marcar como no listo',
 
+  bot: 'bot',
+  addBot: 'Añadir bot',
+  removeBot: 'Quitar',
+  botDifficulty: 'Dificultad',
+  botDifficultyEasy: 'Fácil',
+  botDifficultyNormal: 'Normal',
+  botDifficultyHard: 'Difícil',
+
   youGotCard: (name) => `Conseguiste ${name}`,
   youLeveledUp: (n) => `¡Subiste al nivel ${n}!`,
   youDied: 'Moriste — renaciste con una nueva mano.',

@@ -151,6 +151,14 @@ export const ptBR: Translations = {
   toggleReady: 'Marcar como pronto',
   toggleNotReady: 'Marcar como não pronto',
 
+  bot: 'bot',
+  addBot: 'Adicionar bot',
+  removeBot: 'Remover',
+  botDifficulty: 'Dificuldade',
+  botDifficultyEasy: 'Fácil',
+  botDifficultyNormal: 'Normal',
+  botDifficultyHard: 'Difícil',
+
   youGotCard: (name) => `Você ganhou ${name}`,
   youLeveledUp: (n) => `Subiu para o nível ${n}!`,
   youDied: 'Você morreu — renasceu com uma nova mão.',

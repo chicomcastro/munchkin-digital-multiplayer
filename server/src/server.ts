@@ -6,6 +6,8 @@ import { GameRoom } from './GameRoom.js';
 import type { RoomConfig } from './types.js';
 import { makeRepository } from './persistence/firestore.js';
 import type { RoomRepository } from './persistence/repository.js';
+import { BotDriver, type BotDriverOptions } from './bots/driver.js';
+import type { BotDifficulty } from './bots/policy.js';
 
 export interface ServerHandle {
   app: express.Express;
@@ -13,10 +15,17 @@ export interface ServerHandle {
   io: Server;
   rooms: Map<string, GameRoom>;
   repository: RoomRepository | null;
+  botDrivers: Map<string, BotDriver>;
   close: () => Promise<void>;
 }
 
-export function createServer(opts: { clientUrl?: string; repository?: RoomRepository | null } = {}): ServerHandle {
+export interface CreateServerOptions {
+  clientUrl?: string;
+  repository?: RoomRepository | null;
+  botDriverOptions?: BotDriverOptions;
+}
+
+export function createServer(opts: CreateServerOptions = {}): ServerHandle {
   const clientUrl = opts.clientUrl ?? '*';
   const app = express();
   app.use(cors({ origin: clientUrl === '*' ? true : clientUrl }));
@@ -24,6 +33,7 @@ export function createServer(opts: { clientUrl?: string; repository?: RoomReposi
 
   const rooms = new Map<string, GameRoom>();
   const repository: RoomRepository | null = opts.repository ?? makeRepository();
+  const botDrivers = new Map<string, BotDriver>();
 
   app.get('/health', (_req, res) => {
     res.json({ ok: true, rooms: rooms.size });
@@ -83,6 +93,9 @@ export function createServer(opts: { clientUrl?: string; repository?: RoomReposi
 
   function attachRoomBroadcast(room: GameRoom) {
     room.subscribe(() => broadcastRoom(room.code));
+    if (!botDrivers.has(room.code)) {
+      botDrivers.set(room.code, new BotDriver(room, opts.botDriverOptions));
+    }
   }
 
   io.on('connection', (socket) => {
@@ -119,6 +132,33 @@ export function createServer(opts: { clientUrl?: string; repository?: RoomReposi
         bound = { roomCode: code, playerId: player.id };
         cb?.({ ok: true, roomCode: code, playerId: player.id });
         broadcastRoom(code);
+      } catch (e) {
+        cb?.({ ok: false, error: (e as Error).message });
+      }
+    });
+
+    socket.on('room:addBot', (payload: { difficulty?: BotDifficulty; name?: string }, cb?: (r: any) => void) => {
+      if (!bound) return cb?.({ ok: false, error: 'Not in a room.' });
+      const room = rooms.get(bound.roomCode);
+      if (!room) return cb?.({ ok: false, error: 'Room missing.' });
+      if (!room.isCreator(bound.playerId)) return cb?.({ ok: false, error: 'Only the creator can add bots.' });
+      try {
+        const difficulty: BotDifficulty = payload?.difficulty ?? 'easy';
+        const bot = room.addBot(difficulty, payload?.name);
+        cb?.({ ok: true, botId: bot.id });
+      } catch (e) {
+        cb?.({ ok: false, error: (e as Error).message });
+      }
+    });
+
+    socket.on('room:removeBot', (payload: { botId: string }, cb?: (r: any) => void) => {
+      if (!bound) return cb?.({ ok: false, error: 'Not in a room.' });
+      const room = rooms.get(bound.roomCode);
+      if (!room) return cb?.({ ok: false, error: 'Room missing.' });
+      if (!room.isCreator(bound.playerId)) return cb?.({ ok: false, error: 'Only the creator can remove bots.' });
+      try {
+        room.removeBot(payload.botId);
+        cb?.({ ok: true });
       } catch (e) {
         cb?.({ ok: false, error: (e as Error).message });
       }
@@ -215,7 +255,10 @@ export function createServer(opts: { clientUrl?: string; repository?: RoomReposi
     io,
     rooms,
     repository,
+    botDrivers,
     close: async () => {
+      for (const d of botDrivers.values()) d.dispose();
+      botDrivers.clear();
       await new Promise<void>((resolve) => io.close(() => resolve()));
       await new Promise<void>((resolve) => httpServer.close(() => resolve()));
     },

@@ -80,6 +80,8 @@ export interface Player extends Munchkin {
   ready: boolean;
   halflingSoldThisTurn?: boolean;
   characters?: Munchkin[];
+  isBot?: boolean;
+  botDifficulty?: 'easy' | 'normal' | 'hard';
 }
 
 export type TurnPhase =
