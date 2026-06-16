@@ -249,4 +249,36 @@ describe('createServer — socket flow', () => {
     a.disconnect();
     await handle2.close();
   }, 10000);
+
+  it('room:addBot lets the creator add a bot seat', async () => {
+    const a = await connect();
+    const create = await rpc(a, 'room:create', { name: 'A', config: { playerCount: 3 } });
+    const res = await rpc(a, 'room:addBot', { difficulty: 'easy' });
+    expect(res.botId).toBeTruthy();
+    const room = handle.rooms.get(create.roomCode)!;
+    const bot = room.players.find((p) => p.id === res.botId);
+    expect(bot?.isBot).toBe(true);
+    expect(bot?.botDifficulty).toBe('easy');
+    a.disconnect();
+  });
+
+  it('room:addBot rejects non-creators', async () => {
+    const a = await connect();
+    const create = await rpc(a, 'room:create', { name: 'A', config: { playerCount: 3 } });
+    const b = await connect();
+    await rpc(b, 'room:join', { roomCode: create.roomCode, name: 'B' });
+    await expect(rpc(b, 'room:addBot', { difficulty: 'normal' })).rejects.toThrow(/creator/i);
+    a.disconnect();
+    b.disconnect();
+  });
+
+  it('room:removeBot removes a previously added bot', async () => {
+    const a = await connect();
+    const create = await rpc(a, 'room:create', { name: 'A', config: { playerCount: 3 } });
+    const added = await rpc(a, 'room:addBot', { difficulty: 'normal' });
+    await rpc(a, 'room:removeBot', { botId: added.botId });
+    const room = handle.rooms.get(create.roomCode)!;
+    expect(room.players.find((p) => p.id === added.botId)).toBeUndefined();
+    a.disconnect();
+  });
 });

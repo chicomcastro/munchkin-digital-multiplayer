@@ -151,6 +151,14 @@ export const en: Translations = {
   toggleReady: 'Mark as ready',
   toggleNotReady: 'Mark as not ready',
 
+  bot: 'bot',
+  addBot: 'Add bot',
+  removeBot: 'Remove',
+  botDifficulty: 'Difficulty',
+  botDifficultyEasy: 'Easy',
+  botDifficultyNormal: 'Normal',
+  botDifficultyHard: 'Hard',
+
   youGotCard: (name) => `You got ${name}`,
   youLeveledUp: (n) => `Leveled up to ${n}!`,
   youDied: 'You died — reborn with a new hand.',

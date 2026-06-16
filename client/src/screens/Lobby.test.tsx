@@ -367,4 +367,79 @@ describe('Lobby', () => {
     render(<Lobby state={state} myId="p1" onBoardMode={vi.fn()} />);
     expect(screen.getByRole('button', { name: t.toggleNotReady })).toBeInTheDocument();
   });
+
+  it('shows the Add bot control to the creator when the room has room', async () => {
+    mockSocket.queueAck('room:addBot', { ok: true });
+    const state = makeState({
+      phase: 'lobby',
+      config: makeConfig({ playerCount: 3 }),
+      players: [makePlayer({ id: 'p1', name: 'Alice' })],
+    });
+    render(<Lobby state={state} myId="p1" onBoardMode={vi.fn()} />);
+    const btn = screen.getByRole('button', { name: new RegExp(t.addBot) });
+    fireEvent.click(btn);
+    await waitFor(() => {
+      expect(mockSocket.lastEmit('room:addBot')?.payload?.difficulty).toBe('easy');
+    });
+  });
+
+  it('hides the Add bot control once the room is full', () => {
+    const state = makeState({
+      phase: 'lobby',
+      config: makeConfig({ playerCount: 2 }),
+      players: [
+        makePlayer({ id: 'p1', name: 'Alice' }),
+        makePlayer({ id: 'p2', name: 'Bob' }),
+      ],
+    });
+    render(<Lobby state={state} myId="p1" onBoardMode={vi.fn()} />);
+    expect(screen.queryByRole('button', { name: new RegExp(t.addBot) })).toBeNull();
+  });
+
+  it('renders a bot badge and remove button on bot players for the creator', async () => {
+    mockSocket.queueAck('room:removeBot', { ok: true });
+    const state = makeState({
+      phase: 'lobby',
+      config: makeConfig({ playerCount: 3 }),
+      players: [
+        makePlayer({ id: 'p1', name: 'Alice' }),
+        makePlayer({ id: 'b1', name: 'Bot 1', isBot: true, botDifficulty: 'normal', ready: true, socketId: null }),
+      ],
+    });
+    render(<Lobby state={state} myId="p1" onBoardMode={vi.fn()} />);
+    expect(screen.getByText(new RegExp(`${t.bot}.*${t.botDifficultyNormal}`, 'i'))).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: new RegExp(`${t.removeBot} Bot 1`) }));
+    await waitFor(() => {
+      expect(mockSocket.lastEmit('room:removeBot')?.payload?.botId).toBe('b1');
+    });
+  });
+
+  it('hides the bot remove button for non-creators', () => {
+    const state = makeState({
+      phase: 'lobby',
+      config: makeConfig({ playerCount: 3 }),
+      players: [
+        makePlayer({ id: 'p1', name: 'Alice' }),
+        makePlayer({ id: 'p2', name: 'Bob' }),
+        makePlayer({ id: 'b1', name: 'Bot 1', isBot: true, botDifficulty: 'easy' }),
+      ],
+    });
+    render(<Lobby state={state} myId="p2" onBoardMode={vi.fn()} />);
+    expect(screen.queryByRole('button', { name: new RegExp(`${t.removeBot} Bot 1`) })).toBeNull();
+  });
+
+  it('Add bot control uses the selected difficulty', async () => {
+    mockSocket.queueAck('room:addBot', { ok: true });
+    const state = makeState({
+      phase: 'lobby',
+      config: makeConfig({ playerCount: 3 }),
+      players: [makePlayer({ id: 'p1', name: 'Alice' })],
+    });
+    render(<Lobby state={state} myId="p1" onBoardMode={vi.fn()} />);
+    fireEvent.change(screen.getByLabelText(t.botDifficulty), { target: { value: 'hard' } });
+    fireEvent.click(screen.getByRole('button', { name: new RegExp(t.addBot) }));
+    await waitFor(() => {
+      expect(mockSocket.lastEmit('room:addBot')?.payload?.difficulty).toBe('hard');
+    });
+  });
 });

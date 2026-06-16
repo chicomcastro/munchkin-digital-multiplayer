@@ -85,22 +85,49 @@ export function Lobby({
 
       <div className="card-shell p-4">
         <div className="text-xs uppercase opacity-60 mb-2">
-          {t.players} ({state.players.length})
+          {t.players} ({state.players.length}/{cfg.playerCount})
         </div>
         <div className="space-y-2">
           {state.players.map((p) => (
             <div key={p.id} className="flex items-center gap-3 bg-amber-950/40 rounded-lg px-3 py-2">
               <div className="w-3 h-3 rounded-full shrink-0" style={{ background: p.color }} />
-              <div className="flex-1 truncate">{p.name}{p.id === myId && ' (você)'}</div>
-              {p.ready ? (
+              <div className="flex-1 truncate">
+                {p.name}{p.id === myId && ' (você)'}
+                {p.isBot && (
+                  <span className="ml-2 text-[10px] uppercase tracking-wide bg-indigo-700/70 text-indigo-100 rounded px-1.5 py-0.5 font-bold align-middle">
+                    {t.bot}
+                    {p.botDifficulty && ` · ${
+                      p.botDifficulty === 'easy' ? t.botDifficultyEasy
+                      : p.botDifficulty === 'normal' ? t.botDifficultyNormal
+                      : t.botDifficultyHard
+                    }`}
+                  </span>
+                )}
+              </div>
+              {!p.isBot && (p.ready ? (
                 <span className="text-xs bg-emerald-600/80 text-white rounded-full px-2 py-0.5 font-bold">✓ {t.ready}</span>
               ) : (
                 <span className="text-xs opacity-50">{t.notReady}</span>
+              ))}
+              {!p.isBot && (
+                <div className="text-xs opacity-60">{p.socketId ? t.online : t.offline}</div>
               )}
-              <div className="text-xs opacity-60">{p.socketId ? t.online : t.offline}</div>
+              {p.isBot && isCreator && (
+                <button
+                  type="button"
+                  onClick={() => emit('room:removeBot', { botId: p.id }).catch((e) => alert(e.message))}
+                  className="text-xs bg-red-900/60 hover:bg-red-800/60 text-red-100 rounded px-2 py-0.5 font-bold"
+                  aria-label={`${t.removeBot} ${p.name}`}
+                >
+                  {t.removeBot}
+                </button>
+              )}
             </div>
           ))}
         </div>
+        {isCreator && state.players.length < cfg.playerCount && (
+          <AddBotControl />
+        )}
         {me && (
           <button
             type="button"
@@ -301,6 +328,33 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
     <div className="flex items-center justify-between gap-3">
       <span className="text-sm opacity-80">{label}</span>
       {children}
+    </div>
+  );
+}
+
+type BotDifficulty = 'easy' | 'normal' | 'hard';
+
+function AddBotControl() {
+  const [difficulty, setDifficulty] = useState<BotDifficulty>('easy');
+  return (
+    <div className="mt-3 flex items-center gap-2">
+      <select
+        value={difficulty}
+        onChange={(e) => setDifficulty(e.target.value as BotDifficulty)}
+        aria-label={t.botDifficulty}
+        className="bg-[rgba(26,18,8,0.8)] border border-[rgba(139,90,43,0.35)] rounded-lg px-2 py-1.5 text-sm"
+      >
+        <option value="easy">{t.botDifficultyEasy}</option>
+        <option value="normal">{t.botDifficultyNormal}</option>
+        <option value="hard">{t.botDifficultyHard}</option>
+      </select>
+      <button
+        type="button"
+        onClick={() => emit('room:addBot', { difficulty }).catch((e) => alert(e.message))}
+        className="flex-1 text-sm py-2 rounded-xl font-bold bg-indigo-700 hover:bg-indigo-600 text-white"
+      >
+        + {t.addBot}
+      </button>
     </div>
   );
 }
