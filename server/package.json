@@ -11,7 +11,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
-    "simulate": "tsx src/bots/simulate.ts"
+    "simulate": "tsx src/bots/simulate.ts",
+    "balance-report": "tsx src/bots/balance-report.ts"
   },
   "dependencies": {
     "@amplitude/analytics-node": "^1.3.0",
