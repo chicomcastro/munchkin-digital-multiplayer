@@ -79,7 +79,6 @@ describe('EasyPolicy', () => {
   it('factory returns the expected policy tier per difficulty', () => {
     expect(getPolicy('easy').difficulty).toBe('easy');
     expect(getPolicy('normal').difficulty).toBe('normal');
-    // Hard tier ships in a follow-up PR; falls back to normal until then.
-    expect(getPolicy('hard').difficulty).toBe('normal');
+    expect(getPolicy('hard').difficulty).toBe('hard');
   });
 });

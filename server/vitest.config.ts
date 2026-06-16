@@ -14,8 +14,9 @@ export default defineConfig({
         'src/test-helpers.ts',
         'src/types.ts',
         'src/index.ts',
-        // CLI entrypoint — driven via `npm run simulate`, not vitest.
+        // CLI entrypoints — driven via npm scripts, not vitest.
         'src/bots/simulate.ts',
+        'src/bots/balance-report.ts',
         // Optional infrastructure — only fully exercised with live credentials.
         'src/persistence/firestore.ts',
         'src/analytics.ts',
