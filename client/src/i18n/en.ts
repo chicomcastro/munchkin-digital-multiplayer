@@ -165,6 +165,7 @@ export const en: Translations = {
   soloNormal: 'Normal · 2 bots',
   soloHard: 'Hard · 3 bots',
   soloHint: 'Runs entirely in the browser — no other players needed.',
+  soloResume: 'Resume saved match',
 
   youGotCard: (name) => `You got ${name}`,
   youLeveledUp: (n) => `Leveled up to ${n}!`,

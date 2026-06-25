@@ -177,6 +177,7 @@ export interface Translations {
   soloNormal: string;
   soloHard: string;
   soloHint: string;
+  soloResume: string;
 
   // Toasts
   youGotCard: (name: string) => string;

@@ -3,7 +3,7 @@ import { emit } from '../hooks/useSocket';
 import { t } from '../i18n';
 import { CardTypeIcon } from '../components/CardTypeIcon';
 import { TrophyIcon } from '../components/TrophyIcon';
-import { startOfflineGame, OFFLINE_ROOM_CODE } from '../offline/manager';
+import { startOfflineGame, OFFLINE_ROOM_CODE, hasSavedOfflineGame, resumeOfflineGame } from '../offline/manager';
 
 type BotDifficulty = 'easy' | 'normal' | 'hard';
 
@@ -22,6 +22,7 @@ export function Home({
   const [errorField, setErrorField] = useState<Field>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [pasted, setPasted] = useState(false);
+  const [hasResume, setHasResume] = useState(false);
 
   // If we arrived with a deep-link code, scroll the join input into view.
   useEffect(() => {
@@ -30,6 +31,12 @@ export function Home({
       el?.focus();
     }
   }, [prefilledCode]);
+
+  useEffect(() => {
+    let cancelled = false;
+    hasSavedOfflineGame().then((has) => { if (!cancelled) setHasResume(has); });
+    return () => { cancelled = true; };
+  }, []);
 
   function persistName() {
     localStorage.setItem('munchkin:name', name);
@@ -78,6 +85,20 @@ export function Home({
     try {
       const { playerId } = startOfflineGame({ name, difficulties });
       onJoined(OFFLINE_ROOM_CODE, playerId, name);
+    } catch (e) {
+      setError(null, (e as Error).message);
+    }
+  }
+
+  async function resumeOffline() {
+    setError(null, null);
+    try {
+      const res = await resumeOfflineGame();
+      if (!res) {
+        setHasResume(false);
+        return;
+      }
+      onJoined(OFFLINE_ROOM_CODE, res.playerId, name || 'Aventureiro');
     } catch (e) {
       setError(null, (e as Error).message);
     }
@@ -175,6 +196,16 @@ export function Home({
         </button>
 
         <div className="mt-5 border-t border-amber-800/30 pt-4">
+          {hasResume && (
+            <button
+              type="button"
+              className="btn-primary w-full mb-3 text-sm py-2.5"
+              onClick={resumeOffline}
+              data-testid="solo-resume"
+            >
+              ↻ {t.soloResume}
+            </button>
+          )}
           <div className="text-xs uppercase opacity-60 mb-2 text-center">{t.solo}</div>
           <div className="flex gap-2">
             <button
