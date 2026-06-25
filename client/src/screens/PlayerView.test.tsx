@@ -447,4 +447,27 @@ describe('PlayerView', () => {
     renderView(makeState({ phase: 'playing' }), []);
     expect(screen.queryByTestId('player-game-over')).toBeNull();
   });
+
+  it('game-over overlay surfaces the local victory copy when myId is the winner', () => {
+    const state = makeState({ phase: 'ended', winnerId: 'p1' });
+    renderView(state, []);
+    expect(screen.getByText(new RegExp(t.gameWon('Alice')))).toBeInTheDocument();
+  });
+
+  it('game-over overlay shows the winning opponent label when a bot wins', () => {
+    const state = makeState({ phase: 'ended', winnerId: 'p2' });
+    renderView(state, []);
+    expect(screen.getByText(new RegExp(t.winner))).toBeInTheDocument();
+    expect(screen.queryByText(new RegExp(t.gameWon('Alice')))).toBeNull();
+  });
+
+  it('the overlay Leave button calls the onLeave callback', () => {
+    const state = makeState({ phase: 'ended', winnerId: 'p2' });
+    const onLeave = vi.fn();
+    render(
+      <PlayerView state={state} hand={[]} fist={[]} myId="p1" onLeave={onLeave} />,
+    );
+    fireEvent.click(screen.getByTestId('player-game-over-leave'));
+    expect(onLeave).toHaveBeenCalled();
+  });
 });

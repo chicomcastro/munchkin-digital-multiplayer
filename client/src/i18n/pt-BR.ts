@@ -187,6 +187,7 @@ export const ptBR: Translations = {
   combatWon: (name) => `Derrotou ${name}!`,
   combatLost: (name) => `${name} te derrotou.`,
   gameWon: (name) => `${name} venceu o jogo!`,
+  gameOverLeave: 'Voltar pra tela inicial',
 
   expandCard: 'Toque pra ampliar',
   closePreview: 'Fechar',

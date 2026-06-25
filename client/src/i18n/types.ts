@@ -201,6 +201,7 @@ export interface Translations {
   combatWon: (name: string) => string;
   combatLost: (name: string) => string;
   gameWon: (name: string) => string;
+  gameOverLeave: string;
 
   // Card preview
   expandCard: string;

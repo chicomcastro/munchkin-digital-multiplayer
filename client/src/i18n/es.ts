@@ -187,6 +187,7 @@ export const es: Translations = {
   combatWon: (name) => `¡Derrotaste a ${name}!`,
   combatLost: (name) => `${name} te derrotó.`,
   gameWon: (name) => `¡${name} ganó el juego!`,
+  gameOverLeave: 'Volver al inicio',
 
   expandCard: 'Toca para expandir',
   closePreview: 'Cerrar',
