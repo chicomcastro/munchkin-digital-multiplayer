@@ -24,7 +24,8 @@ export function AppBar({
   return (
     <div
       role="banner"
-      className="fixed top-0 inset-x-0 z-40 h-10 bg-[rgba(15,12,6,0.95)] backdrop-blur-sm border-b border-[rgba(139,90,43,0.3)] flex items-center justify-end gap-2 px-3 text-xs shadow-[0_1px_6px_rgba(251,191,36,0.08)]"
+      style={{ paddingTop: 'env(safe-area-inset-top)' }}
+      className="fixed top-0 inset-x-0 z-40 bg-[rgba(15,12,6,0.95)] backdrop-blur-sm border-b border-[rgba(139,90,43,0.3)] flex items-center justify-end gap-2 px-3 text-xs shadow-[0_1px_6px_rgba(251,191,36,0.08)] min-h-10"
     >
       {onToggleView && viewLabel && (
         <button

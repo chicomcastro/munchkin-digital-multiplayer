@@ -49,7 +49,7 @@ export function Lobby({
   }
 
   return (
-    <div className="min-h-screen pb-28 p-4 pt-12 space-y-4 max-w-2xl xl:max-w-6xl mx-auto xl:grid xl:grid-cols-[1fr_1fr] xl:gap-4 xl:space-y-0 xl:items-start">
+    <div className="min-h-screen pb-28 p-4 pt-app space-y-4 max-w-2xl xl:max-w-6xl mx-auto xl:grid xl:grid-cols-[1fr_1fr] xl:gap-4 xl:space-y-0 xl:items-start">
       <div className="card-shell p-4 flex items-center justify-between gap-3 anim-fade xl:col-start-1 xl:row-start-1">
         <div className="min-w-0">
           <div className="text-xs uppercase opacity-60">{t.room}</div>

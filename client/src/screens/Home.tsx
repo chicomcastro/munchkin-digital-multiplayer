@@ -124,7 +124,7 @@ export function Home({
   }
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-6 pt-16 relative overflow-hidden">
+    <div className="min-h-screen flex flex-col items-center justify-center p-6 pt-app relative overflow-hidden">
       {/* Background glow — gives the otherwise blank dark canvas a subtle brand feel */}
       <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
         <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[300px] h-[300px] rounded-full bg-amber-500/10 blur-3xl" />

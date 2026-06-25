@@ -130,7 +130,7 @@ export default function App() {
   if (!state) {
     return (
       <>
-        <div className="min-h-screen flex items-center justify-center pt-12">
+        <div className="min-h-screen flex items-center justify-center pt-app">
           <div className="card-shell p-6 text-center anim-fade">
             <div className="text-amber-400 font-bold mb-2">{reconnecting ? t.reconnecting : t.connecting}</div>
             <div className="text-sm opacity-60 font-mono">{session.roomCode}</div>

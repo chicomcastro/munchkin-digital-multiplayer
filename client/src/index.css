@@ -19,6 +19,17 @@ html, body, #root {
   -webkit-tap-highlight-color: transparent;
 }
 
+/* iOS/Android notches and home indicators. The AppBar lives behind the
+   status bar (viewport-fit=cover) so it gains a top inset; the sticky
+   footer adds a bottom inset so the home-indicator never overlaps action
+   buttons. */
+.safe-pad-top {
+  padding-top: env(safe-area-inset-top);
+}
+.safe-pad-bottom {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
 body {
   background:
     radial-gradient(ellipse at center, transparent 40%, rgba(0,0,0,0.45) 100%),
@@ -43,7 +54,13 @@ body {
 }
 
 .screen-root {
-  padding-top: 2.5rem;
+  padding-top: calc(3rem + env(safe-area-inset-top));
+}
+
+/* Helper for any screen that needs to sit just below the AppBar including
+   any notch inset — preferable to a literal pt-12 since it adapts. */
+.pt-app {
+  padding-top: calc(3rem + env(safe-area-inset-top));
 }
 
 .font-display {
@@ -87,7 +104,7 @@ body {
   backdrop-filter: blur(10px);
   border-top: 1px solid rgba(251, 191, 36, 0.25);
   box-shadow: 0 -16px 32px -16px rgba(0, 0, 0, 0.7), 0 -1px 8px rgba(251, 191, 36, 0.08);
-  padding: 0.75rem;
+  padding: 0.75rem 0.75rem calc(0.75rem + env(safe-area-inset-bottom));
   transition: box-shadow 0.4s ease, border-color 0.4s ease;
 }
 
