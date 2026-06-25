@@ -107,6 +107,13 @@ describe('Munchkin — full game flow', () => {
     cy.contains('button', /modo jogador/i).click();
     cy.contains('Chutar porta').should('be.visible');
     cy.snapshot('10-player-mode-again');
+
+    // And capture the PlayerView at iPad-portrait dimensions so the 2-column
+    // tablet layout shows up in the visual catalog.
+    cy.viewport(1024, 768);
+    cy.contains('Chutar porta').should('be.visible');
+    cy.snapshot('10b-player-view-tablet');
+    cy.viewport(414, 896);
   });
 
   it('shows the onboarding modal on first visit', () => {

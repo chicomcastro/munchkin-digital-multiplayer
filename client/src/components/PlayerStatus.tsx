@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import type { Card, Player } from '../types';
 import { CardView } from './Card';
+import { SlotIcon } from './SlotIcon';
 import { t } from '../i18n';
 
 export function PlayerStatus({
@@ -108,18 +109,18 @@ export function PlayerStatus({
 }
 
 function SlotBox({ label, card, twoHands }: { label: string; card: Card | null; twoHands?: boolean }) {
+  const kind = (twoHands ? 'twoHands' : label) as 'head' | 'body' | 'hand' | 'feet' | 'twoHands';
   return (
     <div className={[
-      'rounded border px-1 py-1 text-center min-h-[2rem] flex flex-col justify-center',
+      'rounded border px-1 py-1 text-center min-h-[2.75rem] flex flex-col items-center justify-center gap-0.5',
       card
-        ? 'bg-amber-900/40 border-amber-700/50 text-amber-200'
-        : 'bg-amber-950/50 border-dashed border-amber-600/50 text-amber-500/60 italic',
+        ? 'bg-amber-900/40 border-amber-700/60 text-amber-200'
+        : 'bg-amber-950/50 border-dashed border-amber-700/30 text-amber-700/50',
     ].join(' ')}>
+      <SlotIcon slot={kind} size={16} className={card ? 'opacity-30' : 'opacity-50'} />
       <div className="uppercase text-[7px] tracking-wider opacity-60">{twoHands ? '2H' : label}</div>
-      {card ? (
-        <div className="text-[9px] truncate font-bold">{card.name}</div>
-      ) : (
-        <div className="text-[8px]">--</div>
+      {card && (
+        <div className="text-[9px] truncate font-bold leading-tight max-w-full px-0.5">{card.name}</div>
       )}
     </div>
   );
