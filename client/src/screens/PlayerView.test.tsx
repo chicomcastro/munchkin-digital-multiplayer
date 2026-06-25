@@ -426,4 +426,25 @@ describe('PlayerView', () => {
       expect(last?.payload.alternateIdx).toBe(1);
     });
   });
+
+  it('shows a game-over overlay and disables action buttons when phase is ended', () => {
+    const state = makeState({
+      phase: 'ended',
+      winnerId: 'p2',
+      activePlayerId: 'p1',
+      turnPhase: 'lookForTroubleOrLoot',
+    });
+    renderView(state, []);
+    expect(screen.getByTestId('player-game-over')).toBeInTheDocument();
+    expect(screen.getByText(new RegExp(t.gameOver, 'i'))).toBeInTheDocument();
+    const loot = screen.getByRole('button', { name: new RegExp(t.lootRoom) });
+    expect(loot).toBeDisabled();
+    const endTurn = screen.getByRole('button', { name: new RegExp(t.endTurn) });
+    expect(endTurn).toBeDisabled();
+  });
+
+  it('omits the game-over overlay while the game is still playing', () => {
+    renderView(makeState({ phase: 'playing' }), []);
+    expect(screen.queryByTestId('player-game-over')).toBeNull();
+  });
 });

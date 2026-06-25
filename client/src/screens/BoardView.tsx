@@ -36,7 +36,7 @@ export function BoardView({ state }: { state: GameState }) {
   }, [state.globalTimerEndsAt]);
 
   return (
-    <div id="main-content" className="min-h-screen p-4 pt-12 grid grid-cols-1 md:grid-cols-[1fr_280px] xl:grid-cols-[280px_1fr_320px] gap-4">
+    <div id="main-content" className="min-h-screen p-4 pt-app grid grid-cols-1 md:grid-cols-[1fr_280px] xl:grid-cols-[280px_1fr_320px] gap-4">
       {/* Wider screens get a dedicated left column for the player roster, mimicking a
           game table where each "seat" sits at the edge. */}
       <aside className="hidden xl:flex xl:flex-col xl:gap-3 xl:sticky xl:top-4 xl:self-start">

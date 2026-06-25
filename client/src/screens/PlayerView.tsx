@@ -8,6 +8,7 @@ import { ToastStack } from '../components/Toast';
 import { DeathBanner } from '../components/DeathBanner';
 import { Confetti } from '../components/Confetti';
 import { SlotIcon } from '../components/SlotIcon';
+import { TrophyIcon } from '../components/TrophyIcon';
 import { emit } from '../hooks/useSocket';
 import { useToasts } from '../hooks/useToasts';
 import { t } from '../i18n';
@@ -167,7 +168,7 @@ export function PlayerView({
     : { text: t.phaseBannerWaiting(activePlayer?.name ?? '...'), accent: 'bg-amber-900/20 border-amber-800/40 text-amber-300/70' };
 
   return (
-    <div className="min-h-screen flex flex-col screen-root pt-12">
+    <div className="min-h-screen flex flex-col pt-app">
       <div className="md:grid md:grid-cols-[minmax(280px,360px)_1fr] xl:grid-cols-[minmax(280px,340px)_1fr_320px] md:gap-3 md:px-3 md:items-start">
       {/* Hero header */}
       <header className="surface-glass mx-3 md:mx-0 mt-1 md:mt-2 p-3 anim-fade md:sticky md:top-12 md:max-h-[calc(100vh-3.5rem)] md:overflow-y-auto md:self-start" style={{ borderTop: `3px solid ${me.color}` }}>
@@ -561,18 +562,41 @@ export function PlayerView({
       <DeathBanner trigger={deathTrigger} />
       <Confetti trigger={confettiTrigger} />
 
-      <footer className={['sticky-footer', active ? 'active-turn' : ''].join(' ')}>
+      {state.phase === 'ended' && (
+        <div className="fixed inset-0 z-40 bg-black/70 backdrop-blur-sm flex items-center justify-center p-6 anim-fade" data-testid="player-game-over">
+          <div className="card-shell p-6 max-w-sm w-full text-center anim-card-glow">
+            <div className="text-amber-300 mb-2 flex justify-center" aria-hidden="true">
+              <TrophyIcon size={64} />
+            </div>
+            <div className="text-2xl font-bold text-amber-400 mb-2 font-display">{t.gameOver}</div>
+            {state.winnerId ? (
+              <div className="text-lg mb-3">
+                {t.winner}: <span className="font-bold" style={{ color: state.players.find((p) => p.id === state.winnerId)?.color }}>
+                  {state.players.find((p) => p.id === state.winnerId)?.name}
+                </span>
+              </div>
+            ) : (
+              <div className="text-sm opacity-70 mb-3">{state.log[state.log.length - 1]?.text}</div>
+            )}
+            {state.winnerId === myId && (
+              <div className="text-emerald-300 font-bold mb-3">{t.gameWon(me.name)}</div>
+            )}
+          </div>
+        </div>
+      )}
+
+      <footer className={['sticky-footer', active && state.phase !== 'ended' ? 'active-turn' : ''].join(' ')}>
         <div className="flex flex-wrap gap-2 justify-center max-w-2xl mx-auto">
           {(state.turnPhase === 'turnStart' || state.turnPhase === 'kickDoor') && (
             <>
               {state.turnPhase === 'turnStart' && state.config.listeningAtTheDoor && (
-                <button className="btn" disabled={!active} onClick={() => emit('game:listenDoor').catch((e) => alert(e.message))}>
+                <button className="btn" disabled={!active || state.phase === 'ended'} onClick={() => emit('game:listenDoor').catch((e) => alert(e.message))}>
                   {t.iconListen} {t.listen}
                 </button>
               )}
               <button
                 className="btn-primary"
-                disabled={!active}
+                disabled={!active || state.phase === 'ended'}
                 onClick={() => { sound?.play('kick'); emit('game:kickDoor').catch((e) => alert(e.message)); }}
               >
                 {t.iconKick} {t.kickDoor}
@@ -582,7 +606,7 @@ export function PlayerView({
           {state.turnPhase === 'lookForTroubleOrLoot' && (
             <button
               className="btn"
-              disabled={!active}
+              disabled={!active || state.phase === 'ended'}
               onClick={() => emit('game:lootRoom').catch((e) => alert(e.message))}
             >
               {t.iconLoot} {t.lootRoom}
@@ -590,7 +614,7 @@ export function PlayerView({
           )}
           <button
             className="btn"
-            disabled={!active}
+            disabled={!active || state.phase === 'ended'}
             onClick={() => emit('game:endTurn').catch((e) => alert(e.message))}
           >
             {t.iconEndTurn} {t.endTurn}

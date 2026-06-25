@@ -60,7 +60,7 @@ export function ReplayScreen({ onLeave }: { onLeave: () => void }) {
   const total = recording?.frames.length ?? 0;
 
   return (
-    <div className="min-h-screen pt-12 pb-8 px-3 max-w-6xl mx-auto" data-testid="replay-screen">
+    <div className="min-h-screen pt-app pb-8 px-3 max-w-6xl mx-auto" data-testid="replay-screen">
       <header className="card-shell p-4 anim-fade flex items-center justify-between gap-3 mb-3">
         <div>
           <div className="text-xs uppercase opacity-60">{t.replay}</div>
