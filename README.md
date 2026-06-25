@@ -1,65 +1,109 @@
 # Munchkin Digital Multiplayer
 
-A multiplayer digital implementation of Munchkin with a client-server architecture.
+> Munchkin, multiplayer no celular. Estado autoritativo no servidor, clientes finos, tabuleiro compartilhado opcional em outra tela. **Português, Inglês e Espanhol.** Jogue contra amigos online ou contra bots locais.
 
-- **Server:** Node.js + TypeScript + Socket.IO (`/server`)
-- **Client:** React + TypeScript + Vite + Tailwind CSS v4 (`/client`)
-- **State:** authoritative on the server, broadcast over WebSocket
-- **Decks:** shuffled (Fisher-Yates) in memory; no DB
+[![CI](https://github.com/chicomcastro/munchkin-digital-multiplayer/actions/workflows/ci.yml/badge.svg)](https://github.com/chicomcastro/munchkin-digital-multiplayer/actions/workflows/ci.yml)
+[![Deploy](https://github.com/chicomcastro/munchkin-digital-multiplayer/actions/workflows/deploy-client.yml/badge.svg)](https://github.com/chicomcastro/munchkin-digital-multiplayer/actions/workflows/deploy-client.yml)
+[![Play](https://img.shields.io/badge/play-online-amber)](https://chicomcastro.github.io/munchkin-digital-multiplayer/)
+[![Coverage](https://img.shields.io/badge/coverage-server%20%26%20client%20%E2%89%A597%25-brightgreen)](#tests--quality-gates)
 
-## Run locally
+**[▶ Jogar agora](https://chicomcastro.github.io/munchkin-digital-multiplayer/)** &nbsp;•&nbsp; [Especificação](./docs/SPEC.md) &nbsp;•&nbsp; [Backlog](./docs/BACKLOG.md) &nbsp;•&nbsp; [ADRs](./docs/adr/)
+
+---
+
+## Highlights
+
+- **Authoritative server.** Toda a lógica do jogo roda no `GameRoom` em Node + Socket.IO. O client é só renderização — sem cheats client-side.
+- **Tela do jogador + Board Mode.** O celular é a mão fechada; o tabuleiro compartilhado abre num tablet/notebook.
+- **Bots locais.** Adicione adversários AI sem precisar de outras pessoas conectadas. Três níveis (Fácil / Normal / Difícil) com heurísticas crescentes — o Difícil usa 1-step lookahead de combate.
+- **Variantes.** Rápida (6 níveis, timer curto), Média (mercado + timer global), Longa (10 níveis, escalada), Cooperativa (boss / trilha / sobrevivência).
+- **i18n nativo.** pt-BR / en / es alternáveis em runtime via `localStorage`.
+- **Persistência opcional.** Firestore plugável via interface (`RoomRepository`); fallback in-memory para dev/test.
+- **Estética temática.** Pergaminho, tipografia medieval, slots de equipamento, mapa do dungeon em SVG.
+- **CI exigente.** Vitest + Cypress + sticky coverage comment + visual evidence catalog em todo PR.
+
+## Como rodar localmente
 
 ```bash
-# Terminal 1 — server
-cd server
-npm install
-npm run dev          # http://localhost:3001
+npm run install:all                                # ou cd em cada subpasta
 
-# Terminal 2 — client
-cd client
-npm install
-npm run dev          # http://localhost:5173
+# Em terminais separados
+npm --prefix server run dev                        # http://localhost:3001
+npm --prefix client run dev                        # http://localhost:5173
 ```
 
-Open the client URL on a phone (player) and optionally on a tablet/notebook for **Board Mode**. The first player to enter creates a room and receives a 6-character code (e.g. `MNK-7X2`).
+Abre o client URL no celular (jogador) e, opcionalmente, num tablet/notebook (Board Mode). O primeiro jogador cria a sala e recebe um código de 6 caracteres (ex.: `MNK-7X2`).
 
-## Variants
+### Jogar contra bots (offline-friendly)
 
-- **Rápida** — target 6 levels, larger starting hands, 40s turn timer
-- **Média** — target 10 levels, open market, 60min global timer
-- **Longa** — target 10 levels, dual-character for 2 players, hardened scaling past lv 7
-- **Cooperativa** — no offensive curses, win by boss/trail/survival
+No lobby, o host vê o botão **Adicionar bot** com um dropdown de dificuldade. Bots ocupam slots reais (mesmas regras, mesmo estado), só sem socket — o `BotDriver` decide as ações pelo policy escolhido após um pequeno delay "thinking".
+
+## Bot simulator & balance report
+
+Headless, sem socket, in-process:
+
+```bash
+# Roda N partidas, imprime JSON com estatísticas
+npm --prefix server run simulate -- --variant=long --players=4 \
+  --difficulty=easy --difficulty=normal --difficulty=hard --difficulty=hard \
+  --runs=200 --seed=42
+
+# Gera relatório markdown com matriz de matchups por variante
+npm --prefix server run balance-report -- --runs=30 --maxTurns=2500 \
+  --out=balance.md
+```
+
+A mesma abstração (`BotPolicy`) que pilota bots em sala real alimenta o simulator — sem código duplicado.
+
+## Variantes
+
+| Variante | Nível alvo | Mão inicial | Mercado | Timer turno | Timer global |
+| --- | --- | --- | --- | --- | --- |
+| **Rápida** | 6 | 5/5 | — | 40 s | — |
+| **Média** | 10 | 4/4 | 5 cartas | — | 60 min |
+| **Longa** | 10 | 4/4 | — | — | — |
+| **Cooperativa** | 10 | 4/4 | — | — | — |
+
+Cooperativa: sem maldições contra outros jogadores, vitória por **boss / trilha / sobrevivência**.
 
 ## Project layout
 
 ```
-/server   → Express + socket.io, GameRoom, Deck, cards, rules
-/client   → React app: Home, Lobby, PlayerView, BoardView
-/e2e      → Cypress specs and visual catalog
-/scripts  → CI helpers (coverage comment, visual catalog HTML)
+/server   → Express + Socket.IO, GameRoom, decks, cards, regras, bots
+/client   → React + Vite + Tailwind v4: Home, Lobby, PlayerView, BoardView
+/e2e      → Cypress specs + visual catalog
+/docs     → Spec, ADRs, backlog
+/scripts  → Helpers de CI (coverage comment, evidence catalog)
 ```
 
-## Testing
+Para detalhes de arquitetura e decisões: [`docs/SPEC.md`](./docs/SPEC.md) e [`docs/adr/`](./docs/adr/).
+
+## Tests & quality gates
 
 ```bash
-# Unit + integration (with coverage)
+# Unit + integration (com cobertura)
 npm --prefix server run test:coverage
 npm --prefix client run test:coverage
 
-# End-to-end (requires both servers running)
-npm --prefix server run dev &
-npm --prefix client run dev &
+# End-to-end (precisa dos dois dev servers rodando)
 npm --prefix e2e run cy:run
 ```
 
-Both `server` and `client` enforce **90% line / statement / function coverage** and **80% branches** via Vitest thresholds. CI fails the build if any drops below.
+Server **e** client travam o build em **90% linhas / statements / functions** e **80% branches** (Vitest thresholds). O CI:
 
-## CI
+1. Roda server tests (unit + Socket.IO integration) com V8 coverage.
+2. Roda client tests (component, hook, screen) com V8 coverage.
+3. Sobe o server build + client preview e roda Cypress E2E.
+4. Constrói o **visual evidence catalog** (`e2e/visual-catalog.html`) a partir dos screenshots.
+5. Posta um **sticky coverage comment** no PR que atualiza a cada push.
+6. Faz deploy do client no GitHub Pages e do server no Cloud Run nos merges para `main`.
 
-The GitHub Actions workflow on every push to a PR:
+## Stack
 
-1. Runs server tests (unit + socket.io integration) with V8 coverage.
-2. Runs client tests (component, hook, screen) with V8 coverage.
-3. Boots the built server + client preview and runs Cypress end-to-end.
-4. Builds a **visual evidence catalog** (`e2e/visual-catalog.html`) from the Cypress screenshots and uploads it as an artifact.
-5. Posts a **sticky coverage comment** on the PR that updates on every push.
+| Camada | Tecnologia |
+| --- | --- |
+| Servidor | Node 20 + TypeScript + Express + Socket.IO |
+| Persistência | In-memory (default) ou Firestore (`RoomRepository`) |
+| Cliente | React 18 + Vite 5 + Tailwind v4 |
+| Testes | Vitest (server/client) + Cypress (e2e) + V8 coverage |
+| Hospedagem | GitHub Pages (client) + Google Cloud Run (server) |
