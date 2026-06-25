@@ -148,7 +148,7 @@ export default function App() {
   } else if (boardMode) {
     screen = <BoardView state={state} />;
   } else {
-    screen = <PlayerView state={state} hand={hand} fist={fist} myId={session.playerId} sound={sound} />;
+    screen = <PlayerView state={state} hand={hand} fist={fist} myId={session.playerId} sound={sound} onLeave={leave} />;
   }
 
   return (

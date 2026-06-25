@@ -23,12 +23,14 @@ export function PlayerView({
   fist,
   myId,
   sound,
+  onLeave,
 }: {
   state: GameState;
   hand: Card[];
   fist: Card[];
   myId: string;
   sound?: SoundHandle;
+  onLeave?: () => void;
 }) {
   const me = state.players.find((p) => p.id === myId)!;
   const opponents = state.players.filter((p) => p.id !== myId);
@@ -66,8 +68,15 @@ export function PlayerView({
         sound?.play('victory');
       }
       if (entry.kind === 'system' && /hit level|won the game/i.test(entry.text)) {
-        setConfettiTrigger((n) => n + 1);
-        sound?.play('victory');
+        const iWon = entry.text.startsWith(`${me.name}`);
+        if (iWon) {
+          setConfettiTrigger((n) => n + 1);
+          sound?.play('victory');
+          try { navigator.vibrate?.([80, 40, 80, 40, 200]); } catch { /* ignore */ }
+        } else {
+          sound?.play('flee');
+          try { navigator.vibrate?.([200]); } catch { /* ignore */ }
+        }
       }
       if (entry.kind === 'level' && entry.text.startsWith(`${me.name}`)) {
         sound?.play('levelUp');
@@ -565,11 +574,16 @@ export function PlayerView({
       {state.phase === 'ended' && (
         <div className="fixed inset-0 z-40 bg-black/70 backdrop-blur-sm flex items-center justify-center p-6 anim-fade" data-testid="player-game-over">
           <div className="card-shell p-6 max-w-sm w-full text-center anim-card-glow">
-            <div className="text-amber-300 mb-2 flex justify-center" aria-hidden="true">
-              <TrophyIcon size={64} />
+            <div className={[
+              'mb-2 flex justify-center',
+              state.winnerId === myId ? 'text-amber-300' : 'text-amber-700/70',
+            ].join(' ')} aria-hidden="true">
+              <TrophyIcon size={72} />
             </div>
             <div className="text-2xl font-bold text-amber-400 mb-2 font-display">{t.gameOver}</div>
-            {state.winnerId ? (
+            {state.winnerId === myId ? (
+              <div className="text-lg text-emerald-300 font-bold mb-3">{t.gameWon(me.name)}</div>
+            ) : state.winnerId ? (
               <div className="text-lg mb-3">
                 {t.winner}: <span className="font-bold" style={{ color: state.players.find((p) => p.id === state.winnerId)?.color }}>
                   {state.players.find((p) => p.id === state.winnerId)?.name}
@@ -578,8 +592,15 @@ export function PlayerView({
             ) : (
               <div className="text-sm opacity-70 mb-3">{state.log[state.log.length - 1]?.text}</div>
             )}
-            {state.winnerId === myId && (
-              <div className="text-emerald-300 font-bold mb-3">{t.gameWon(me.name)}</div>
+            {onLeave && (
+              <button
+                type="button"
+                className="btn-primary w-full mt-2"
+                onClick={onLeave}
+                data-testid="player-game-over-leave"
+              >
+                {t.gameOverLeave}
+              </button>
             )}
           </div>
         </div>
