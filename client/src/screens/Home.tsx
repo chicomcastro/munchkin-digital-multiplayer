@@ -12,9 +12,11 @@ type Field = 'name' | 'code' | null;
 export function Home({
   onJoined,
   prefilledCode,
+  onWatchBots,
 }: {
   onJoined: (roomCode: string, playerId: string, name: string) => void;
   prefilledCode?: string | null;
+  onWatchBots?: () => void;
 }) {
   const [name, setName] = useState(localStorage.getItem('munchkin:name') ?? '');
   const [roomCode, setRoomCode] = useState(prefilledCode ?? '');
@@ -237,6 +239,16 @@ export function Home({
             </button>
           </div>
           <div className="text-[10px] opacity-50 mt-1.5 text-center italic">{t.soloHint}</div>
+          {onWatchBots && (
+            <button
+              type="button"
+              className="btn text-xs py-2 w-full mt-3 opacity-80 hover:opacity-100"
+              onClick={onWatchBots}
+              data-testid="watch-bots"
+            >
+              👁 {t.watchBots}
+            </button>
+          )}
         </div>
 
         {errorField === null && errorMsg && (

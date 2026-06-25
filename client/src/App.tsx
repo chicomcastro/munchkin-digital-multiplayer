@@ -3,6 +3,7 @@ import { Home } from './screens/Home';
 import { Lobby } from './screens/Lobby';
 import { PlayerView } from './screens/PlayerView';
 import { BoardView } from './screens/BoardView';
+import { ReplayScreen } from './replay/ReplayScreen';
 import { useGameState } from './hooks/useGameState';
 import { emit, useSocket } from './hooks/useSocket';
 import { useSounds } from './hooks/useSounds';
@@ -47,6 +48,7 @@ export default function App() {
   const { state, hand, fist, errorMsg } = useGameState();
   const [session, setSession] = useState<Session | null>(() => loadSession());
   const [boardMode, setBoardMode] = useState(false);
+  const [replayMode, setReplayMode] = useState(false);
   const [reconnecting, setReconnecting] = useState(false);
   const [deepLinkCode] = useState<string | null>(() => (loadSession() ? null : readDeepLinkCode()));
   const sound = useSounds();
@@ -107,10 +109,19 @@ export default function App() {
     </>
   );
 
+  if (replayMode) {
+    return (
+      <>
+        <ReplayScreen onLeave={() => setReplayMode(false)} />
+        {chrome}
+      </>
+    );
+  }
+
   if (!session) {
     return (
       <>
-        <Home onJoined={onJoined} prefilledCode={deepLinkCode} />
+        <Home onJoined={onJoined} prefilledCode={deepLinkCode} onWatchBots={() => setReplayMode(true)} />
         {chrome}
       </>
     );

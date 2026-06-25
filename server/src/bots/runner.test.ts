@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { runBatch, runMatch } from './runner.js';
+import { recordMatch, runBatch, runMatch } from './runner.js';
 
 describe('runMatch', () => {
   it('plays a long-variant match without crashing within the turn budget', () => {
@@ -67,5 +67,39 @@ describe('runBatch', () => {
     expect(batch.avgTurns).toBeGreaterThan(0);
     const totalWins = batch.winsByDifficulty.easy + batch.winsByDifficulty.normal + batch.winsByDifficulty.hard;
     expect(totalWins).toBeLessThanOrEqual(batch.finished);
+  });
+});
+
+describe('recordMatch', () => {
+  it('captures one frame per applied action with monotonic indices', () => {
+    const rec = recordMatch({
+      variant: 'long',
+      playerCount: 2,
+      difficulties: ['hard', 'hard'],
+      seed: 1,
+      maxFrames: 200,
+    });
+    expect(rec.frames.length).toBeGreaterThan(1);
+    // First frame is the initial snapshot with no action.
+    expect(rec.frames[0]!.action).toBeNull();
+    expect(rec.frames[0]!.index).toBe(0);
+    // Subsequent frames must have action + difficulty + ascending index.
+    for (let i = 1; i < rec.frames.length; i++) {
+      const f = rec.frames[i]!;
+      expect(f.index).toBe(i);
+      expect(f.action).not.toBeNull();
+      expect(['easy', 'normal', 'hard']).toContain(f.difficulty);
+    }
+  });
+
+  it('respects the maxFrames cap', () => {
+    const rec = recordMatch({
+      variant: 'long',
+      playerCount: 2,
+      difficulties: ['easy', 'easy'],
+      seed: 99,
+      maxFrames: 12,
+    });
+    expect(rec.frames.length).toBeLessThanOrEqual(12);
   });
 });

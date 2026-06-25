@@ -163,4 +163,16 @@ describe('Home', () => {
     expect(onJoined).not.toHaveBeenCalled();
     expect(screen.getByText(t.errChooseName)).toBeInTheDocument();
   });
+
+  it('Watch bots button calls the onWatchBots callback when provided', () => {
+    const onWatchBots = vi.fn();
+    render(<Home onJoined={vi.fn()} onWatchBots={onWatchBots} />);
+    fireEvent.click(screen.getByTestId('watch-bots'));
+    expect(onWatchBots).toHaveBeenCalled();
+  });
+
+  it('Watch bots button is hidden when no callback is provided', () => {
+    render(<Home onJoined={vi.fn()} />);
+    expect(screen.queryByTestId('watch-bots')).toBeNull();
+  });
 });
