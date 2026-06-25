@@ -39,7 +39,7 @@ export function CardView({
         style.ring,
         selected ? 'ring-4 ring-amber-400 -translate-y-2 scale-[1.02]' : '',
         disabled ? 'opacity-50' : 'active:scale-95 hover:-translate-y-0.5 hover:shadow-lg',
-        compact ? 'min-w-[8rem] max-w-[10rem] min-h-[6.5rem]' : 'min-w-[9rem] max-w-[12rem] min-h-[12rem]',
+        compact ? 'min-w-[8rem] max-w-[10rem] min-h-[6.5rem]' : 'min-w-[9rem] md:min-w-[10.5rem] max-w-[12rem] md:max-w-[13rem] min-h-[12rem] md:min-h-[13rem]',
       ].join(' ')}
     >
       <div className={['absolute top-0 left-0 right-0 h-1 rounded-t-xl', style.bar].join(' ')} />

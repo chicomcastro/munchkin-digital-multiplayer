@@ -127,6 +127,7 @@ export function PlayerView({
     return { slots: map, others };
   }, [me.equipped]);
 
+
   function playCard(c: Card, targetId?: string) {
     emit('game:playCard', { cardId: c.id, targetId }).catch((e) => alert(e.message));
     setSelectedCard(null);
@@ -746,12 +747,25 @@ function CharacterRow({
 
 function SlotBox({ label, card, twoHands }: { label: string; card: Card | null; twoHands?: boolean }) {
   const kind = (twoHands ? 'twoHands' : label) as 'head' | 'body' | 'hand' | 'feet' | 'twoHands';
+  const prevId = useRef<string | null>(card?.id ?? null);
+  const [animate, setAnimate] = useState(false);
+  useEffect(() => {
+    const nowId = card?.id ?? null;
+    if (nowId && nowId !== prevId.current) {
+      setAnimate(true);
+      const t = setTimeout(() => setAnimate(false), 700);
+      prevId.current = nowId;
+      return () => clearTimeout(t);
+    }
+    prevId.current = nowId;
+  }, [card?.id]);
   return (
     <div className={[
       'rounded border px-1 py-1.5 text-center min-h-[3.25rem] md:min-h-[4rem] flex flex-col items-center justify-center gap-0.5 relative overflow-hidden',
       card
         ? 'bg-amber-900/40 border-amber-700/60 text-amber-200'
         : 'bg-amber-950/50 border-dashed border-amber-700/30 text-amber-700/50',
+      animate ? 'anim-slot-equip' : '',
     ].join(' ')}>
       <SlotIcon slot={kind} size={20} className={card ? 'opacity-30' : 'opacity-50'} />
       <div className="uppercase text-[7px] tracking-wider opacity-60">{twoHands ? '2H' : label}</div>
