@@ -145,6 +145,16 @@ body {
   100% { transform: scale(1); filter: brightness(1); }
 }
 
+.anim-slot-equip {
+  animation: slotEquip 0.6s ease-out both;
+}
+@keyframes slotEquip {
+  0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(251, 191, 36, 0); }
+  20% { transform: scale(1.08); box-shadow: 0 0 0 4px rgba(251, 191, 36, 0.55); }
+  60% { transform: scale(1.02); box-shadow: 0 0 0 2px rgba(251, 191, 36, 0.25); }
+  100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(251, 191, 36, 0); }
+}
+
 .anim-pulse-active {
   animation: pulseActive 1.8s ease-in-out infinite;
 }
