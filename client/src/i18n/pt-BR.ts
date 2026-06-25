@@ -165,6 +165,7 @@ export const ptBR: Translations = {
   soloNormal: 'Normal · 2 bots',
   soloHard: 'Difícil · 3 bots',
   soloHint: 'Roda dentro do navegador — não precisa de outros jogadores.',
+  soloResume: 'Continuar partida salva',
 
   youGotCard: (name) => `Você ganhou ${name}`,
   youLeveledUp: (n) => `Subiu para o nível ${n}!`,

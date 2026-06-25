@@ -2,6 +2,7 @@ import { setSocketOverride } from '../hooks/useSocket';
 import { LocalGame } from './LocalGame';
 import type { RoomConfig } from '../types';
 import type { BotDifficulty } from '@core/bots/policy.js';
+import { clearOfflineGame, loadOfflineGame } from './storage';
 
 export const OFFLINE_ROOM_CODE = 'LOCAL';
 
@@ -39,10 +40,33 @@ export function getOfflineGame(): LocalGame | null {
   return current;
 }
 
-export function endOfflineGame(): void {
+export function endOfflineGame(opts: { clearSaved?: boolean } = {}): void {
   if (current) {
     current.dispose();
     current = null;
   }
   setSocketOverride(null);
+  if (opts.clearSaved) void clearOfflineGame();
+}
+
+/**
+ * Restore a previously-saved offline game from IndexedDB and install it
+ * as the active transport. Returns the human player's id or null when no
+ * save is present (or storage is unavailable).
+ */
+export async function resumeOfflineGame(): Promise<{ playerId: string } | null> {
+  const saved = await loadOfflineGame();
+  if (!saved) return null;
+  if (current) {
+    current.dispose();
+    current = null;
+  }
+  const game = LocalGame.fromSnapshot(saved.snapshot, saved.humanId);
+  setSocketOverride(game);
+  current = game;
+  return { playerId: game.humanId };
+}
+
+export function hasSavedOfflineGame(): Promise<boolean> {
+  return loadOfflineGame().then((s) => !!s);
 }

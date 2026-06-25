@@ -1,7 +1,8 @@
-import { GameRoom } from '@core/GameRoom.js';
+import { GameRoom, type RoomSnapshotInternal } from '@core/GameRoom.js';
 import { BotDriver } from '@core/bots/driver.js';
 import type { BotDifficulty } from '@core/bots/policy.js';
 import type { Card, GameState, RoomConfig } from '../types';
+import { clearOfflineGame, saveOfflineGame } from './storage';
 
 type Handler = (...args: any[]) => void;
 
@@ -18,6 +19,8 @@ export class LocalGame {
   private readonly listeners = new Map<string, Set<Handler>>();
   private readonly unsubscribe: () => void;
   private disposed = false;
+  private persistTimer: ReturnType<typeof setTimeout> | null = null;
+  private autosaveEnabled = true;
 
   constructor(humanName: string, config?: Partial<RoomConfig>) {
     this.room = new GameRoom(config);
@@ -26,6 +29,30 @@ export class LocalGame {
     this.driver = new BotDriver(this.room);
     this.unsubscribe = this.room.subscribe(() => this.broadcast());
     this.broadcast();
+  }
+
+  /**
+   * Construct a LocalGame from a previously-saved snapshot. Internal use
+   * only — call `resumeOfflineGame` from manager.ts which reads storage and
+   * then hands the snapshot here.
+   */
+  static fromSnapshot(snap: RoomSnapshotInternal, humanId: string): LocalGame {
+    const game = Object.create(LocalGame.prototype) as LocalGame;
+    Object.assign(game, {
+      room: new GameRoom(snap.config),
+      humanId,
+      connected: true,
+      listeners: new Map(),
+      disposed: false,
+      persistTimer: null,
+      autosaveEnabled: true,
+    });
+    Object.assign(game.room, { code: snap.code });
+    game.room.hydrate(snap);
+    (game as any).driver = new BotDriver(game.room);
+    (game as any).unsubscribe = game.room.subscribe(() => game.broadcast());
+    game.broadcast();
+    return game;
   }
 
   addBot(difficulty: BotDifficulty, name?: string) {
@@ -62,6 +89,15 @@ export class LocalGame {
     this.driver.dispose();
     this.unsubscribe();
     this.listeners.clear();
+    if (this.persistTimer) {
+      clearTimeout(this.persistTimer);
+      this.persistTimer = null;
+    }
+  }
+
+  /** Used by tests + replay viewer to suppress IndexedDB writes. */
+  setAutosave(enabled: boolean) {
+    this.autosaveEnabled = enabled;
   }
 
   get state(): GameState {
@@ -110,6 +146,28 @@ export class LocalGame {
   private broadcast() {
     this.fire('game:stateUpdate', this.state);
     this.fire('game:yourHand', { hand: this.hand, fist: this.fist });
+    this.schedulePersist();
+  }
+
+  private schedulePersist() {
+    if (!this.autosaveEnabled) return;
+    if (this.disposed) return;
+    if (this.persistTimer) clearTimeout(this.persistTimer);
+    this.persistTimer = setTimeout(() => {
+      this.persistTimer = null;
+      if (this.disposed) return;
+      const phase = this.room.phase;
+      if (phase === 'ended') {
+        void clearOfflineGame();
+        return;
+      }
+      void saveOfflineGame({
+        snapshot: this.room.serialize(),
+        humanId: this.humanId,
+        savedAt: Date.now(),
+        schemaVersion: 1,
+      });
+    }, 400);
   }
 
   private fire(event: string, payload: any) {
