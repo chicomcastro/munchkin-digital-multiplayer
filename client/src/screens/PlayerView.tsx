@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { Card, GameState } from '../types';
 import { CardView } from '../components/Card';
+import { CardTypeIcon } from '../components/CardTypeIcon';
 import { CombatArena } from '../components/CombatArena';
 import { CardPreview } from '../components/CardPreview';
 import { ToastStack } from '../components/Toast';
@@ -178,9 +179,9 @@ export function PlayerView({
                 <div
                   key={n}
                   className={[
-                    'w-5 h-5 rounded-full border-2 flex items-center justify-center text-[9px] font-bold transition-all',
+                    'w-5 h-5 md:w-6 md:h-6 rounded-full border-2 flex items-center justify-center text-[9px] md:text-xs font-bold transition-all',
                     n <= me.level
-                      ? 'bg-amber-500 border-amber-400 text-amber-950'
+                      ? 'bg-amber-500 border-amber-400 text-amber-950 shadow-[0_0_6px_rgba(251,191,36,0.35)]'
                       : 'bg-amber-950/40 border-amber-700/40 text-amber-600/60',
                     n === me.level && pulseLevel ? 'anim-pop' : '',
                   ].join(' ')}
@@ -499,7 +500,16 @@ export function PlayerView({
             <div className="h-px flex-1 bg-amber-800/30" />
           </div>
           <div className="flex gap-2 overflow-x-auto scroll-thin pb-2 justify-center flex-wrap">
-            {hand.length === 0 && <div className="opacity-50 text-sm italic">{t.emptyHand}</div>}
+            {hand.length === 0 && (
+              <div className="text-center py-6 opacity-60">
+                <div className="flex justify-center gap-3 mb-2 text-amber-700/60" aria-hidden="true">
+                  <CardTypeIcon type="monster" size={28} />
+                  <CardTypeIcon type="item" size={28} />
+                  <CardTypeIcon type="oneShot" size={28} />
+                </div>
+                <div className="text-sm italic">{t.emptyHand}</div>
+              </div>
+            )}
             {hand.map((c) => (
               <div key={c.id} className="anim-slide-in">
                 <CardView
@@ -520,7 +530,7 @@ export function PlayerView({
       <DeathBanner trigger={deathTrigger} />
       <Confetti trigger={confettiTrigger} />
 
-      <footer className="sticky-footer">
+      <footer className={['sticky-footer', active ? 'active-turn' : ''].join(' ')}>
         <div className="flex flex-wrap gap-2 justify-center max-w-2xl mx-auto">
           {(state.turnPhase === 'turnStart' || state.turnPhase === 'kickDoor') && (
             <>

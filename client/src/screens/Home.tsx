@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import { emit } from '../hooks/useSocket';
 import { t } from '../i18n';
+import { CardTypeIcon } from '../components/CardTypeIcon';
+import { TrophyIcon } from '../components/TrophyIcon';
 
 type Field = 'name' | 'code' | null;
 
@@ -93,7 +95,11 @@ export function Home({
 
       <div className="card-shell p-6 w-full max-w-sm anim-fade relative">
         <div className="text-center mb-6">
-          <div className="text-5xl mb-1" aria-hidden="true">🎲⚔️🛡️</div>
+          <div className="flex items-center justify-center gap-3 mb-2 text-amber-400" aria-hidden="true">
+            <CardTypeIcon type="class" size={36} className="opacity-90" />
+            <TrophyIcon size={44} />
+            <CardTypeIcon type="item" size={36} className="opacity-90" />
+          </div>
           <h1 className="text-4xl font-bold text-amber-400 tracking-tight font-display">Munchkin</h1>
           <p className="text-sm opacity-70">{t.homeSubtitle}</p>
           <p className="text-xs opacity-50 mt-1 italic">{t.brandTagline}</p>
