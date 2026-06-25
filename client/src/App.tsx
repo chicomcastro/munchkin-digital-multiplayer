@@ -11,6 +11,7 @@ import { Onboarding, shouldShowOnboarding } from './components/Onboarding';
 import { AppBar } from './components/AppBar';
 import { t } from './i18n';
 import { trackHomeViewed } from './analytics';
+import { endOfflineGame, isOfflineActive, OFFLINE_ROOM_CODE } from './offline/manager';
 
 interface Session {
   roomCode: string;
@@ -58,12 +59,19 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    if (session) localStorage.setItem(SESSION_KEY, JSON.stringify(session));
-    else localStorage.removeItem(SESSION_KEY);
+    // Offline sessions don't survive a reload — the in-memory GameRoom is
+    // gone, so persisting their session id would only force a doomed
+    // room:join against the real server on the next page load.
+    if (session && session.roomCode !== OFFLINE_ROOM_CODE) {
+      localStorage.setItem(SESSION_KEY, JSON.stringify(session));
+    } else {
+      localStorage.removeItem(SESSION_KEY);
+    }
   }, [session]);
 
   useEffect(() => {
     if (!connected || !session || state) return;
+    if (session.roomCode === OFFLINE_ROOM_CODE) return;
     setReconnecting(true);
     emit('room:join', { roomCode: session.roomCode, name: session.name, playerId: session.playerId })
       .catch(() => setSession(null))
@@ -75,6 +83,7 @@ export default function App() {
   }
 
   function leave() {
+    if (isOfflineActive()) endOfflineGame();
     setSession(null);
     setBoardMode(false);
     location.reload();

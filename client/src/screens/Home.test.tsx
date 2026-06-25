@@ -141,4 +141,26 @@ describe('Home', () => {
     render(<Home onJoined={vi.fn()} />);
     expect(screen.getByText(t.brandTagline)).toBeInTheDocument();
   });
+
+  it('solo offline button calls onJoined with the LOCAL room code', async () => {
+    const onJoined = vi.fn();
+    render(<Home onJoined={onJoined} />);
+    const nameInput = screen.getByPlaceholderText(t.namePlaceholder);
+    fireEvent.change(nameInput, { target: { value: 'Alice' } });
+    fireEvent.click(screen.getByTestId('solo-easy'));
+    await waitFor(() => {
+      expect(onJoined).toHaveBeenCalled();
+    });
+    const call = onJoined.mock.calls[0]!;
+    expect(call[0]).toBe('LOCAL');
+    expect(call[2]).toBe('Alice');
+  });
+
+  it('solo offline button without a name surfaces a name error', () => {
+    const onJoined = vi.fn();
+    render(<Home onJoined={onJoined} />);
+    fireEvent.click(screen.getByTestId('solo-hard'));
+    expect(onJoined).not.toHaveBeenCalled();
+    expect(screen.getByText(t.errChooseName)).toBeInTheDocument();
+  });
 });

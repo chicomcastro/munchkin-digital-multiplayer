@@ -21,7 +21,7 @@ const defaultDelay = (d: BotDifficulty): number => {
 
 const defaultScheduler = (cb: () => void, ms: number): (() => void) => {
   const t = setTimeout(cb, ms);
-  t.unref?.();
+  (t as { unref?: () => void }).unref?.();
   return () => clearTimeout(t);
 };
 

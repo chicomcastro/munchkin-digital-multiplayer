@@ -160,6 +160,12 @@ export const ptBR: Translations = {
   botDifficultyHard: 'Difícil',
   botThinking: 'pensando',
 
+  solo: 'Jogar solo (offline)',
+  soloEasy: 'Fácil · 1 bot',
+  soloNormal: 'Normal · 2 bots',
+  soloHard: 'Difícil · 3 bots',
+  soloHint: 'Roda dentro do navegador — não precisa de outros jogadores.',
+
   youGotCard: (name) => `Você ganhou ${name}`,
   youLeveledUp: (n) => `Subiu para o nível ${n}!`,
   youDied: 'Você morreu — renasceu com uma nova mão.',

@@ -171,6 +171,13 @@ export interface Translations {
   botDifficultyHard: string;
   botThinking: string;
 
+  // Offline solo mode
+  solo: string;
+  soloEasy: string;
+  soloNormal: string;
+  soloHard: string;
+  soloHint: string;
+
   // Toasts
   youGotCard: (name: string) => string;
   youLeveledUp: (n: number) => string;

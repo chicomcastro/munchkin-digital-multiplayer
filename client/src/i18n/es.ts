@@ -160,6 +160,12 @@ export const es: Translations = {
   botDifficultyHard: 'Difícil',
   botThinking: 'pensando',
 
+  solo: 'Jugar solo (offline)',
+  soloEasy: 'Fácil · 1 bot',
+  soloNormal: 'Normal · 2 bots',
+  soloHard: 'Difícil · 3 bots',
+  soloHint: 'Funciona dentro del navegador — sin otros jugadores.',
+
   youGotCard: (name) => `Conseguiste ${name}`,
   youLeveledUp: (n) => `¡Subiste al nivel ${n}!`,
   youDied: 'Moriste — renaciste con una nueva mano.',
