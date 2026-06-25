@@ -179,6 +179,21 @@ export interface Translations {
   soloHint: string;
   soloResume: string;
 
+  // Bot replay viewer
+  watchBots: string;
+  replay: string;
+  replayTitle: string;
+  replayPreset: string;
+  replayGenerate: string;
+  replayPlay: string;
+  replayPause: string;
+  replayPrev: string;
+  replayNext: string;
+  replaySpeed: string;
+  replayScrub: string;
+  replayOutcome: string;
+  replayEmpty: string;
+
   // Toasts
   youGotCard: (name: string) => string;
   youLeveledUp: (n: number) => string;
