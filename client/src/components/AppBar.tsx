@@ -29,9 +29,9 @@ export function AppBar({
       {onToggleView && viewLabel && (
         <button
           onClick={onToggleView}
-          className="opacity-60 hover:opacity-100 transition-opacity mr-auto"
+          className="mr-auto bg-amber-900/40 hover:bg-amber-800/60 border border-amber-700/50 rounded px-2.5 py-1 text-amber-200 font-bold tracking-wide uppercase text-[10px] transition-colors"
         >
-          {viewLabel}
+          ⇄ {viewLabel}
         </button>
       )}
       <select

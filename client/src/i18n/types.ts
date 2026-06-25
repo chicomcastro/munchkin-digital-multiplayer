@@ -169,6 +169,7 @@ export interface Translations {
   botDifficultyEasy: string;
   botDifficultyNormal: string;
   botDifficultyHard: string;
+  botThinking: string;
 
   // Toasts
   youGotCard: (name: string) => string;

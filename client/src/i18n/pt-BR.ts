@@ -158,6 +158,7 @@ export const ptBR: Translations = {
   botDifficultyEasy: 'Fácil',
   botDifficultyNormal: 'Normal',
   botDifficultyHard: 'Difícil',
+  botThinking: 'pensando',
 
   youGotCard: (name) => `Você ganhou ${name}`,
   youLeveledUp: (n) => `Subiu para o nível ${n}!`,

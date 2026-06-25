@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { mockSocket, resetMockSocket } from '../test/mockSocket';
 import { PlayerView } from './PlayerView';
-import { makeCard, makeCombat, makeState } from '../test/fixtures';
+import { makeCard, makeCombat, makePlayer, makeState } from '../test/fixtures';
 import { t } from '../i18n';
 
 beforeEach(() => {
@@ -186,6 +186,44 @@ describe('PlayerView', () => {
     expect(screen.getByText('Bob')).toBeInTheDocument();
   });
 
+  it('shows a bot badge and difficulty label on bot opponents', () => {
+    const state = makeState({
+      players: [
+        makePlayer({ id: 'p1', name: 'Alice' }),
+        makePlayer({ id: 'b1', name: 'Bot 1', isBot: true, botDifficulty: 'hard', socketId: null }),
+      ],
+      activePlayerId: 'p1',
+    });
+    renderView(state, []);
+    const bot = screen.getByTestId('opponent-b1');
+    expect(bot.textContent).toMatch(new RegExp(`${t.bot}.*${t.botDifficultyHard}`, 'i'));
+  });
+
+  it('shows a "thinking" indicator when a bot is the active player', () => {
+    const state = makeState({
+      players: [
+        makePlayer({ id: 'p1', name: 'Alice' }),
+        makePlayer({ id: 'b1', name: 'Bot 1', isBot: true, botDifficulty: 'normal', socketId: null }),
+      ],
+      activePlayerId: 'b1',
+      phase: 'playing',
+    });
+    renderView(state, []);
+    expect(screen.getByTestId('opponent-thinking-b1')).toBeInTheDocument();
+  });
+
+  it('omits the "thinking" indicator when a human is active', () => {
+    const state = makeState({
+      players: [
+        makePlayer({ id: 'p1', name: 'Alice' }),
+        makePlayer({ id: 'b1', name: 'Bot 1', isBot: true, botDifficulty: 'normal' }),
+      ],
+      activePlayerId: 'p1',
+    });
+    renderView(state, []);
+    expect(screen.queryByTestId('opponent-thinking-b1')).toBeNull();
+  });
+
   it('renders deck and discard boxes', () => {
     const state = makeState({ doorDeckSize: 42, treasureDeckSize: 17 });
     renderView(state, []);
@@ -327,6 +365,26 @@ describe('PlayerView', () => {
     expect(altRow).toHaveTextContent('Cleric');
     expect(altRow).toHaveTextContent('3');
     expect(altRow).toHaveTextContent('6');
+  });
+
+  it('Dual-character: characters panel is hidden when every character is empty (lv 1, no race/class)', () => {
+    const base = makeState();
+    const me = {
+      ...base.players[0]!,
+      level: 1,
+      race: null,
+      class: null,
+      equipped: [],
+      characters: [{
+        level: 1, hand: [], equipped: [], carried: [], race: null, class: null, combatPower: 1,
+      }],
+    };
+    const state = makeState({
+      players: [me, base.players[1]!],
+      config: { ...base.config, twoPlayerDualCharacter: true },
+    });
+    renderView(state, []);
+    expect(screen.queryByTestId('characters-panel')).not.toBeInTheDocument();
   });
 
   it('Dual-character: characters panel is hidden when feature disabled', () => {
