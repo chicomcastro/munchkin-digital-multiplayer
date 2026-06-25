@@ -158,9 +158,18 @@ export default function App() {
         <div
           role="alert"
           aria-live="polite"
-          className="fixed bottom-4 left-1/2 -translate-x-1/2 bg-red-700/95 text-white px-4 py-2 rounded-xl shadow-lg z-50 anim-slide-in"
+          className="fixed bottom-20 left-1/2 -translate-x-1/2 bg-red-700/95 text-white px-4 py-2.5 rounded-xl shadow-lg z-50 anim-slide-in flex items-center gap-3 max-w-[90vw]"
+          data-testid="app-error-banner"
         >
-          {errorMsg}
+          <span className="text-sm">{errorMsg}</span>
+          <button
+            type="button"
+            onClick={leave}
+            className="text-xs bg-red-900 hover:bg-red-950 border border-red-300/40 rounded px-2 py-1 font-bold uppercase tracking-wide shrink-0"
+            data-testid="app-error-leave"
+          >
+            {t.leave}
+          </button>
         </div>
       )}
       {chrome}
