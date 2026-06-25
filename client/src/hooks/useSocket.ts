@@ -4,7 +4,7 @@ import { io, Socket } from 'socket.io-client';
 const SERVER_URL =
   (import.meta.env.VITE_SERVER_URL as string | undefined) ?? `http://${window.location.hostname}:3001`;
 
-type EmitFn = (event: string, payload: any, ack?: (res: any) => void) => void;
+type EmitFn = (event: string, payload?: any, ack?: (res: any) => void) => void;
 type SocketLike = {
   on: (event: string, handler: (...args: any[]) => void) => void;
   off: (event: string, handler: (...args: any[]) => void) => void;

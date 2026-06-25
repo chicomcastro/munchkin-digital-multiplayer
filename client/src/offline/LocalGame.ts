@@ -45,7 +45,7 @@ export class LocalGame {
     this.listeners.get(event)?.delete(handler);
   }
 
-  emit(event: string, payload: any, ack?: (res: any) => void) {
+  emit(event: string, payload?: any, ack?: (res: any) => void) {
     try {
       this.dispatch(event, payload);
       ack?.({ ok: true });
