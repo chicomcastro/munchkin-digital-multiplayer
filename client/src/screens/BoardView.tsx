@@ -36,7 +36,7 @@ export function BoardView({ state }: { state: GameState }) {
   }, [state.globalTimerEndsAt]);
 
   return (
-    <div id="main-content" className="min-h-screen p-4 pt-12 grid grid-cols-1 lg:grid-cols-[1fr_320px] xl:grid-cols-[280px_1fr_320px] gap-4">
+    <div id="main-content" className="min-h-screen p-4 pt-12 grid grid-cols-1 md:grid-cols-[1fr_280px] xl:grid-cols-[280px_1fr_320px] gap-4">
       {/* Wider screens get a dedicated left column for the player roster, mimicking a
           game table where each "seat" sits at the edge. */}
       <aside className="hidden xl:flex xl:flex-col xl:gap-3 xl:sticky xl:top-4 xl:self-start">
@@ -124,7 +124,7 @@ export function BoardView({ state }: { state: GameState }) {
         )}
 
         {/* On xl: the roster moved to the left column; keep grid for sm/lg. */}
-        <div className="grid grid-cols-2 md:grid-cols-3 xl:hidden gap-3">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:hidden gap-3">
           {state.players.map((p) => (
             <PlayerStatus key={p.id} player={p} active={state.activePlayerId === p.id} detailed />
           ))}
@@ -148,7 +148,7 @@ export function BoardView({ state }: { state: GameState }) {
         )}
       </div>
 
-      <aside className="card-shell p-3 max-h-[80vh] flex flex-col lg:sticky lg:top-4 lg:self-start">
+      <aside className="card-shell p-3 max-h-[80vh] flex flex-col md:sticky md:top-4 md:self-start">
         <div className="text-xs uppercase opacity-60 mb-2">{t.log}</div>
         <div className="flex-1 overflow-y-auto scroll-thin text-sm space-y-1 pr-1">
           {state.log.map((e) => (

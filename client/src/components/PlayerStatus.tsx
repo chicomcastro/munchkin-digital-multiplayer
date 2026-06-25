@@ -43,11 +43,21 @@ export function PlayerStatus({
       onClick={() => setExpanded((v) => !v)}
     >
       <div className="flex items-baseline justify-between">
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-1.5 min-w-0">
           <span className="text-xs opacity-40">{expanded ? '▲' : '▼'}</span>
           <span className="font-bold text-lg truncate">{player.name}</span>
+          {player.isBot && (
+            <span className="text-[10px] uppercase tracking-wide bg-indigo-700/70 text-indigo-100 rounded px-1.5 py-0.5 font-bold shrink-0">
+              {t.bot}
+              {player.botDifficulty && ` · ${
+                player.botDifficulty === 'easy' ? t.botDifficultyEasy
+                : player.botDifficulty === 'normal' ? t.botDifficultyNormal
+                : t.botDifficultyHard
+              }`}
+            </span>
+          )}
         </div>
-        <span className="text-sm opacity-70">{player.socketId ? t.online : t.offline}</span>
+        <span className="text-sm opacity-70 shrink-0 ml-2">{player.isBot ? '★' : (player.socketId ? t.online : t.offline)}</span>
       </div>
       <div className="flex gap-4 mt-1 text-sm">
         <div>

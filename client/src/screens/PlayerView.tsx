@@ -165,8 +165,9 @@ export function PlayerView({
 
   return (
     <div className="min-h-screen flex flex-col screen-root pt-12">
+      <div className="md:grid md:grid-cols-[minmax(280px,360px)_1fr] md:gap-3 md:px-3 md:items-start">
       {/* Hero header */}
-      <header className="surface-glass mx-3 mt-1 p-3 anim-fade" style={{ borderTop: `3px solid ${me.color}` }}>
+      <header className="surface-glass mx-3 md:mx-0 mt-1 md:mt-2 p-3 anim-fade md:sticky md:top-12 md:max-h-[calc(100vh-3.5rem)] md:overflow-y-auto md:self-start" style={{ borderTop: `3px solid ${me.color}` }}>
         <div className="flex justify-between items-start gap-2">
           <div className="min-w-0">
             <div className="text-xs opacity-60 truncate">{t.room} {state.roomCode} · {t.turn} {state.turn}</div>
@@ -209,7 +210,7 @@ export function PlayerView({
           </div>
         </div>
         <div className="mt-2">
-          <div className="grid grid-cols-3 gap-1 text-[10px] max-w-[280px]">
+          <div className="grid grid-cols-3 gap-1.5 text-[10px] max-w-[280px] md:max-w-none">
             <div />
             <SlotBox label="head" card={slotMap.slots.head} />
             <div />
@@ -230,7 +231,7 @@ export function PlayerView({
             </div>
           )}
         </div>
-        {state.config.twoPlayerDualCharacter && (me.characters?.length ?? 0) > 0 && (
+        {state.config.twoPlayerDualCharacter && (me.characters?.length ?? 0) > 0 && (me.characters!.some((alt) => alt.race || alt.class || alt.level > 1 || alt.equipped.length > 0) || me.race || me.class) && (
           <div className="mt-2.5 border-t border-amber-800/30 pt-2" data-testid="characters-panel">
             <div className="text-[10px] uppercase tracking-widest opacity-60 font-display mb-1.5">
               {t.charactersLabel}
@@ -262,8 +263,9 @@ export function PlayerView({
         )}
       </header>
 
+      <div className="md:min-w-0 flex flex-col gap-2">
       {/* Phase banner */}
-      <div className={['mx-3 mt-1.5 px-3 py-1.5 rounded-lg border text-sm text-center font-medium anim-fade font-display', phaseBanner.accent].join(' ')}>
+      <div className={['mx-3 md:mx-0 mt-1.5 md:mt-2 px-3 py-1.5 rounded-lg border text-sm text-center font-medium anim-fade font-display', phaseBanner.accent].join(' ')}>
         {phaseBanner.text}
       </div>
 
@@ -277,24 +279,44 @@ export function PlayerView({
               <span className="text-xs uppercase tracking-widest opacity-50 font-display">{t.opponents}</span>
               <div className="h-px flex-1 bg-amber-800/30" />
             </div>
-            <div className="flex gap-2 overflow-x-auto scroll-thin pb-1 justify-center">
-              {opponents.map((p) => (
+            <div className="flex gap-2 overflow-x-auto scroll-thin pb-1 justify-center md:flex-wrap">
+              {opponents.map((p) => {
+                const isActiveBot = p.isBot && state.activePlayerId === p.id && state.phase === 'playing';
+                const difficultyLabel = p.botDifficulty === 'easy' ? t.botDifficultyEasy
+                  : p.botDifficulty === 'normal' ? t.botDifficultyNormal
+                  : p.botDifficulty === 'hard' ? t.botDifficultyHard
+                  : null;
+                return (
                 <div
                   key={p.id}
+                  data-testid={`opponent-${p.id}`}
                   className={[
-                    'shrink-0 surface-glass px-3 py-2 min-w-[120px] max-w-[160px] text-center',
+                    'shrink-0 surface-glass px-3 py-2 min-w-[120px] max-w-[160px] md:max-w-[180px] text-center relative',
                     !p.isAlive ? 'opacity-40' : '',
                     state.activePlayerId === p.id ? 'ring-2 ring-amber-400' : '',
                   ].join(' ')}
                 >
-                  <div
-                    className="w-10 h-10 rounded-full mx-auto flex items-center justify-center text-lg font-black text-white"
-                    style={{ backgroundColor: p.color }}
-                  >
-                    {p.name.charAt(0).toUpperCase()}
+                  <div className="relative w-10 h-10 mx-auto">
+                    <div
+                      className="w-10 h-10 rounded-full flex items-center justify-center text-lg font-black text-white"
+                      style={{ backgroundColor: p.color }}
+                    >
+                      {p.name.charAt(0).toUpperCase()}
+                    </div>
+                    {p.isBot && (
+                      <span className="absolute -bottom-0.5 -right-0.5 bg-indigo-800 border border-indigo-400 text-indigo-100 rounded-full w-4 h-4 flex items-center justify-center text-[9px] font-bold" aria-hidden="true">
+                        ★
+                      </span>
+                    )}
                   </div>
                   <div className="font-bold truncate text-sm mt-1 font-display">{p.name}</div>
-                  {!p.socketId && <div className="text-[10px] opacity-50">{t.offline}</div>}
+                  {p.isBot ? (
+                    <div className="text-[10px] uppercase tracking-wide text-indigo-200">
+                      {t.bot}{difficultyLabel ? ` · ${difficultyLabel}` : ''}
+                    </div>
+                  ) : !p.socketId && (
+                    <div className="text-[10px] opacity-50">{t.offline}</div>
+                  )}
                   <div className="text-xs mt-0.5 opacity-80">
                     <span className="text-amber-300 font-bold">{p.level}</span>
                     <span className="opacity-50 mx-1">·</span>
@@ -305,8 +327,17 @@ export function PlayerView({
                       {p.race?.name ?? '—'} / {p.class?.name ?? '—'}
                     </div>
                   )}
+                  {isActiveBot && (
+                    <div className="mt-1 text-[10px] text-amber-200 anim-pulse-active flex items-center justify-center gap-1" data-testid={`opponent-thinking-${p.id}`}>
+                      <span className="inline-block w-1 h-1 rounded-full bg-amber-300" />
+                      <span className="inline-block w-1 h-1 rounded-full bg-amber-300" style={{ animationDelay: '0.15s' }} />
+                      <span className="inline-block w-1 h-1 rounded-full bg-amber-300" style={{ animationDelay: '0.3s' }} />
+                      <span>{t.botThinking}</span>
+                    </div>
+                  )}
                 </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         )}
@@ -476,6 +507,8 @@ export function PlayerView({
           </div>
         </div>
       </main>
+      </div>
+      </div>
 
       <ToastStack toasts={toasts} onDismiss={dismiss} />
       <CardPreview card={previewCard} onClose={() => setPreviewCard(null)} />

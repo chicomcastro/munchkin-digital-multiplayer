@@ -158,6 +158,7 @@ export const en: Translations = {
   botDifficultyEasy: 'Easy',
   botDifficultyNormal: 'Normal',
   botDifficultyHard: 'Hard',
+  botThinking: 'thinking',
 
   youGotCard: (name) => `You got ${name}`,
   youLeveledUp: (n) => `Leveled up to ${n}!`,

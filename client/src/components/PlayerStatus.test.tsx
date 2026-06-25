@@ -63,4 +63,14 @@ describe('PlayerStatus', () => {
     expect(screen.getByText(/Elf/)).toBeInTheDocument();
     expect(screen.getByText(/Warrior/)).toBeInTheDocument();
   });
+
+  it('shows a bot badge with difficulty when the player is a bot', () => {
+    render(
+      <PlayerStatus
+        player={makePlayer({ name: 'Bot 1', isBot: true, botDifficulty: 'hard' })}
+        active={false}
+      />,
+    );
+    expect(screen.getByText(new RegExp(`${t.bot}.*${t.botDifficultyHard}`, 'i'))).toBeInTheDocument();
+  });
 });
