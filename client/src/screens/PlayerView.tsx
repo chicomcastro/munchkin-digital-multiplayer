@@ -168,7 +168,7 @@ export function PlayerView({
 
   return (
     <div className="min-h-screen flex flex-col screen-root pt-12">
-      <div className="md:grid md:grid-cols-[minmax(280px,360px)_1fr] md:gap-3 md:px-3 md:items-start">
+      <div className="md:grid md:grid-cols-[minmax(280px,360px)_1fr] xl:grid-cols-[minmax(280px,340px)_1fr_320px] md:gap-3 md:px-3 md:items-start">
       {/* Hero header */}
       <header className="surface-glass mx-3 md:mx-0 mt-1 md:mt-2 p-3 anim-fade md:sticky md:top-12 md:max-h-[calc(100vh-3.5rem)] md:overflow-y-auto md:self-start" style={{ borderTop: `3px solid ${me.color}` }}>
         <div className="flex justify-between items-start gap-2">
@@ -531,6 +531,29 @@ export function PlayerView({
         </div>
       </main>
       </div>
+      {/* Desktop-only: game log sidebar so players see context without toggling to BoardView */}
+      <aside className="hidden xl:flex xl:flex-col xl:gap-2 xl:sticky xl:top-12 xl:self-start xl:max-h-[calc(100vh-3.5rem)] surface-glass p-3">
+        <div className="text-xs uppercase tracking-widest opacity-50 font-display">{t.log}</div>
+        <div className="flex-1 overflow-y-auto scroll-thin text-sm space-y-1 pr-1 min-h-0">
+          {state.log.slice(-40).map((e) => (
+            <div
+              key={e.id}
+              className={[
+                'leading-snug',
+                e.kind === 'combat' ? 'text-red-300' :
+                e.kind === 'curse' ? 'text-purple-300' :
+                e.kind === 'level' ? 'text-amber-300' :
+                e.kind === 'system' ? 'text-emerald-300 font-bold' : 'opacity-80',
+              ].join(' ')}
+            >
+              {e.text}
+            </div>
+          ))}
+        </div>
+        <div className="text-[10px] opacity-60 mt-1 border-t border-amber-800/30 pt-2">
+          {t.doors.toLowerCase()} {state.doorDeckSize} · {t.treasures.toLowerCase()} {state.treasureDeckSize}
+        </div>
+      </aside>
       </div>
 
       <ToastStack toasts={toasts} onDismiss={dismiss} />

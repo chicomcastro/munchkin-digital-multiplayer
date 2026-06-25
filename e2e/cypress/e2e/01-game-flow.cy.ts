@@ -113,6 +113,13 @@ describe('Munchkin — full game flow', () => {
     cy.viewport(1024, 768);
     cy.contains('Chutar porta').should('be.visible');
     cy.snapshot('10b-player-view-tablet');
+
+    // Capture at desktop width too so the 3-column layout (left rail + main
+    // + log sidebar) shows up.
+    cy.viewport(1440, 900);
+    cy.contains('Chutar porta').should('be.visible');
+    cy.snapshot('10c-player-view-desktop');
+
     cy.viewport(414, 896);
   });
 
