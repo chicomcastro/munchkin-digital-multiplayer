@@ -4,6 +4,8 @@ import { CardView } from '../components/Card';
 import { CardTypeIcon } from '../components/CardTypeIcon';
 import { CombatArena } from '../components/CombatArena';
 import { CardPreview } from '../components/CardPreview';
+import { PlayerDetailModal } from '../components/PlayerDetailModal';
+import type { Player } from '../types';
 import { ToastStack } from '../components/Toast';
 import { DeathBanner } from '../components/DeathBanner';
 import { Confetti } from '../components/Confetti';
@@ -42,6 +44,7 @@ export function PlayerView({
     inCombat && (combat!.attackerId === myId || combat!.alliedPlayerId === myId);
   const [selectedCard, setSelectedCard] = useState<string | null>(null);
   const [previewCard, setPreviewCard] = useState<Card | null>(null);
+  const [detailPlayer, setDetailPlayer] = useState<Player | null>(null);
   const [sellPicker, setSellPicker] = useState<Set<string>>(new Set());
   const [targetMode, setTargetMode] = useState(false);
   const [secondsLeft, setSecondsLeft] = useState<number | null>(null);
@@ -183,7 +186,14 @@ export function PlayerView({
       <header className="surface-glass mx-3 md:mx-0 mt-1 md:mt-2 p-3 anim-fade md:sticky md:top-12 md:max-h-[calc(100vh-3.5rem)] md:overflow-y-auto md:self-start" style={{ borderTop: `3px solid ${me.color}` }}>
         <div className="flex justify-between items-start gap-2">
           <div className="min-w-0">
-            <div className="text-xs opacity-60 truncate">{t.room} {state.roomCode} · {t.turn} {state.turn}</div>
+            <button
+              type="button"
+              onClick={() => setDetailPlayer(me)}
+              className="text-xs opacity-60 hover:opacity-100 truncate underline-offset-2 hover:underline transition-opacity"
+              aria-label={t.viewMySet}
+            >
+              {t.room} {state.roomCode} · {t.turn} {state.turn} · 🔍
+            </button>
             <div className="flex items-center gap-0.5 mt-1">
               <span className="text-xs opacity-60 mr-1.5 font-display">{t.level}</span>
               {Array.from({ length: 10 }, (_, i) => i + 1).map((n) => (
@@ -232,21 +242,26 @@ export function PlayerView({
         <div className="mt-2">
           <div className="grid grid-cols-3 gap-1.5 text-[10px] max-w-[280px] md:max-w-none">
             <div />
-            <SlotBox label="head" card={slotMap.slots.head} />
+            <SlotBox label="head" card={slotMap.slots.head} onClick={setPreviewCard} />
             <div />
-            <SlotBox label="hand" card={slotMap.slots.handL} />
-            <SlotBox label="body" card={slotMap.slots.body} />
-            <SlotBox label="hand" card={slotMap.slots.handR} twoHands={slotMap.slots.handL === slotMap.slots.handR && !!slotMap.slots.handL} />
+            <SlotBox label="hand" card={slotMap.slots.handL} onClick={setPreviewCard} />
+            <SlotBox label="body" card={slotMap.slots.body} onClick={setPreviewCard} />
+            <SlotBox label="hand" card={slotMap.slots.handR} twoHands={slotMap.slots.handL === slotMap.slots.handR && !!slotMap.slots.handL} onClick={setPreviewCard} />
             <div />
-            <SlotBox label="feet" card={slotMap.slots.feet} />
+            <SlotBox label="feet" card={slotMap.slots.feet} onClick={setPreviewCard} />
             <div />
           </div>
           {slotMap.others.length > 0 && (
             <div className="flex gap-1 mt-1 flex-wrap">
               {slotMap.others.map((c) => (
-                <span key={c.id} className="bg-amber-900/40 border border-amber-800/40 px-1.5 py-0.5 rounded text-[10px]">
+                <button
+                  key={c.id}
+                  type="button"
+                  onClick={() => setPreviewCard(c)}
+                  className="bg-amber-900/40 border border-amber-800/40 hover:bg-amber-800/60 px-1.5 py-0.5 rounded text-[10px] transition-colors"
+                >
                   {c.name} +{c.bonus ?? 0}
-                </span>
+                </button>
               ))}
             </div>
           )}
@@ -311,11 +326,13 @@ export function PlayerView({
                   : p.botDifficulty === 'hard' ? t.botDifficultyHard
                   : null;
                 return (
-                <div
+                <button
+                  type="button"
                   key={p.id}
                   data-testid={`opponent-${p.id}`}
+                  onClick={() => setDetailPlayer(p)}
                   className={[
-                    'shrink-0 surface-glass px-3 py-2 min-w-[120px] max-w-[160px] md:max-w-[180px] text-center relative',
+                    'shrink-0 surface-glass px-3 py-2 min-w-[120px] max-w-[160px] md:max-w-[180px] text-center relative hover:ring-1 hover:ring-amber-500/60 transition-shadow text-inherit',
                     !p.isAlive ? 'opacity-40' : '',
                     state.activePlayerId === p.id ? 'ring-2 ring-amber-400' : '',
                   ].join(' ')}
@@ -359,7 +376,7 @@ export function PlayerView({
                       <span>{t.botThinking}</span>
                     </div>
                   )}
-                </div>
+                </button>
                 );
               })}
             </div>
@@ -385,10 +402,18 @@ export function PlayerView({
                       </button>
                     </>
                   ) : (
-                    !combat.alliedPlayerId && (
-                      <button className="btn col-span-2" onClick={() => emit('game:helpInCombat').catch((e) => alert(e.message))}>
-                        {t.iconHelp} {t.helpInCombat}
+                    !combat.alliedPlayerId ? (
+                      <button
+                        className="btn-primary col-span-2 anim-pulse-active"
+                        data-testid="help-in-combat"
+                        onClick={() => emit('game:helpInCombat').catch((e) => alert(e.message))}
+                      >
+                        {t.iconHelp} {t.helpInCombat} <span className="text-xs opacity-70">({state.players.find((p) => p.id === combat.attackerId)?.name})</span>
                       </button>
+                    ) : (
+                      <div className="col-span-2 text-center text-xs italic opacity-60 py-2">
+                        {t.allyJoinedHint(state.players.find((p) => p.id === combat.alliedPlayerId)?.name ?? '?')}
+                      </div>
                     )
                   )}
                 </div>
@@ -568,6 +593,7 @@ export function PlayerView({
 
       <ToastStack toasts={toasts} onDismiss={dismiss} />
       <CardPreview card={previewCard} onClose={() => setPreviewCard(null)} />
+      <PlayerDetailModal player={detailPlayer} onClose={() => setDetailPlayer(null)} />
       <DeathBanner trigger={deathTrigger} />
       <Confetti trigger={confettiTrigger} />
 
@@ -611,8 +637,13 @@ export function PlayerView({
           {(state.turnPhase === 'turnStart' || state.turnPhase === 'kickDoor') && (
             <>
               {state.turnPhase === 'turnStart' && state.config.listeningAtTheDoor && (
-                <button className="btn" disabled={!active || state.phase === 'ended'} onClick={() => emit('game:listenDoor').catch((e) => alert(e.message))}>
-                  {t.iconListen} {t.listen}
+                <button
+                  className="btn text-sm py-1.5 px-3 opacity-90"
+                  disabled={!active || state.phase === 'ended'}
+                  onClick={() => emit('game:listenDoor').catch((e) => alert(e.message))}
+                  title={t.tipListening}
+                >
+                  {t.iconListen} {t.listen} <span className="text-[10px] opacity-60">({t.optional})</span>
                 </button>
               )}
               <button
@@ -820,7 +851,7 @@ function CharacterRow({
   );
 }
 
-function SlotBox({ label, card, twoHands }: { label: string; card: Card | null; twoHands?: boolean }) {
+function SlotBox({ label, card, twoHands, onClick }: { label: string; card: Card | null; twoHands?: boolean; onClick?: (card: Card) => void }) {
   const kind = (twoHands ? 'twoHands' : label) as 'head' | 'body' | 'hand' | 'feet' | 'twoHands';
   const prevId = useRef<string | null>(card?.id ?? null);
   const [animate, setAnimate] = useState(false);
@@ -834,20 +865,27 @@ function SlotBox({ label, card, twoHands }: { label: string; card: Card | null; 
     }
     prevId.current = nowId;
   }, [card?.id]);
+  const clickable = !!card && !!onClick;
+  const Wrapper = clickable ? 'button' : 'div';
   return (
-    <div className={[
-      'rounded border px-1 py-1.5 text-center min-h-[3.75rem] md:min-h-[4.25rem] flex flex-col items-center justify-center gap-0.5 relative overflow-hidden',
-      card
-        ? 'bg-amber-900/40 border-amber-700/60 text-amber-200'
-        : 'bg-amber-950/60 border-dashed border-amber-600/40 text-amber-300/70',
-      animate ? 'anim-slot-equip' : '',
-    ].join(' ')}>
+    <Wrapper
+      type={clickable ? 'button' : undefined as any}
+      onClick={clickable ? () => onClick!(card!) : undefined}
+      aria-label={clickable ? card!.name : undefined}
+      className={[
+        'rounded border px-1 py-1.5 text-center min-h-[3.75rem] md:min-h-[4.25rem] flex flex-col items-center justify-center gap-0.5 relative overflow-hidden',
+        card
+          ? 'bg-amber-900/40 border-amber-700/60 text-amber-200'
+          : 'bg-amber-950/60 border-dashed border-amber-600/40 text-amber-300/70',
+        animate ? 'anim-slot-equip' : '',
+        clickable ? 'cursor-pointer hover:bg-amber-900/60 active:scale-95 transition-transform' : '',
+      ].join(' ')}>
       <SlotIcon slot={kind} size={22} className={card ? 'opacity-40' : 'opacity-80'} />
       <div className="uppercase text-[8px] tracking-wider opacity-75">{twoHands ? '2H' : label}</div>
       {card && (
         <div className="text-[9px] truncate font-bold leading-tight max-w-full px-0.5">{card.name}</div>
       )}
-    </div>
+    </Wrapper>
   );
 }
 

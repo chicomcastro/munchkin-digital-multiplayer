@@ -461,6 +461,28 @@ describe('PlayerView', () => {
     expect(screen.queryByText(new RegExp(t.gameWon('Alice')))).toBeNull();
   });
 
+  it('clicking an equipped slot opens the card preview modal', () => {
+    const sword = makeCard({ id: 'sword1', name: 'Sword', type: 'item', slot: 'hand', bonus: 2 });
+    const me = { ...makeState().players[0]!, equipped: [sword] };
+    const state = makeState({ players: [me, makeState().players[1]!] });
+    renderView(state, []);
+    fireEvent.click(screen.getByRole('button', { name: 'Sword' }));
+    // CardPreview shows the card name as a heading too
+    expect(screen.getAllByText('Sword').length).toBeGreaterThan(1);
+  });
+
+  it('clicking an opponent card opens the player detail modal', () => {
+    renderView(makeState(), []);
+    fireEvent.click(screen.getByTestId('opponent-p2'));
+    expect(screen.getByTestId('player-detail-modal-p2')).toBeInTheDocument();
+  });
+
+  it('the room-header crumb opens the modal with the current player', () => {
+    renderView(makeState(), []);
+    fireEvent.click(screen.getByLabelText(t.viewMySet));
+    expect(screen.getByTestId('player-detail-modal-p1')).toBeInTheDocument();
+  });
+
   it('the overlay Leave button calls the onLeave callback', () => {
     const state = makeState({ phase: 'ended', winnerId: 'p2' });
     const onLeave = vi.fn();
