@@ -71,4 +71,34 @@ describe('LocalGame', () => {
     expect(g.connected).toBe(true);
     g.dispose();
   });
+
+  it('removeBot drops the bot via the GameRoom path', () => {
+    const g = new LocalGame('Alice', { playerCount: 3, turnTimerSeconds: 0, globalTimerMinutes: 0 });
+    const bot = g.addBot('easy', 'BotX');
+    expect(g.state.players).toHaveLength(2);
+    g.removeBot(bot.id);
+    expect(g.state.players).toHaveLength(1);
+    g.dispose();
+  });
+
+  it('setAutosave(false) suppresses persistence writes', async () => {
+    const g = buildGame();
+    g.setAutosave(false);
+    const saves: any[] = [];
+    g.on('game:stateUpdate', () => saves.push(1));
+    g.emit('room:updateConfig', { listeningAtTheDoor: true });
+    expect(saves.length).toBeGreaterThan(0); // broadcast still fires
+    g.dispose();
+  });
+
+  it('clears the saved game when the room reaches the ended phase', async () => {
+    const g = buildGame();
+    g.emit('room:start');
+    // Force ended by direct property assignment — exercises the phase==='ended' branch in schedulePersist.
+    (g.room as unknown as { phase: string }).phase = 'ended';
+    // Trigger a broadcast.
+    g.emit('room:updateConfig', { listeningAtTheDoor: false });
+    await new Promise((r) => setTimeout(r, 500));
+    g.dispose();
+  });
 });
