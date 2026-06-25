@@ -16,7 +16,28 @@
     "noUnusedParameters": false,
     "noFallthroughCasesInSwitch": true,
     "esModuleInterop": true,
-    "forceConsistentCasingInFileNames": true
+    "forceConsistentCasingInFileNames": true,
+    "paths": {
+      "@core/*": ["../server/src/*"]
+    }
   },
-  "include": ["src"]
+  "include": [
+    "src",
+    "../server/src/GameRoom.ts",
+    "../server/src/Deck.ts",
+    "../server/src/cards/doors.ts",
+    "../server/src/cards/treasures.ts",
+    "../server/src/rules/variants.ts",
+    "../server/src/rules/combat.ts",
+    "../server/src/rules/abilities.ts",
+    "../server/src/rules/phases.ts",
+    "../server/src/bots/policy.ts",
+    "../server/src/bots/easy.ts",
+    "../server/src/bots/normal.ts",
+    "../server/src/bots/hard.ts",
+    "../server/src/bots/factory.ts",
+    "../server/src/bots/dispatcher.ts",
+    "../server/src/bots/driver.ts",
+    "../server/src/types.ts"
+  ]
 }

@@ -3,6 +3,9 @@ import { emit } from '../hooks/useSocket';
 import { t } from '../i18n';
 import { CardTypeIcon } from '../components/CardTypeIcon';
 import { TrophyIcon } from '../components/TrophyIcon';
+import { startOfflineGame, OFFLINE_ROOM_CODE } from '../offline/manager';
+
+type BotDifficulty = 'easy' | 'normal' | 'hard';
 
 type Field = 'name' | 'code' | null;
 
@@ -65,6 +68,18 @@ export function Home({
       setError(null, (e as Error).message);
     } finally {
       setBusy(false);
+    }
+  }
+
+  function startOffline(difficulties: BotDifficulty[]) {
+    setError(null, null);
+    if (!name.trim()) return setError('name', t.errChooseName);
+    persistName();
+    try {
+      const { playerId } = startOfflineGame({ name, difficulties });
+      onJoined(OFFLINE_ROOM_CODE, playerId, name);
+    } catch (e) {
+      setError(null, (e as Error).message);
     }
   }
 
@@ -158,6 +173,40 @@ export function Home({
         <button className="btn w-full" disabled={busy} onClick={join}>
           {t.joinRoom}
         </button>
+
+        <div className="mt-5 border-t border-amber-800/30 pt-4">
+          <div className="text-xs uppercase opacity-60 mb-2 text-center">{t.solo}</div>
+          <div className="flex gap-2">
+            <button
+              type="button"
+              className="btn flex-1 text-sm py-2"
+              disabled={busy}
+              onClick={() => startOffline(['easy'])}
+              data-testid="solo-easy"
+            >
+              {t.soloEasy}
+            </button>
+            <button
+              type="button"
+              className="btn flex-1 text-sm py-2"
+              disabled={busy}
+              onClick={() => startOffline(['normal', 'normal'])}
+              data-testid="solo-normal"
+            >
+              {t.soloNormal}
+            </button>
+            <button
+              type="button"
+              className="btn flex-1 text-sm py-2"
+              disabled={busy}
+              onClick={() => startOffline(['hard', 'hard', 'hard'])}
+              data-testid="solo-hard"
+            >
+              {t.soloHard}
+            </button>
+          </div>
+          <div className="text-[10px] opacity-50 mt-1.5 text-center italic">{t.soloHint}</div>
+        </div>
 
         {errorField === null && errorMsg && (
           <div className="text-red-400 mt-3 text-sm text-center">{errorMsg}</div>

@@ -78,7 +78,7 @@ export class GameRoom {
   winnerId: string | null = null;
   turnTimerEndsAt: number | null = null;
   globalTimerEndsAt: number | null = null;
-  turnTimer: NodeJS.Timeout | null = null;
+  turnTimer: ReturnType<typeof setTimeout> | null = null;
 
   private listeners = new Set<Listener>();
   private creatorId: string | null = null;
@@ -398,7 +398,7 @@ export class GameRoom {
       this.endTurn();
     }, this.config.turnTimerSeconds * 1000);
     // Don't block process shutdown in scripts / tests.
-    t.unref?.();
+    (t as { unref?: () => void }).unref?.();
     this.turnTimer = t;
   }
 
