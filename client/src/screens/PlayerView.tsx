@@ -6,6 +6,7 @@ import { CardPreview } from '../components/CardPreview';
 import { ToastStack } from '../components/Toast';
 import { DeathBanner } from '../components/DeathBanner';
 import { Confetti } from '../components/Confetti';
+import { SlotIcon } from '../components/SlotIcon';
 import { emit } from '../hooks/useSocket';
 import { useToasts } from '../hooks/useToasts';
 import { t } from '../i18n';
@@ -264,8 +265,12 @@ export function PlayerView({
       </header>
 
       <div className="md:min-w-0 flex flex-col gap-2">
-      {/* Phase banner */}
-      <div className={['mx-3 md:mx-0 mt-1.5 md:mt-2 px-3 py-1.5 rounded-lg border text-sm text-center font-medium anim-fade font-display', phaseBanner.accent].join(' ')}>
+      {/* Phase banner — louder & bigger when it is your turn */}
+      <div className={[
+        'mx-3 md:mx-0 mt-1.5 md:mt-2 px-3 rounded-lg border text-center font-medium anim-fade font-display',
+        active ? 'py-3 text-base md:text-lg font-bold tracking-wide shadow-[0_0_24px_rgba(251,191,36,0.18)]' : 'py-1.5 text-sm',
+        phaseBanner.accent,
+      ].join(' ')}>
         {phaseBanner.text}
       </div>
 
@@ -730,18 +735,18 @@ function CharacterRow({
 }
 
 function SlotBox({ label, card, twoHands }: { label: string; card: Card | null; twoHands?: boolean }) {
+  const kind = (twoHands ? 'twoHands' : label) as 'head' | 'body' | 'hand' | 'feet' | 'twoHands';
   return (
     <div className={[
-      'rounded border px-1 py-1 text-center min-h-[2.25rem] flex flex-col justify-center',
+      'rounded border px-1 py-1.5 text-center min-h-[3.25rem] md:min-h-[4rem] flex flex-col items-center justify-center gap-0.5 relative overflow-hidden',
       card
-        ? 'bg-amber-900/40 border-amber-700/50 text-amber-200'
-        : 'bg-amber-950/50 border-dashed border-amber-600/50 text-amber-500/60 italic',
+        ? 'bg-amber-900/40 border-amber-700/60 text-amber-200'
+        : 'bg-amber-950/50 border-dashed border-amber-700/30 text-amber-700/50',
     ].join(' ')}>
+      <SlotIcon slot={kind} size={20} className={card ? 'opacity-30' : 'opacity-50'} />
       <div className="uppercase text-[7px] tracking-wider opacity-60">{twoHands ? '2H' : label}</div>
-      {card ? (
-        <div className="text-[9px] truncate font-bold">{card.name}</div>
-      ) : (
-        <div className="text-[8px]">--</div>
+      {card && (
+        <div className="text-[9px] truncate font-bold leading-tight max-w-full px-0.5">{card.name}</div>
       )}
     </div>
   );
