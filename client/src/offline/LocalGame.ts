@@ -152,6 +152,15 @@ export class LocalGame {
     }
   }
 
+  /**
+   * Re-fires the latest state/hand to all current listeners. Called from
+   * manager.startOfflineGame after install so any hooks that subscribed
+   * post-construction still get the initial snapshot.
+   */
+  rebroadcast() {
+    this.broadcast();
+  }
+
   private broadcast() {
     this.fire('game:stateUpdate', this.state);
     this.fire('game:yourHand', { hand: this.hand, fist: this.fist });

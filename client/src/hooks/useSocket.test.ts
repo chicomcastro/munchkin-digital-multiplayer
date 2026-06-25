@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { renderHook, act, waitFor } from '@testing-library/react';
 import { mockSocket, resetMockSocket } from '../test/mockSocket';
-import { useSocket, emit, getSocket } from './useSocket';
+import { useSocket, emit, getSocket, setSocketOverride, subscribeSocketOverride } from './useSocket';
 
 beforeEach(() => {
   resetMockSocket();
@@ -50,5 +50,17 @@ describe('emit', () => {
   it('rejects with a default error when no error provided', async () => {
     mockSocket.queueAck('game:kickDoor', { ok: false });
     await expect(emit('game:kickDoor')).rejects.toThrow(/unknown error/i);
+  });
+
+  it('setSocketOverride notifies subscribers and changes getSocket()', () => {
+    const fake = { on: () => {}, off: () => {}, emit: () => {}, connected: true } as const;
+    let called = 0;
+    const unsub = subscribeSocketOverride(() => { called += 1; });
+    setSocketOverride(fake as any);
+    expect(called).toBe(1);
+    expect(getSocket()).toBe(fake);
+    setSocketOverride(null);
+    expect(called).toBe(2);
+    unsub();
   });
 });

@@ -54,15 +54,16 @@ body {
 }
 
 .screen-root {
-  padding-top: calc(3rem + max(env(safe-area-inset-top), 1rem));
+  padding-top: calc(0.75rem + max(env(safe-area-inset-top), 2.75rem));
 }
 
 /* Helper for any screen that needs to sit just below the AppBar including
    any notch inset — preferable to a literal pt-12 since it adapts. The
-   max() with 1rem covers regular mobile Safari where env() returns 0 but
-   the status bar still overlays the top of the viewport. */
+   max() with 2.75rem covers iOS Safari where env() returns 0 but the
+   status bar still overlays the top of the viewport at ~44px on notched
+   devices. */
 .pt-app {
-  padding-top: calc(3rem + max(env(safe-area-inset-top), 1rem));
+  padding-top: calc(0.75rem + max(env(safe-area-inset-top), 2.75rem));
 }
 
 .font-display {
