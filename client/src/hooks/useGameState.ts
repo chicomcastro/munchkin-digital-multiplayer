@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { getSocket } from './useSocket';
+import { getSocket, subscribeSocketOverride } from './useSocket';
 import type { Card, GameState } from '../types';
 
 export function useGameState() {
@@ -7,6 +7,14 @@ export function useGameState() {
   const [hand, setHand] = useState<Card[]>([]);
   const [fist, setFist] = useState<Card[]>([]);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  // Bumps every time the active socket transport changes (e.g. when offline
+  // mode installs a LocalGame override). The subscriber effect below rebinds
+  // its listeners on each bump so we don't keep listening to a stale Socket.
+  const [transportRev, setTransportRev] = useState(0);
+
+  useEffect(() => {
+    return subscribeSocketOverride(() => setTransportRev((n) => n + 1));
+  }, []);
 
   useEffect(() => {
     const s = getSocket();
@@ -27,7 +35,7 @@ export function useGameState() {
       s.off('game:yourHand', onHand);
       s.off('error', onErr);
     };
-  }, []);
+  }, [transportRev]);
 
   return { state, hand, fist, errorMsg };
 }

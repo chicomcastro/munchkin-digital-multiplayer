@@ -29,6 +29,9 @@ export function startOfflineGame({ name, difficulties, config }: StartOfflineOpt
   difficulties.forEach((d, i) => game.addBot(d, `Bot ${i + 1}`));
   setSocketOverride(game);
   current = game;
+  // setSocketOverride causes hooks to re-bind their listeners; queue a
+  // re-broadcast on the next tick so they receive the initial snapshot.
+  queueMicrotask(() => { try { game.rebroadcast(); } catch { /* disposed */ } });
   return { playerId: game.humanId };
 }
 
@@ -64,6 +67,7 @@ export async function resumeOfflineGame(): Promise<{ playerId: string } | null> 
   const game = LocalGame.fromSnapshot(saved.snapshot, saved.humanId);
   setSocketOverride(game);
   current = game;
+  queueMicrotask(() => { try { game.rebroadcast(); } catch { /* disposed */ } });
   return { playerId: game.humanId };
 }
 
