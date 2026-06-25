@@ -223,7 +223,18 @@ export function PlayerView({
               </span>
             </div>
           </div>
-          <div className="text-right shrink-0">
+          <div className="text-right shrink-0 flex flex-col items-end gap-1">
+            {onLeave && (
+              <button
+                type="button"
+                onClick={onLeave}
+                aria-label={t.leave}
+                className="text-[10px] uppercase opacity-50 hover:opacity-100 text-red-300 hover:text-red-200 transition-opacity"
+                data-testid="player-header-leave"
+              >
+                ✕ {t.leave}
+              </button>
+            )}
             {active ? (
               <div className="bg-amber-500 text-amber-950 rounded-md px-2 py-1 font-bold uppercase text-xs tracking-wide anim-pulse-active shadow-[0_0_12px_rgba(251,191,36,0.45)]">
                 {t.yourTurn}
@@ -607,7 +618,7 @@ export function PlayerView({
       <Confetti trigger={confettiTrigger} />
 
       {state.phase === 'ended' && (
-        <div className="fixed inset-0 z-40 bg-black/70 backdrop-blur-sm flex items-center justify-center p-6 anim-fade" data-testid="player-game-over">
+        <div className="fixed inset-0 z-[60] bg-black/80 backdrop-blur-sm flex items-center justify-center p-6 anim-fade" data-testid="player-game-over">
           <div className="card-shell p-6 max-w-sm w-full text-center anim-card-glow">
             <div className={[
               'mb-2 flex justify-center',

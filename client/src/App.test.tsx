@@ -81,6 +81,19 @@ describe('App', () => {
     await waitFor(() => expect(screen.getByText('Not your turn.')).toBeInTheDocument());
   });
 
+  it('error banner exposes a leave button as an escape hatch', async () => {
+    localStorage.setItem('munchkin:session', JSON.stringify({ roomCode: 'MNK-AAA', playerId: 'p1', name: 'Alice' }));
+    mockSocket.queueAck('room:join', { ok: true, roomCode: 'MNK-AAA', playerId: 'p1' });
+    render(<App />);
+    act(() => {
+      mockSocket.serverEmit('game:stateUpdate', makeState({ phase: 'playing' }));
+      mockSocket.serverEmit('game:yourHand', { hand: [], fist: [] });
+      mockSocket.serverEmit('error', 'Game not running.');
+    });
+    await waitFor(() => expect(screen.getByTestId('app-error-banner')).toBeInTheDocument());
+    expect(screen.getByTestId('app-error-leave')).toBeInTheDocument();
+  });
+
   it('leave clears session and reloads', async () => {
     localStorage.setItem('munchkin:session', JSON.stringify({ roomCode: 'MNK-AAA', playerId: 'p1', name: 'Alice' }));
     mockSocket.queueAck('room:join', { ok: true, roomCode: 'MNK-AAA', playerId: 'p1' });
