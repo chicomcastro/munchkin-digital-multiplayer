@@ -195,6 +195,7 @@ export const es: Translations = {
   viewMySet: 'Ver tu set completo',
   optional: 'opcional',
   allyJoinedHint: (name) => `${name} ya está ayudando en este combate.`,
+  requestHelp: 'Pedir ayuda',
 
   expandCard: 'Toca para expandir',
   closePreview: 'Cerrar',

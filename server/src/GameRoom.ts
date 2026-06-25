@@ -651,6 +651,33 @@ export class GameRoom {
     this.emit();
   }
 
+  /**
+   * Attacker asks the room if anyone will help. Bots decide via their
+   * shouldHelp policy; the first willing helper joins the combat. Returns
+   * the helper id or null if nobody agreed.
+   */
+  requestHelpInCombat(attackerId: string, decide: (helperId: string, difficulty: 'easy' | 'normal' | 'hard') => boolean): string | null {
+    if (!this.combatState || this.combatState.resolved) throw new Error('No active combat.');
+    if (this.combatState.attackerId !== attackerId) throw new Error('Only the attacker can ask for help.');
+    if (this.combatState.alliedPlayerId) throw new Error('Combat already has an ally.');
+    const candidates = this.players.filter((p) => p.isAlive && p.id !== attackerId);
+    for (const candidate of candidates) {
+      // Humans would need a UI prompt; for now only bot candidates are
+      // consulted via the decide() callback.
+      if (!candidate.isBot || !candidate.botDifficulty) continue;
+      if (decide(candidate.id, candidate.botDifficulty)) {
+        this.combatState.alliedPlayerId = candidate.id;
+        this.write(`${candidate.name} aceitou ajudar.`, 'combat');
+        this.refreshCombatTotals();
+        this.emit();
+        return candidate.id;
+      }
+    }
+    this.write(`Ninguém aceitou ajudar ${this.playerById(attackerId).name}.`, 'combat');
+    this.emit();
+    return null;
+  }
+
   flee(playerId: string) {
     if (!this.combatState || this.combatState.resolved) throw new Error('No active combat.');
     const player = this.playerById(playerId);

@@ -195,6 +195,7 @@ export const ptBR: Translations = {
   viewMySet: 'Ver seu set completo',
   optional: 'opcional',
   allyJoinedHint: (name) => `${name} já está ajudando neste combate.`,
+  requestHelp: 'Pedir ajuda',
 
   expandCard: 'Toque pra ampliar',
   closePreview: 'Fechar',

@@ -31,6 +31,11 @@ function findCombatBoostCard(hand: Card[]): Card | null {
 export class EasyPolicy implements BotPolicy {
   readonly difficulty = 'easy' as const;
 
+  shouldHelp({ rng }: BotContext): boolean {
+    // Coin flip with a small bias toward helping — easy bots are nice.
+    return rng() < 0.55;
+  }
+
   decide({ room, playerId, rng }: BotContext): BotAction {
     const state = room.snapshot();
     const hand = room.privateHandFor(playerId);

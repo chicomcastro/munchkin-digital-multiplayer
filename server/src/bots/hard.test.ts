@@ -95,6 +95,42 @@ describe('HardPolicy', () => {
     if (action.kind === 'playCard') expect(action.cardId).toBe(weak.id);
   });
 
+  it('shouldHelp accepts when the combat is flippable and the prize is worth it', () => {
+    const { room, a } = startedRoom();
+    const player = room.players.find((p) => p.id === a.id)!;
+    player.combatPower = 5;
+    room.combatState = {
+      attackerId: 'someone-else',
+      monsters: [makeCard({ type: 'monster', deck: 'door', level: 6, treasures: 2, levelsAwarded: 1 })],
+      monsterPower: 6,
+      playerPower: 2,
+      alliedPlayerId: null,
+      cardsPlayedThisRound: [],
+      resolved: false,
+      result: 'pending',
+      fleeBonus: 0,
+    } satisfies CombatState;
+    expect(new HardPolicy().shouldHelp!({ room, playerId: a.id, rng: () => 0.5 })).toBe(true);
+  });
+
+  it('shouldHelp refuses when the helper would not flip the combat', () => {
+    const { room, a } = startedRoom();
+    const player = room.players.find((p) => p.id === a.id)!;
+    player.combatPower = 1;
+    room.combatState = {
+      attackerId: 'someone-else',
+      monsters: [makeCard({ type: 'monster', deck: 'door', level: 18, treasures: 4, levelsAwarded: 3 })],
+      monsterPower: 18,
+      playerPower: 2,
+      alliedPlayerId: null,
+      cardsPlayedThisRound: [],
+      resolved: false,
+      result: 'pending',
+      fleeBonus: 0,
+    } satisfies CombatState;
+    expect(new HardPolicy().shouldHelp!({ room, playerId: a.id, rng: () => 0.5 })).toBe(false);
+  });
+
   it('passes when it is not the bot turn in combat', () => {
     const { room, a, b } = startedRoom();
     room.combatState = {

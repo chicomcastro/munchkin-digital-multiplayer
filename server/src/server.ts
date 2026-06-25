@@ -7,6 +7,7 @@ import type { RoomConfig } from './types.js';
 import { makeRepository } from './persistence/firestore.js';
 import type { RoomRepository } from './persistence/repository.js';
 import { BotDriver, type BotDriverOptions } from './bots/driver.js';
+import * as botFactory from './bots/factory.js';
 import type { BotDifficulty } from './bots/policy.js';
 
 export interface ServerHandle {
@@ -212,6 +213,14 @@ export function createServer(opts: CreateServerOptions = {}): ServerHandle {
       withRoom(cb, (r, pid) => r.playCard(pid, p.cardId, p.targetId))
     );
     socket.on('game:helpInCombat', (_p, cb) => withRoom(cb, (r, pid) => r.helpInCombat(pid)));
+    socket.on('game:requestHelp', (_p, cb) => withRoom(cb, (r, pid) => {
+      // Server-side: defer to each candidate bot's shouldHelp via factory.
+      return r.requestHelpInCombat(pid, (helperId, difficulty) => {
+        const policy = botFactory.getPolicy(difficulty);
+        if (!policy.shouldHelp) return false;
+        return policy.shouldHelp({ room: r, playerId: helperId, rng: Math.random });
+      });
+    }));
     socket.on('game:flee', (_p, cb) => withRoom(cb, (r, pid) => r.flee(pid)));
     socket.on('game:resolveCombat', (_p, cb) => withRoom(cb, (r, pid) => r.resolveCombat(pid)));
     socket.on('game:lootRoom', (_p, cb) => withRoom(cb, (r, pid) => r.lootRoom(pid)));

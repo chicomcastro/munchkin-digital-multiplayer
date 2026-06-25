@@ -400,6 +400,15 @@ export function PlayerView({
                       <button className="btn-danger" onClick={() => { sound?.play('flee'); emit('game:flee').catch((e) => alert(e.message)); }}>
                         {t.iconFlee} {t.flee}
                       </button>
+                      {combat.attackerId === myId && !combat.alliedPlayerId && (
+                        <button
+                          className="btn col-span-2"
+                          data-testid="request-help"
+                          onClick={() => emit('game:requestHelp').catch((e) => alert(e.message))}
+                        >
+                          {t.iconHelp} {t.requestHelp}
+                        </button>
+                      )}
                     </>
                   ) : (
                     !combat.alliedPlayerId ? (

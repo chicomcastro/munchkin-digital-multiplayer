@@ -210,6 +210,7 @@ export interface Translations {
   viewMySet: string;
   optional: string;
   allyJoinedHint: (name: string) => string;
+  requestHelp: string;
 
   // Card preview
   expandCard: string;
