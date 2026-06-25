@@ -204,11 +204,18 @@ export function PlayerView({
             </div>
           </div>
           <div className="text-right shrink-0">
-            <div className="text-xs uppercase opacity-60">{active ? t.yourTurn : t.active}</div>
-            {!active && <div className="font-bold text-sm" style={{ color: activePlayer?.color }}>{activePlayer?.name}</div>}
-            {active && <div className="font-bold text-amber-300 anim-pulse-active rounded px-1 inline-block text-sm">●</div>}
+            {active ? (
+              <div className="bg-amber-500 text-amber-950 rounded-md px-2 py-1 font-bold uppercase text-xs tracking-wide anim-pulse-active shadow-[0_0_12px_rgba(251,191,36,0.45)]">
+                {t.yourTurn}
+              </div>
+            ) : (
+              <>
+                <div className="text-xs uppercase opacity-60">{t.active}</div>
+                <div className="font-bold text-sm" style={{ color: activePlayer?.color }}>{activePlayer?.name}</div>
+              </>
+            )}
             {secondsLeft != null && (
-              <div className={['text-sm font-bold', secondsLeft < 10 ? 'text-red-400' : ''].join(' ')}>{secondsLeft}s</div>
+              <div className={['text-sm font-bold mt-0.5', secondsLeft < 10 ? 'text-red-400' : ''].join(' ')}>{secondsLeft}s</div>
             )}
           </div>
         </div>
@@ -500,9 +507,9 @@ export function PlayerView({
             <span className="text-xs uppercase tracking-widest opacity-50 font-display">{t.hand} ({hand.length})</span>
             <div className="h-px flex-1 bg-amber-800/30" />
           </div>
-          <div className="flex gap-2 overflow-x-auto scroll-thin pb-2 justify-center flex-wrap">
+          <div className="flex gap-2 overflow-x-auto scroll-thin pb-2 md:justify-center md:flex-wrap snap-x snap-mandatory md:snap-none">
             {hand.length === 0 && (
-              <div className="text-center py-6 opacity-60">
+              <div className="text-center py-6 opacity-60 w-full">
                 <div className="flex justify-center gap-3 mb-2 text-amber-700/60" aria-hidden="true">
                   <CardTypeIcon type="monster" size={28} />
                   <CardTypeIcon type="item" size={28} />
@@ -512,7 +519,7 @@ export function PlayerView({
               </div>
             )}
             {hand.map((c) => (
-              <div key={c.id} className="anim-slide-in">
+              <div key={c.id} className="anim-slide-in shrink-0 snap-start">
                 <CardView
                   card={c}
                   selected={selectedCard === c.id}
@@ -761,14 +768,14 @@ function SlotBox({ label, card, twoHands }: { label: string; card: Card | null; 
   }, [card?.id]);
   return (
     <div className={[
-      'rounded border px-1 py-1.5 text-center min-h-[3.25rem] md:min-h-[4rem] flex flex-col items-center justify-center gap-0.5 relative overflow-hidden',
+      'rounded border px-1 py-1.5 text-center min-h-[3.75rem] md:min-h-[4.25rem] flex flex-col items-center justify-center gap-0.5 relative overflow-hidden',
       card
         ? 'bg-amber-900/40 border-amber-700/60 text-amber-200'
-        : 'bg-amber-950/50 border-dashed border-amber-700/30 text-amber-700/50',
+        : 'bg-amber-950/60 border-dashed border-amber-600/40 text-amber-300/70',
       animate ? 'anim-slot-equip' : '',
     ].join(' ')}>
-      <SlotIcon slot={kind} size={20} className={card ? 'opacity-30' : 'opacity-50'} />
-      <div className="uppercase text-[7px] tracking-wider opacity-60">{twoHands ? '2H' : label}</div>
+      <SlotIcon slot={kind} size={22} className={card ? 'opacity-40' : 'opacity-80'} />
+      <div className="uppercase text-[8px] tracking-wider opacity-75">{twoHands ? '2H' : label}</div>
       {card && (
         <div className="text-[9px] truncate font-bold leading-tight max-w-full px-0.5">{card.name}</div>
       )}
