@@ -49,6 +49,13 @@ describe('event interpolations', () => {
   it('youLeveledUp includes the new level', () => {
     expect(t.youLeveledUp(7)).toContain('7');
   });
+  it('allyJoinedHint names the helper across every locale', () => {
+    for (const locale of ['pt-BR', 'en', 'es'] as const) {
+      setLocale(locale);
+      expect(t.allyJoinedHint('Bob')).toContain('Bob');
+    }
+    setLocale('pt-BR');
+  });
 });
 
 describe('label tables', () => {

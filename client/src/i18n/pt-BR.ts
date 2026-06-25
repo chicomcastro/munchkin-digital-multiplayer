@@ -189,6 +189,13 @@ export const ptBR: Translations = {
   gameWon: (name) => `${name} venceu o jogo!`,
   gameOverLeave: 'Voltar pra tela inicial',
 
+  equipment: 'Equipamento',
+  otherItems: 'Outros itens',
+  carried: 'Carregados',
+  viewMySet: 'Ver seu set completo',
+  optional: 'opcional',
+  allyJoinedHint: (name) => `${name} já está ajudando neste combate.`,
+
   expandCard: 'Toque pra ampliar',
   closePreview: 'Fechar',
 

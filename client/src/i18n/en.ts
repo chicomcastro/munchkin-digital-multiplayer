@@ -189,6 +189,13 @@ export const en: Translations = {
   gameWon: (name) => `${name} won the game!`,
   gameOverLeave: 'Back to home',
 
+  equipment: 'Equipment',
+  otherItems: 'Other items',
+  carried: 'Carried',
+  viewMySet: 'View your full set',
+  optional: 'optional',
+  allyJoinedHint: (name) => `${name} is already helping in this combat.`,
+
   expandCard: 'Tap to expand',
   closePreview: 'Close',
 

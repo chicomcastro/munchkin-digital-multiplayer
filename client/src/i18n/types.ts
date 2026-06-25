@@ -203,6 +203,14 @@ export interface Translations {
   gameWon: (name: string) => string;
   gameOverLeave: string;
 
+  // Player detail modal
+  equipment: string;
+  otherItems: string;
+  carried: string;
+  viewMySet: string;
+  optional: string;
+  allyJoinedHint: (name: string) => string;
+
   // Card preview
   expandCard: string;
   closePreview: string;
