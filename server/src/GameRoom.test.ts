@@ -1531,6 +1531,68 @@ describe('GameRoom — Dual character', () => {
   });
 });
 
+describe('GameRoom — requestHelpInCombat', () => {
+  function setupCombat() {
+    const room = new GameRoom({ variant: 'long', playerCount: 3, turnTimerSeconds: 0, globalTimerMinutes: 0 });
+    const attacker = room.addPlayer('Alice', 's1');
+    const helperBot = room.addBot('hard', 'BotHard');
+    room.addBot('easy', 'BotEasy');
+    room.start();
+    // Force a combat with Alice as the attacker by mutating the room state.
+    (room as unknown as { activePlayerId: string }).activePlayerId = attacker.id;
+    (room as unknown as { turnPhase: string }).turnPhase = 'combat';
+    room.combatState = {
+      attackerId: attacker.id,
+      monsters: [{ id: 'm1', type: 'monster', deck: 'door', name: 'Beast', description: '', level: 8, treasures: 2, levelsAwarded: 1 }],
+      monsterPower: 8,
+      playerPower: 4,
+      alliedPlayerId: null,
+      cardsPlayedThisRound: [],
+      resolved: false,
+      result: 'pending',
+      fleeBonus: 0,
+    };
+    return { room, attacker, helperBot };
+  }
+
+  it('returns null when no bot accepts', () => {
+    const { room, attacker } = setupCombat();
+    const helperId = room.requestHelpInCombat(attacker.id, () => false);
+    expect(helperId).toBeNull();
+    expect(room.combatState?.alliedPlayerId).toBeNull();
+  });
+
+  it('binds the first bot that accepts as the ally', () => {
+    const { room, attacker } = setupCombat();
+    let called = 0;
+    const helperId = room.requestHelpInCombat(attacker.id, () => {
+      called += 1;
+      return called === 1;
+    });
+    expect(helperId).not.toBeNull();
+    expect(room.combatState?.alliedPlayerId).toBe(helperId);
+  });
+
+  it('rejects requests outside an active combat', () => {
+    const room = new GameRoom({ variant: 'long', playerCount: 2, turnTimerSeconds: 0, globalTimerMinutes: 0 });
+    const a = room.addPlayer('A', 'sa');
+    room.addBot('easy');
+    room.start();
+    expect(() => room.requestHelpInCombat(a.id, () => true)).toThrow(/active combat/i);
+  });
+
+  it('rejects requests from non-attackers', () => {
+    const { room, helperBot } = setupCombat();
+    expect(() => room.requestHelpInCombat(helperBot.id, () => true)).toThrow(/attacker/i);
+  });
+
+  it('rejects when the combat already has an ally', () => {
+    const { room, attacker, helperBot } = setupCombat();
+    room.combatState!.alliedPlayerId = helperBot.id;
+    expect(() => room.requestHelpInCombat(attacker.id, () => true)).toThrow(/already/i);
+  });
+});
+
 describe('GameRoom — bot seats', () => {
   it('adds a bot with the requested difficulty', () => {
     const room = new GameRoom({ variant: 'long', playerCount: 4, turnTimerSeconds: 0, globalTimerMinutes: 0 });

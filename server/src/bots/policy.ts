@@ -23,4 +23,9 @@ export interface BotContext {
 export interface BotPolicy {
   readonly difficulty: BotDifficulty;
   decide(ctx: BotContext): BotAction;
+  /**
+   * Called when another player asks this bot for help in their active combat.
+   * Defaults to refusing if not implemented.
+   */
+  shouldHelp?(ctx: BotContext): boolean;
 }

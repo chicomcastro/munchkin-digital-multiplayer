@@ -1,5 +1,6 @@
 import { GameRoom, type RoomSnapshotInternal } from '@core/GameRoom.js';
 import { BotDriver } from '@core/bots/driver.js';
+import { getPolicy } from '@core/bots/factory.js';
 import type { BotDifficulty } from '@core/bots/policy.js';
 import type { Card, GameState, RoomConfig } from '../types';
 import { clearOfflineGame, saveOfflineGame } from './storage';
@@ -126,6 +127,14 @@ export class LocalGame {
       case 'game:listenDoor': this.room.listenAtDoor(pid); return;
       case 'game:playCard': this.room.playCard(pid, payload.cardId, payload.targetId); return;
       case 'game:helpInCombat': this.room.helpInCombat(pid); return;
+      case 'game:requestHelp': {
+        this.room.requestHelpInCombat(pid, (helperId, difficulty) => {
+          const policy = getPolicy(difficulty);
+          if (!policy.shouldHelp) return false;
+          return policy.shouldHelp({ room: this.room, playerId: helperId, rng: Math.random });
+        });
+        return;
+      }
       case 'game:flee': this.room.flee(pid); return;
       case 'game:resolveCombat': this.room.resolveCombat(pid); return;
       case 'game:lootRoom': this.room.lootRoom(pid); return;

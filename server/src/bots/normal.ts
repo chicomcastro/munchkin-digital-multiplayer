@@ -44,6 +44,17 @@ function sumBoost(cards: Card[]): number {
 export class NormalPolicy implements BotPolicy {
   readonly difficulty = 'normal' as const;
 
+  shouldHelp({ room, playerId }: BotContext): boolean {
+    // Help if joining flips a losing combat to winning, or if the combat is
+    // close enough that the helper's power could swing it.
+    const c = room.snapshot().combatState;
+    if (!c) return false;
+    const me = room.players.find((p) => p.id === playerId);
+    if (!me) return false;
+    const gap = c.monsterPower - c.playerPower;
+    return me.combatPower + 1 >= gap;
+  }
+
   decide({ room, playerId, rng }: BotContext): BotAction {
     const state = room.snapshot();
     const hand = room.privateHandFor(playerId);

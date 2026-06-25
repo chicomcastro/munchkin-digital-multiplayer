@@ -101,6 +101,20 @@ function evaluateCombat(state: GameState, me: Player, hand: Card[], depth: numbe
 export class HardPolicy implements BotPolicy {
   readonly difficulty = 'hard' as const;
 
+  shouldHelp({ room, playerId }: BotContext): boolean {
+    // Help if joining can flip the combat AND the monster awards meaningful
+    // levels (half is the helper's standard cut).
+    const c = room.snapshot().combatState;
+    if (!c) return false;
+    const me = room.players.find((p) => p.id === playerId);
+    const monster = c.monsters[0];
+    if (!me || !monster) return false;
+    const gap = c.monsterPower - c.playerPower;
+    const canFlip = me.combatPower >= gap;
+    const worthIt = (monster.levelsAwarded ?? 1) >= 1 && (monster.treasures ?? 1) >= 2;
+    return canFlip && worthIt;
+  }
+
   decide({ room, playerId, rng }: BotContext): BotAction {
     const state = room.snapshot();
     const hand = room.privateHandFor(playerId);

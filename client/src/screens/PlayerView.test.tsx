@@ -471,6 +471,29 @@ describe('PlayerView', () => {
     expect(screen.getAllByText('Sword').length).toBeGreaterThan(1);
   });
 
+  it('attacker sees a "Pedir ajuda" button when combat has no ally yet', async () => {
+    mockSocket.queueAck('game:requestHelp', { ok: true });
+    const state = makeState({
+      combatState: makeCombat({ attackerId: 'p1', monsterPower: 10, playerPower: 3, alliedPlayerId: null }),
+      activePlayerId: 'p1',
+      turnPhase: 'combat',
+    });
+    renderView(state, []);
+    const btn = screen.getByTestId('request-help');
+    fireEvent.click(btn);
+    await waitFor(() => expect(mockSocket.lastEmit('game:requestHelp')).toBeTruthy());
+  });
+
+  it('"Pedir ajuda" disappears once an ally has joined', () => {
+    const state = makeState({
+      combatState: makeCombat({ attackerId: 'p1', monsterPower: 10, playerPower: 3, alliedPlayerId: 'p2' }),
+      activePlayerId: 'p1',
+      turnPhase: 'combat',
+    });
+    renderView(state, []);
+    expect(screen.queryByTestId('request-help')).toBeNull();
+  });
+
   it('clicking an opponent card opens the player detail modal', () => {
     renderView(makeState(), []);
     fireEvent.click(screen.getByTestId('opponent-p2'));
