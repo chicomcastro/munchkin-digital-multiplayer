@@ -49,8 +49,8 @@ export function Lobby({
   }
 
   return (
-    <div className="min-h-screen pb-28 p-4 pt-12 space-y-4 max-w-2xl mx-auto">
-      <div className="card-shell p-4 flex items-center justify-between gap-3 anim-fade">
+    <div className="min-h-screen pb-28 p-4 pt-12 space-y-4 max-w-2xl xl:max-w-6xl mx-auto xl:grid xl:grid-cols-[1fr_1fr] xl:gap-4 xl:space-y-0 xl:items-start">
+      <div className="card-shell p-4 flex items-center justify-between gap-3 anim-fade xl:col-start-1 xl:row-start-1">
         <div className="min-w-0">
           <div className="text-xs uppercase opacity-60">{t.room}</div>
           <div className="text-3xl font-bold text-amber-400 tracking-widest font-mono font-display">{state.roomCode}</div>
@@ -64,7 +64,7 @@ export function Lobby({
       </div>
 
       {isCreator && (
-        <div className="card-shell p-4 anim-fade">
+        <div className="card-shell p-4 anim-fade xl:col-start-2 xl:row-start-1">
           <div className="text-xs uppercase opacity-60 mb-2">{t.presets}</div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             {PRESETS.map((p) => (
@@ -83,7 +83,7 @@ export function Lobby({
         </div>
       )}
 
-      <div className="card-shell p-4">
+      <div className="card-shell p-4 xl:col-start-1 xl:row-start-2">
         <div className="text-xs uppercase opacity-60 mb-2">
           {t.players} ({state.players.length}/{cfg.playerCount})
         </div>
@@ -147,14 +147,14 @@ export function Lobby({
       <button
         type="button"
         onClick={() => setShowConfig((v) => !v)}
-        className="w-full text-left text-sm bg-amber-950/40 hover:bg-amber-950/60 border border-amber-800/30 rounded-xl px-4 py-3 flex items-center justify-between"
+        className="w-full text-left text-sm bg-amber-950/40 hover:bg-amber-950/60 border border-amber-800/30 rounded-xl px-4 py-3 flex items-center justify-between xl:col-start-2 xl:row-start-2"
       >
         <span className="opacity-80">{showConfig ? t.hideConfig : t.showConfig}</span>
         <span className="opacity-60 text-xs">{showConfig ? '▲' : '▼'}</span>
       </button>
 
       {showConfig && (
-        <div className="card-shell p-4 space-y-3 anim-fade">
+        <div className="card-shell p-4 space-y-3 anim-fade xl:col-start-2 xl:row-start-3">
           <div className="text-xs uppercase opacity-60">
             {t.configuration} {isCreator ? '' : t.configReadOnly}
           </div>
@@ -299,11 +299,11 @@ export function Lobby({
         </div>
       )}
 
-      {me && !me.socketId && <div className="text-red-400 text-center">{t.disconnectedLabel}</div>}
+      {me && !me.socketId && <div className="text-red-400 text-center xl:col-span-2">{t.disconnectedLabel}</div>}
 
       {/* Sticky footer — primary action stays in reach without scrolling */}
       <div className="fixed bottom-0 inset-x-0 z-30 bg-gradient-to-t from-[#0f0c06] via-[rgba(15,12,6,0.95)] to-transparent p-4 pt-8 backdrop-blur-sm border-t border-amber-800/30 shadow-[0_-16px_32px_-16px_rgba(0,0,0,0.7)]">
-        <div className="max-w-2xl mx-auto">
+        <div className="max-w-2xl xl:max-w-3xl mx-auto">
           {isCreator ? (
             <button
               className="btn-primary w-full text-lg"
