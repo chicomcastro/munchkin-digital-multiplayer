@@ -19,7 +19,7 @@
     "@google-cloud/firestore": "^8.6.0",
     "cors": "^2.8.5",
     "express": "^4.19.2",
-    "nanoid": "^5.0.7",
+    "nanoid": "^5.1.16",
     "socket.io": "^4.7.5"
   },
   "devDependencies": {
